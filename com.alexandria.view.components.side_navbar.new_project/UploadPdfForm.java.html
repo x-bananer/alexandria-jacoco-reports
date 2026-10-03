@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UploadPdfForm.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.side_navbar.new_project</a> &gt; <span class="el_source">UploadPdfForm.java</span></div><h1>UploadPdfForm.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.side_navbar.new_project;
+
+import java.io.File;
+import java.util.function.Consumer;
+
+import com.alexandria.view.components.shared.form.Form;
+import com.alexandria.view.components.shared.form.FormField;
+
+import javafx.scene.Node;
+import javafx.scene.layout.VBox;
+
+public class UploadPdfForm extends VBox {
+
+<span class="nc" id="L14">    public record UploadData(String title, String fileName, File file) {</span>
+    }
+
+    private final Form form;
+
+<span class="nc" id="L19">    private Consumer&lt;UploadData&gt; onSubmit = data -&gt; {</span>
+<span class="nc" id="L20">    };</span>
+
+<span class="nc" id="L22">    public UploadPdfForm(Node customContent) {</span>
+<span class="nc" id="L23">        getStyleClass().add(&quot;upload-pdf-form&quot;);</span>
+
+<span class="nc" id="L25">        form = new Form.Builder()</span>
+<span class="nc" id="L26">                .field(&quot;title&quot;, &quot;Project Name&quot;, FormField.Type.TEXT, true)</span>
+<span class="nc" id="L27">                .field(&quot;fileName&quot;, &quot;File Name (optional)&quot;, FormField.Type.TEXT, false)</span>
+<span class="nc" id="L28">                .field(&quot;file&quot;, &quot;Document&quot;, FormField.Type.DOCUMENT_FILE, true)</span>
+<span class="nc" id="L29">                .submitLabel(&quot;Create Project&quot;)</span>
+<span class="nc" id="L30">                .build();</span>
+
+<span class="nc" id="L32">        form.addCustomContent(customContent);</span>
+
+<span class="nc" id="L34">        form.setOnSubmit(values -&gt; onSubmit.accept(new UploadData(</span>
+<span class="nc" id="L35">                values.get(&quot;title&quot;),</span>
+<span class="nc" id="L36">                values.get(&quot;fileName&quot;),</span>
+<span class="nc" id="L37">                form.getFile(&quot;file&quot;))));</span>
+
+<span class="nc" id="L39">        getChildren().add(form);</span>
+<span class="nc" id="L40">    }</span>
+
+    public void setOnSubmit(Consumer&lt;UploadData&gt; handler) {
+<span class="nc" id="L43">        this.onSubmit = handler;</span>
+<span class="nc" id="L44">    }</span>
+
+    public void showError(String message) {
+<span class="nc" id="L47">        form.showError(message);</span>
+<span class="nc" id="L48">    }</span>
+
+    public void reset() {
+<span class="nc" id="L51">        form.reset();</span>
+<span class="nc" id="L52">    }</span>
+
+    public Form getForm() {
+<span class="nc" id="L55">        return form;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

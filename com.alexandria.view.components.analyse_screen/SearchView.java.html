@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SearchView.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.analyse_screen</a> &gt; <span class="el_source">SearchView.java</span></div><h1>SearchView.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.analyse_screen;
+
+import com.alexandria.view.components.analyse_screen.input_term_analyse.TrackedWordsList;
+import com.alexandria.view.components.shared.SearchInput;
+
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+
+import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
+import org.kordamp.ikonli.javafx.FontIcon;
+
+public class SearchView extends VBox {
+
+    private final SearchInput searchInput;
+    private final Button previousButton;
+    private final Button nextButton;
+    private final TrackedWordsList trackedWordsList;
+
+    private SearchCallback onSearch;
+    private Runnable onPreviousMatch;
+    private Runnable onNextMatch;
+
+<span class="fc" id="L27">    public SearchView() {</span>
+<span class="fc" id="L28">        getStyleClass().add(&quot;search-view&quot;);</span>
+
+<span class="fc" id="L30">        searchInput = new SearchInput(&quot;Search Term Frequency&quot;);</span>
+
+<span class="fc" id="L32">        previousButton = createIconButton(FontAwesomeSolid.CHEVRON_UP);</span>
+<span class="fc" id="L33">        nextButton = createIconButton(FontAwesomeSolid.CHEVRON_DOWN);</span>
+
+<span class="fc" id="L35">        trackedWordsList = new TrackedWordsList();</span>
+
+<span class="fc" id="L37">        HBox navigationButtons = new HBox(</span>
+                previousButton,
+                nextButton);
+
+<span class="fc" id="L41">        navigationButtons.setAlignment(Pos.CENTER_RIGHT);</span>
+<span class="fc" id="L42">        navigationButtons.getStyleClass().add(&quot;search-navigation-buttons&quot;);</span>
+
+<span class="fc" id="L44">        HBox searchControls = new HBox(</span>
+                searchInput,
+                navigationButtons);
+
+<span class="fc" id="L48">        searchControls.setAlignment(Pos.CENTER_LEFT);</span>
+<span class="fc" id="L49">        searchControls.setPadding(new Insets(4, 0, 8, 0));</span>
+
+<span class="fc" id="L51">        HBox.setHgrow(searchInput, Priority.ALWAYS);</span>
+
+<span class="fc" id="L53">        getChildren().addAll(</span>
+                searchControls,
+                trackedWordsList);
+
+<span class="fc" id="L57">        wireEvents();</span>
+<span class="fc" id="L58">    }</span>
+
+    private void wireEvents() {
+<span class="fc" id="L61">        searchInput.setOnSearch(term -&gt; {</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">            if (onSearch != null) {</span>
+<span class="nc" id="L63">                onSearch.onSearch(term);</span>
+            }
+<span class="nc" id="L65">        });</span>
+
+<span class="fc" id="L67">        previousButton.setOnAction(event -&gt; {</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">            if (onPreviousMatch != null) {</span>
+<span class="nc" id="L69">                onPreviousMatch.run();</span>
+            }
+<span class="nc" id="L71">        });</span>
+
+<span class="fc" id="L73">        nextButton.setOnAction(event -&gt; {</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">            if (onNextMatch != null) {</span>
+<span class="nc" id="L75">                onNextMatch.run();</span>
+            }
+<span class="nc" id="L77">        });</span>
+<span class="fc" id="L78">    }</span>
+
+    private Button createIconButton(FontAwesomeSolid icon) {
+<span class="fc" id="L81">        FontIcon fontIcon = new FontIcon(icon);</span>
+<span class="fc" id="L82">        fontIcon.getStyleClass().add(&quot;text-muted&quot;);</span>
+
+<span class="fc" id="L84">        Button button = new Button();</span>
+<span class="fc" id="L85">        button.setGraphic(fontIcon);</span>
+
+<span class="fc" id="L87">        button.getStyleClass().add(&quot;icon-button&quot;);</span>
+<span class="fc" id="L88">        button.getStyleClass().add(&quot;search-navigation-button&quot;);</span>
+
+<span class="fc" id="L90">        return button;</span>
+    }
+
+    public void setOnSearch(SearchCallback callback) {
+<span class="fc" id="L94">        this.onSearch = callback;</span>
+<span class="fc" id="L95">    }</span>
+
+    public void setOnPreviousMatch(Runnable callback) {
+<span class="fc" id="L98">        this.onPreviousMatch = callback;</span>
+<span class="fc" id="L99">    }</span>
+
+    public void setOnNextMatch(Runnable callback) {
+<span class="fc" id="L102">        this.onNextMatch = callback;</span>
+<span class="fc" id="L103">    }</span>
+
+    public String getSearchText() {
+<span class="nc" id="L106">        return searchInput.getText();</span>
+    }
+
+    public SearchInput getSearchInput() {
+<span class="nc" id="L110">        return searchInput;</span>
+    }
+
+    public TrackedWordsList getTrackedWordsList() {
+<span class="fc" id="L114">        return trackedWordsList;</span>
+    }
+
+    public void reset() {
+<span class="nc" id="L118">        trackedWordsList.reset();</span>
+<span class="nc" id="L119">    }</span>
+
+    @FunctionalInterface
+    public interface SearchCallback {
+        void onSearch(String term);
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

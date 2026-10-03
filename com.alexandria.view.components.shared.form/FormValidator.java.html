@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FormValidator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.shared.form</a> &gt; <span class="el_source">FormValidator.java</span></div><h1>FormValidator.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.shared.form;
+
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+
+public final class FormValidator {
+
+    private final Function&lt;Map&lt;String, String&gt;, String&gt; customValidator;
+
+<span class="fc" id="L11">    public FormValidator(Function&lt;Map&lt;String, String&gt;, String&gt; customValidator) {</span>
+<span class="fc" id="L12">        this.customValidator = customValidator;</span>
+<span class="fc" id="L13">    }</span>
+
+    public String validate(List&lt;FormField&gt; fields, FormRenderer renderer) {
+<span class="fc bfc" id="L16" title="All 2 branches covered.">        for (FormField field : fields) {</span>
+<span class="fc" id="L17">            String error = validateField(field, renderer);</span>
+<span class="fc bfc" id="L18" title="All 2 branches covered.">            if (error != null) {</span>
+<span class="fc" id="L19">                return error;</span>
+            }
+<span class="fc" id="L21">        }</span>
+
+<span class="fc bfc" id="L23" title="All 2 branches covered.">        if (customValidator != null) {</span>
+<span class="fc" id="L24">            String error = customValidator.apply(renderer.getValues());</span>
+<span class="pc bpc" id="L25" title="1 of 2 branches missed.">            if (error != null) {</span>
+<span class="fc" id="L26">                return error;</span>
+            }
+        }
+
+<span class="fc" id="L30">        return null;</span>
+    }
+
+    private String validateField(FormField field, FormRenderer renderer) {
+<span class="fc bfc" id="L34" title="All 2 branches covered.">        if (renderer.isEmpty(field)) {</span>
+<span class="fc bfc" id="L35" title="All 2 branches covered.">            return field.required() ? field.label() + &quot; is required.&quot; : null;</span>
+        }
+
+<span class="fc" id="L38">        String value = renderer.getValue(field);</span>
+
+<span class="fc bfc" id="L40" title="All 2 branches covered.">        for (FieldValidator validator : field.validators()) {</span>
+<span class="fc" id="L41">            String error = validator.validate(value, field);</span>
+<span class="pc bpc" id="L42" title="1 of 2 branches missed.">            if (error != null) {</span>
+<span class="fc" id="L43">                return error;</span>
+            }
+<span class="nc" id="L45">        }</span>
+
+<span class="fc" id="L47">        return null;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

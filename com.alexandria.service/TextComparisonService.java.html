@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TextComparisonService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.service</a> &gt; <span class="el_source">TextComparisonService.java</span></div><h1>TextComparisonService.java</h1><pre class="source lang-java linenums">package com.alexandria.service;
+
+import com.alexandria.service.analysis.*;
+import com.alexandria.service.analysis.TextComparisonResult.TextComparisonRow;
+
+import java.util.*;
+import java.util.stream.*;
+
+import static com.alexandria.service.AnalysisUtils.*;
+
+
+
+<span class="fc" id="L13">public class TextComparisonService implements TextComparisonServiceINT {</span>
+
+    private static final int MIN_PARAGRAPH_LENGTH = 50;
+    private static final int MIN_SHARED_COMMON_WORDS = 3;
+    private static final int MAX_PARAGRAPH_THRESHOLD = 5000;
+    private static final int MAX_PARAGRAPH_MATCHES = 5;
+
+    public TextComparisonResult compareTexts(Map&lt;Integer, String&gt; textsById, Map&lt;Integer, List&lt;Integer&gt;&gt; pageOffsetsById, int limit) {
+<span class="pc bpc" id="L21" title="2 of 4 branches missed.">        if (textsById == null || textsById.isEmpty()) {</span>
+<span class="nc" id="L22">            return new TextComparisonResult(Collections.emptyList(), Collections.emptyList(), 0.0, &quot;Low&quot;, Collections.emptyList());</span>
+        }
+
+<span class="fc" id="L25">        var extractedWords = textsById.entrySet().stream()</span>
+<span class="fc" id="L26">            .collect(Collectors.toMap(Map.Entry::getKey, e -&gt; extractWords(e.getValue())));</span>
+
+<span class="fc" id="L28">        var wordFrequencies = extractedWords.entrySet().stream()</span>
+<span class="fc" id="L29">            .collect(Collectors.toMap(Map.Entry::getKey, e -&gt; countWordFrequencies(e.getValue())));</span>
+
+<span class="fc" id="L31">        var intersection = wordFrequencies.values().stream() // A &quot;shared vocabulary&quot; between texts, so both are taken into account.</span>
+<span class="fc" id="L32">            .map(Map::keySet)</span>
+<span class="fc" id="L33">            .reduce((s1, s2) -&gt; {</span>
+<span class="fc" id="L34">                Set&lt;String&gt; temp = new HashSet&lt;&gt;(s1);</span>
+<span class="fc" id="L35">                temp.retainAll(s2);</span>
+<span class="fc" id="L36">                return temp;</span>
+            })
+<span class="fc" id="L38">            .orElse(Collections.emptySet());</span>
+
+<span class="fc" id="L40">        double similarityScore = 0.0;</span>
+<span class="pc bpc" id="L41" title="2 of 4 branches missed.">        if (textsById.size() &gt;= 2 &amp;&amp; !wordFrequencies.isEmpty()) {</span>
+<span class="fc" id="L42">            var iterator = wordFrequencies.values().iterator();</span>
+<span class="fc" id="L43">            similarityScore = calculateCosineSimilarity(iterator.next(), iterator.next());</span>
+        }
+
+<span class="fc" id="L46">        String similarityAmount = TextComparisonResult.SimilarityAmount.fromScore(similarityScore).label();</span>
+
+<span class="fc" id="L48">        long maxRows = Long.MAX_VALUE;</span>
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">        if (limit &gt; 0) {</span>
+<span class="fc" id="L50">            maxRows = limit;</span>
+        }
+
+<span class="fc" id="L53">        var rows = intersection.stream()</span>
+<span class="fc" id="L54">            .map(word -&gt; createComparisonRow(word, extractedWords, wordFrequencies))</span>
+<span class="fc" id="L55">            .sorted(Comparator.comparingInt(this::sumComparisonCounts).reversed().thenComparing(TextComparisonRow::word))</span>
+<span class="fc" id="L56">            .limit(maxRows)</span>
+<span class="fc" id="L57">            .toList();</span>
+
+<span class="fc" id="L59">        List&lt;TextComparisonResult.ParagraphMatch&gt; similarParagraphs = findSimilarParagraphs(textsById, pageOffsetsById, intersection);</span>
+
+<span class="fc" id="L61">        return new TextComparisonResult(new ArrayList&lt;&gt;(textsById.keySet()), rows, similarityScore, similarityAmount, similarParagraphs);</span>
+    }
+
+    private double calculateCosineSimilarity(Map&lt;String, Long&gt; vec1, Map&lt;String, Long&gt; vec2) {
+<span class="fc" id="L65">        double dotProduct = 0.0;</span>
+<span class="fc" id="L66">        double norm1 = 0.0;</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">        for (Map.Entry&lt;String, Long&gt; entry : vec1.entrySet()) {</span>
+<span class="fc" id="L68">            long v1 = entry.getValue();</span>
+<span class="fc" id="L69">            norm1 += v1 * v1;</span>
+<span class="fc" id="L70">            Long v2 = vec2.get(entry.getKey());</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">            if (v2 != null) {</span>
+<span class="fc" id="L72">                dotProduct += v1 * v2;</span>
+            }
+<span class="fc" id="L74">        }</span>
+
+<span class="fc" id="L76">        double norm2 = 0.0;</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        for (long v2 : vec2.values()) {</span>
+<span class="fc" id="L78">            norm2 += v2 * v2;</span>
+<span class="fc" id="L79">        }</span>
+
+<span class="pc bpc" id="L81" title="1 of 4 branches missed.">        if (norm1 == 0.0 || norm2 == 0.0) {</span>
+<span class="fc" id="L82">            return 0.0;</span>
+        }
+<span class="fc" id="L84">        return (dotProduct / (Math.sqrt(norm1) * Math.sqrt(norm2))) * 100.0;</span>
+    }
+
+<span class="fc" id="L87">    private record ParagraphMatchCandidate(int firstIndex, int secondIndex, double score, int start1, String p1, int start2, String p2) {}</span>
+
+    private List&lt;TextComparisonResult.ParagraphMatch&gt; findSimilarParagraphs(Map&lt;Integer, String&gt; textsById, Map&lt;Integer, List&lt;Integer&gt;&gt; pageOffsetsById, Set&lt;String&gt; commonWords) {
+<span class="pc bpc" id="L90" title="2 of 6 branches missed.">        if (textsById == null || textsById.size() &lt; 2 || commonWords.isEmpty()) {</span>
+<span class="fc" id="L91">            return Collections.emptyList();</span>
+        }
+
+<span class="fc" id="L94">        var textEntries = new ArrayList&lt;&gt;(textsById.entrySet());</span>
+<span class="fc" id="L95">        var entry1 = textEntries.get(0);</span>
+<span class="fc" id="L96">        var entry2 = textEntries.get(1);</span>
+
+<span class="fc" id="L98">        String text1 = entry1.getValue();</span>
+<span class="fc" id="L99">        String text2 = entry2.getValue();</span>
+
+<span class="pc bpc" id="L101" title="4 of 8 branches missed.">        if (text1 == null || text1.isBlank() || text2 == null || text2.isBlank()) {</span>
+<span class="nc" id="L102">            return Collections.emptyList();</span>
+        }
+
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">        if (pageOffsetsById == null) {</span>
+<span class="nc" id="L106">            pageOffsetsById = Collections.emptyMap();</span>
+        }
+<span class="fc" id="L108">        List&lt;Integer&gt; pages1 = pageOffsetsById.getOrDefault(entry1.getKey(), Collections.emptyList());</span>
+<span class="fc" id="L109">        List&lt;Integer&gt; pages2 = pageOffsetsById.getOrDefault(entry2.getKey(), Collections.emptyList());</span>
+
+<span class="fc" id="L111">        String[] paragraphs1 = PARAGRAPH_SPLIT_PATTERN.split(text1);</span>
+<span class="fc" id="L112">        String[] paragraphs2 = PARAGRAPH_SPLIT_PATTERN.split(text2);</span>
+
+<span class="pc bpc" id="L114" title="2 of 4 branches missed.">        if (paragraphs1.length &gt; MAX_PARAGRAPH_THRESHOLD || paragraphs2.length &gt; MAX_PARAGRAPH_THRESHOLD) {</span>
+<span class="nc" id="L115">            return Collections.emptyList();</span>
+        }
+
+<span class="fc" id="L118">        List&lt;ParagraphMatchCandidate&gt; candidates = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L120">        int charOffset1 = 0;</span>
+<span class="fc bfc" id="L121" title="All 2 branches covered.">        for (int i = 0; i &lt; paragraphs1.length; i++) {</span>
+<span class="fc" id="L122">            String p1 = paragraphs1[i];</span>
+<span class="fc" id="L123">            int start1 = text1.indexOf(p1, charOffset1);</span>
+<span class="pc bpc" id="L124" title="1 of 2 branches missed.">            if (start1 &lt; 0) {</span>
+<span class="nc" id="L125">                continue;</span>
+            }
+<span class="fc" id="L127">            charOffset1 = start1;</span>
+
+<span class="pc bpc" id="L129" title="1 of 2 branches missed.">            if (p1.length() &lt; MIN_PARAGRAPH_LENGTH) {</span>
+<span class="nc" id="L130">                charOffset1 += p1.length();</span>
+<span class="nc" id="L131">                continue;</span>
+            }
+
+<span class="fc" id="L134">            Set&lt;String&gt; words1 = new HashSet&lt;&gt;(extractWords(p1));</span>
+<span class="fc" id="L135">            words1.retainAll(commonWords);</span>
+<span class="fc bfc" id="L136" title="All 2 branches covered.">            if (words1.isEmpty()) {</span>
+<span class="fc" id="L137">                charOffset1 += p1.length();</span>
+<span class="fc" id="L138">                continue;</span>
+            }
+
+<span class="fc" id="L141">            int charOffset2 = 0;</span>
+<span class="fc bfc" id="L142" title="All 2 branches covered.">            for (int j = 0; j &lt; paragraphs2.length; j++) {</span>
+<span class="fc" id="L143">                String p2 = paragraphs2[j];</span>
+<span class="fc" id="L144">                int start2 = text2.indexOf(p2, charOffset2);</span>
+<span class="pc bpc" id="L145" title="1 of 2 branches missed.">                if (start2 &lt; 0) {</span>
+<span class="nc" id="L146">                    continue;</span>
+                }
+<span class="fc" id="L148">                charOffset2 = start2;</span>
+
+<span class="pc bpc" id="L150" title="1 of 2 branches missed.">                if (p2.length() &lt; MIN_PARAGRAPH_LENGTH) {</span>
+<span class="nc" id="L151">                    charOffset2 += p2.length();</span>
+<span class="nc" id="L152">                    continue;</span>
+                }
+
+<span class="fc" id="L155">                Set&lt;String&gt; words2 = new HashSet&lt;&gt;(extractWords(p2));</span>
+<span class="fc" id="L156">                words2.retainAll(commonWords);</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">                if (words2.isEmpty()) {</span>
+<span class="fc" id="L158">                    charOffset2 += p2.length();</span>
+<span class="fc" id="L159">                    continue;</span>
+                }
+
+<span class="fc" id="L162">                Set&lt;String&gt; shared = new HashSet&lt;&gt;(words1);</span>
+<span class="fc" id="L163">                shared.retainAll(words2);</span>
+<span class="fc bfc" id="L164" title="All 2 branches covered.">                if (shared.size() &gt;= MIN_SHARED_COMMON_WORDS) {</span>
+<span class="fc" id="L165">                    double score = ((double) shared.size() / Math.max(words1.size(), words2.size())) * 100.0;</span>
+<span class="fc" id="L166">                    candidates.add(new ParagraphMatchCandidate(i, j, score, start1, p1, start2, p2));</span>
+                }
+<span class="fc" id="L168">                charOffset2 += p2.length();</span>
+            }
+<span class="fc" id="L170">            charOffset1 += p1.length();</span>
+        }
+
+<span class="fc" id="L173">        candidates.sort(Comparator.comparingDouble(ParagraphMatchCandidate::score).reversed());</span>
+
+<span class="fc" id="L175">        List&lt;TextComparisonResult.ParagraphMatch&gt; results = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L176">        Set&lt;Integer&gt; used1 = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L177">        Set&lt;Integer&gt; used2 = new HashSet&lt;&gt;();</span>
+
+        // Greedily match paragraphs one-to-one. ⚡
+<span class="fc bfc" id="L180" title="All 2 branches covered.">        for (ParagraphMatchCandidate c : candidates) {</span>
+<span class="pc bpc" id="L181" title="1 of 2 branches missed.">            if (results.size() &gt;= MAX_PARAGRAPH_MATCHES) {</span>
+<span class="nc" id="L182">                break;</span>
+            }
+<span class="pc bpc" id="L184" title="2 of 4 branches missed.">            if (!used1.contains(c.firstIndex) &amp;&amp; !used2.contains(c.secondIndex)) {</span>
+<span class="fc" id="L185">                used1.add(c.firstIndex);</span>
+<span class="fc" id="L186">                used2.add(c.secondIndex);</span>
+
+<span class="fc" id="L188">                var snip1 = new TextComparisonResult.ParagraphSnippet(c.p1.strip(), c.start1, c.start1 + c.p1.length(), resolvePage(c.start1, pages1), c.firstIndex + 1);</span>
+<span class="fc" id="L189">                var snip2 = new TextComparisonResult.ParagraphSnippet(c.p2.strip(), c.start2, c.start2 + c.p2.length(), resolvePage(c.start2, pages2), c.secondIndex + 1);</span>
+<span class="fc" id="L190">                results.add(new TextComparisonResult.ParagraphMatch(snip1, snip2, c.score));</span>
+            }
+<span class="fc" id="L192">        }</span>
+
+<span class="fc" id="L194">        return results;</span>
+    }
+
+    private TextComparisonRow createComparisonRow(String word, Map&lt;Integer, List&lt;String&gt;&gt; extractedWords, Map&lt;Integer, Map&lt;String, Long&gt;&gt; wordFrequencies) {
+<span class="fc" id="L198">        var counts = new HashMap&lt;Integer, Integer&gt;();</span>
+<span class="fc" id="L199">        var relFreqs = new HashMap&lt;Integer, Double&gt;();</span>
+
+<span class="fc" id="L201">        extractedWords.forEach((id, words) -&gt; {</span>
+<span class="fc" id="L202">            int count = wordFrequencies.get(id).getOrDefault(word, 0L).intValue();</span>
+<span class="fc" id="L203">            counts.put(id, count);</span>
+<span class="fc" id="L204">            relFreqs.put(id, calculateRelativeFrequency(count, words.size()));</span>
+<span class="fc" id="L205">        });</span>
+
+<span class="fc" id="L207">        return new TextComparisonRow(word, counts, relFreqs);</span>
+    }
+
+    private int sumComparisonCounts(TextComparisonRow row) {
+<span class="fc" id="L211">        return row.countsByTextId().values().stream().mapToInt(Integer::intValue).sum();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

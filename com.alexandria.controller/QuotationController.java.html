@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>QuotationController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.controller</a> &gt; <span class="el_source">QuotationController.java</span></div><h1>QuotationController.java</h1><pre class="source lang-java linenums">package com.alexandria.controller;
+
+import com.alexandria.model.Quotation;
+import com.alexandria.service.QuotationService;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+public class QuotationController {
+
+    private Integer currentUserId;
+    private Integer currentTextId;
+<span class="fc" id="L15">    private final List&lt;Quotation&gt; quotations = new ArrayList&lt;&gt;();</span>
+
+    private final QuotationService quotationService;
+
+    public QuotationController() {
+<span class="fc" id="L20">        this(new QuotationService());</span>
+<span class="fc" id="L21">    }</span>
+
+<span class="fc" id="L23">    QuotationController(QuotationService quotationService) {</span>
+<span class="fc" id="L24">        this.quotationService = quotationService;</span>
+<span class="fc" id="L25">    }</span>
+
+    public void openText(Integer userId, Integer textId) throws SQLException {
+<span class="fc" id="L28">        this.currentUserId = userId;</span>
+<span class="fc" id="L29">        this.currentTextId = textId;</span>
+
+<span class="fc" id="L31">        reloadQuotations();</span>
+<span class="fc" id="L32">    }</span>
+
+    public Quotation addQuotation(String quotationText, String location) throws SQLException {
+<span class="fc bfc" id="L35" title="All 6 branches covered.">        if (!canSaveQuotations() || quotationText == null || quotationText.isBlank()) {</span>
+<span class="fc" id="L36">            return null;</span>
+        }
+<span class="fc" id="L38">        String trimmed = quotationText.strip();</span>
+
+<span class="fc bfc" id="L40" title="All 2 branches covered.">        for (Quotation existing : quotations) {</span>
+<span class="pc bpc" id="L41" title="1 of 2 branches missed.">            if (trimmed.equals(existing.getQuotationText())</span>
+<span class="nc bnc" id="L42" title="All 2 branches missed.">                    &amp;&amp; Objects.equals(location, existing.getLocation())) {</span>
+<span class="nc" id="L43">                return existing;</span>
+            }
+<span class="fc" id="L45">        }</span>
+
+<span class="fc" id="L47">        Quotation quotation = quotationService.create(currentUserId, currentTextId, quotationText, location);</span>
+
+<span class="fc" id="L49">        quotations.add(quotation);</span>
+
+<span class="fc" id="L51">        return quotation;</span>
+    }
+
+    public boolean removeQuotation(int quotationId) throws SQLException {
+<span class="fc bfc" id="L55" title="All 4 branches covered.">        if (!canSaveQuotations() || !quotationService.deleteById(quotationId, currentUserId)) {</span>
+<span class="fc" id="L56">            return false;</span>
+        }
+
+<span class="fc" id="L59">        return quotations.removeIf(quotation -&gt; Objects.equals(quotation.getId(), quotationId));</span>
+    }
+
+    public boolean updateQuotation(Quotation quotation) throws SQLException {
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        if (!canSaveQuotations()) {</span>
+<span class="fc" id="L64">            return false;</span>
+        }
+
+<span class="fc" id="L67">        return quotationService.update(quotation, currentUserId);</span>
+    }
+
+    private boolean canSaveQuotations() {
+<span class="pc bpc" id="L71" title="1 of 4 branches missed.">        return currentUserId != null &amp;&amp; currentTextId != null;</span>
+    }
+
+    public void reloadQuotations() throws SQLException {
+<span class="fc" id="L75">        quotations.clear();</span>
+
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        if (canSaveQuotations()) {</span>
+<span class="fc" id="L78">            quotations.addAll(quotationService.findAllByTextId(currentTextId, currentUserId));</span>
+        }
+<span class="fc" id="L80">    }</span>
+
+    public List&lt;Quotation&gt; getQuotations() {
+<span class="fc" id="L83">        return List.copyOf(quotations);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

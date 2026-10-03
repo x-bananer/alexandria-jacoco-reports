@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>QuotationSelectionPopup.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.shared.selection</a> &gt; <span class="el_source">QuotationSelectionPopup.java</span></div><h1>QuotationSelectionPopup.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.shared.selection;
+
+import com.alexandria.model.QuotationType;
+
+import javafx.geometry.Point2D;
+import javafx.scene.control.Button;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+
+import java.util.function.Consumer;
+
+public final class QuotationSelectionPopup {
+    private final HBox root;
+    private Pane attachedTo;
+
+<span class="nc" id="L16">    public QuotationSelectionPopup(Consumer&lt;QuotationType&gt; onSelect) {</span>
+<span class="nc" id="L17">        Button directBtn = createTypeButton(&quot;Direct citation&quot;,</span>
+<span class="nc" id="L18">                () -&gt; onSelect.accept(QuotationType.DIRECT));</span>
+<span class="nc" id="L19">        Button indirectBtn = createTypeButton(&quot;Indirect citation&quot;,</span>
+<span class="nc" id="L20">                () -&gt; onSelect.accept(QuotationType.INDIRECT));</span>
+<span class="nc" id="L21">        Button annotationBtn = createTypeButton(&quot;Annotation&quot;,</span>
+<span class="nc" id="L22">                () -&gt; onSelect.accept(QuotationType.ANNOTATION));</span>
+
+<span class="nc" id="L24">        root = new HBox(6, directBtn, indirectBtn, annotationBtn);</span>
+<span class="nc" id="L25">        root.getStyleClass().add(&quot;selection-popup&quot;);</span>
+<span class="nc" id="L26">        root.setManaged(false);</span>
+<span class="nc" id="L27">    }</span>
+
+    private Button createTypeButton(String text, Runnable action) {
+<span class="nc" id="L30">        Button button = new Button(text);</span>
+<span class="nc" id="L31">        button.getStyleClass().add(&quot;selection-popup-toggle&quot;);</span>
+<span class="nc" id="L32">        button.setOnAction(e -&gt; action.run());</span>
+<span class="nc" id="L33">        return button;</span>
+    }
+
+    public void showAt(Pane overlay, double screenX, double screenY) {
+<span class="nc" id="L37">        hide();</span>
+
+<span class="nc bnc" id="L39" title="All 4 branches missed.">        if (overlay == null || overlay.getScene() == null) {</span>
+<span class="nc" id="L40">            return;</span>
+        }
+
+<span class="nc" id="L43">        Point2D local = overlay.screenToLocal(screenX, screenY);</span>
+
+<span class="nc bnc" id="L45" title="All 2 branches missed.">        if (local == null) {</span>
+<span class="nc" id="L46">            return;</span>
+        }
+
+<span class="nc" id="L49">        overlay.getChildren().add(root);</span>
+<span class="nc" id="L50">        attachedTo = overlay;</span>
+
+<span class="nc" id="L52">        root.applyCss();</span>
+<span class="nc" id="L53">        root.autosize();</span>
+
+<span class="nc" id="L55">        double overlayWidth = overlay.getWidth();</span>
+<span class="nc" id="L56">        double overlayHeight = overlay.getHeight();</span>
+
+<span class="nc" id="L58">        double x = local.getX();</span>
+<span class="nc" id="L59">        double y = local.getY();</span>
+
+<span class="nc bnc" id="L61" title="All 2 branches missed.">        if (overlayWidth &gt; 0) {</span>
+<span class="nc" id="L62">            x = Math.max(4, Math.min(x, overlayWidth - root.getWidth() - 4));</span>
+        }
+
+<span class="nc bnc" id="L65" title="All 2 branches missed.">        if (overlayHeight &gt; 0) {</span>
+<span class="nc" id="L66">            y = Math.max(4, Math.min(y, overlayHeight - root.getHeight() - 4));</span>
+        }
+
+<span class="nc" id="L69">        root.relocate(x, y);</span>
+<span class="nc" id="L70">    }</span>
+
+    public void hide() {
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        if (attachedTo != null) {</span>
+<span class="nc" id="L74">            attachedTo.getChildren().remove(root);</span>
+<span class="nc" id="L75">            attachedTo = null;</span>
+        }
+<span class="nc" id="L77">    }</span>
+
+    public boolean isShowing() {
+<span class="nc bnc" id="L80" title="All 2 branches missed.">        return attachedTo != null;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

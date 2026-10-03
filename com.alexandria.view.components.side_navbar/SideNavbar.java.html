@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SideNavbar.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.side_navbar</a> &gt; <span class="el_source">SideNavbar.java</span></div><h1>SideNavbar.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.side_navbar;
+
+import java.util.function.Consumer;
+
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.Separator;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
+import javafx.scene.shape.Rectangle;
+
+public class SideNavbar extends VBox {
+
+    private final Label titleLabel;
+    private final Label subtitleLabel;
+    private final VBox brandSection;
+    private final Button newProjectButton;
+
+    private final SideNavbarNavigation navigation;
+
+<span class="fc" id="L27">    private Runnable onNewProject = () -&gt; {</span>
+<span class="nc" id="L28">    };</span>
+
+    public SideNavbar() {
+<span class="fc" id="L31">        this(&quot;Alexandria Text Analysis&quot;, &quot;Statistics Intelligence.&quot;);</span>
+<span class="fc" id="L32">    }</span>
+
+<span class="fc" id="L34">    public SideNavbar(String title, String subtitle) {</span>
+<span class="fc" id="L35">        getStyleClass().add(&quot;side-navbar&quot;);</span>
+
+<span class="fc" id="L37">        setPrefWidth(240);</span>
+<span class="fc" id="L38">        setMinWidth(240);</span>
+<span class="fc" id="L39">        setMaxWidth(240);</span>
+
+<span class="fc" id="L41">        setPadding(new Insets(20, 12, 16, 12));</span>
+<span class="fc" id="L42">        setSpacing(4);</span>
+
+<span class="fc" id="L44">        titleLabel = new Label(title);</span>
+<span class="fc" id="L45">        titleLabel.getStyleClass().add(&quot;heading-lg&quot;);</span>
+<span class="fc" id="L46">        titleLabel.setWrapText(true);</span>
+
+<span class="fc" id="L48">        subtitleLabel = new Label(subtitle);</span>
+<span class="fc" id="L49">        subtitleLabel.getStyleClass().add(&quot;text-muted&quot;);</span>
+<span class="fc" id="L50">        subtitleLabel.setWrapText(true);</span>
+
+<span class="fc" id="L52">        navigation = new SideNavbarNavigation();</span>
+
+<span class="fc" id="L54">        brandSection = buildBrandSection();</span>
+<span class="fc" id="L55">        newProjectButton = buildNewProjectButton();</span>
+
+<span class="fc" id="L57">        getChildren().addAll(</span>
+                brandSection,
+                newProjectButton,
+<span class="fc" id="L60">                navigation.getMainNavigation(),</span>
+<span class="fc" id="L61">                buildSpacer(),</span>
+<span class="fc" id="L62">                buildSeparator(),</span>
+<span class="fc" id="L63">                navigation.getFooterNavigation());</span>
+<span class="fc" id="L64">    }</span>
+
+    private VBox buildBrandSection() {
+<span class="fc" id="L67">        Image logoImage = new Image(getClass().getResourceAsStream(&quot;/images/logo.png&quot;));</span>
+<span class="fc" id="L68">        ImageView logo = new ImageView(logoImage);</span>
+<span class="fc" id="L69">        logo.setFitWidth(36);</span>
+<span class="fc" id="L70">        logo.setFitHeight(36);</span>
+<span class="fc" id="L71">        logo.setPreserveRatio(true);</span>
+<span class="fc" id="L72">        logo.setSmooth(true);</span>
+
+<span class="fc" id="L74">        Rectangle clip = new Rectangle(36, 36);</span>
+<span class="fc" id="L75">        clip.setArcWidth(12);</span>
+<span class="fc" id="L76">        clip.setArcHeight(12);</span>
+<span class="fc" id="L77">        logo.setClip(clip);</span>
+
+<span class="fc" id="L79">        VBox titleBox = new VBox(titleLabel, subtitleLabel);</span>
+<span class="fc" id="L80">        titleBox.setAlignment(Pos.CENTER_LEFT);</span>
+
+<span class="fc" id="L82">        HBox row = new HBox(10, logo, titleBox);</span>
+<span class="fc" id="L83">        row.setAlignment(Pos.CENTER_LEFT);</span>
+
+<span class="fc" id="L85">        VBox brand = new VBox(row);</span>
+<span class="fc" id="L86">        brand.setPadding(new Insets(0, 8, 16, 8));</span>
+
+<span class="fc" id="L88">        return brand;</span>
+    }
+
+    private Button buildNewProjectButton() {
+<span class="fc" id="L92">        Button button = new Button(&quot;+ New Project&quot;);</span>
+<span class="fc" id="L93">        button.getStyleClass().addAll(&quot;button&quot;, &quot;primary&quot;);</span>
+<span class="fc" id="L94">        button.setMaxWidth(Double.MAX_VALUE);</span>
+<span class="pc" id="L95">        button.setOnAction(e -&gt; onNewProject.run());</span>
+<span class="fc" id="L96">        VBox.setMargin(button, new Insets(0, 8, 16, 8));</span>
+
+<span class="fc" id="L98">        return button;</span>
+    }
+
+    private Region buildSpacer() {
+<span class="fc" id="L102">        Region spacer = new Region();</span>
+<span class="fc" id="L103">        VBox.setVgrow(spacer, Priority.ALWAYS);</span>
+
+<span class="fc" id="L105">        return spacer;</span>
+    }
+
+    private Separator buildSeparator() {
+<span class="fc" id="L109">        Separator separator = new Separator();</span>
+<span class="fc" id="L110">        separator.getStyleClass().add(&quot;separator&quot;);</span>
+
+<span class="fc" id="L112">        return separator;</span>
+    }
+
+    public void selectItem(String id) {
+<span class="fc" id="L116">        navigation.selectItem(id);</span>
+<span class="fc" id="L117">    }</span>
+
+    public void setOnNavigate(Consumer&lt;String&gt; handler) {
+<span class="nc" id="L120">        navigation.setOnNavigate(handler);</span>
+<span class="nc" id="L121">    }</span>
+
+    public void setOnFooterNavigate(Consumer&lt;String&gt; handler) {
+<span class="nc" id="L124">        navigation.setOnFooterNavigate(handler);</span>
+<span class="nc" id="L125">    }</span>
+
+    public void setOnNewProject(Runnable action) {
+<span class="nc" id="L128">        this.onNewProject = action;</span>
+<span class="nc" id="L129">    }</span>
+
+    public void setTitle(String title) {
+<span class="nc" id="L132">        titleLabel.setText(title);</span>
+<span class="nc" id="L133">    }</span>
+
+    public void setSubtitle(String subtitle) {
+<span class="nc" id="L136">        subtitleLabel.setText(subtitle);</span>
+<span class="nc" id="L137">    }</span>
+
+    public SideNavbarNavigation getNavigation() {
+<span class="fc" id="L140">        return navigation;</span>
+    }
+
+    public Button getNewProjectButton() {
+<span class="nc" id="L144">        return newProjectButton;</span>
+    }
+
+    public VBox getBrandSection() {
+<span class="nc" id="L148">        return brandSection;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

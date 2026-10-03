@@ -1,0 +1,437 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AnalyseController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.controller</a> &gt; <span class="el_source">AnalyseController.java</span></div><h1>AnalyseController.java</h1><pre class="source lang-java linenums">package com.alexandria.controller;
+
+import com.alexandria.model.Text;
+import com.alexandria.model.Quotation;
+import com.alexandria.model.User;
+import com.alexandria.service.analysis.SearchMatch;
+import com.alexandria.service.analysis.SearchServiceINT;
+import com.alexandria.service.analysis.SearchSettings;
+import com.alexandria.service.analysis.TermAnalysisResult;
+import com.alexandria.service.analysis.TermAnalysisServiceINT;
+import com.alexandria.service.analysis.TextAnalysisResult;
+import com.alexandria.service.analysis.TextAnalysisServiceINT;
+import com.alexandria.view.screens.AnalyseScreen;
+import com.alexandria.service.ArchiveTermAnalysisService;
+import com.alexandria.service.ArchiveTextAnalysisService;
+import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+import java.io.File;
+import java.util.List;
+
+public class AnalyseController {
+
+    private final SearchServiceINT searchService;
+    private final TermAnalysisServiceINT termAnalysisService;
+    private final TextAnalysisServiceINT textAnalysisService;
+    private final QuotationController quotationController;
+<span class="fc" id="L30">    private final UserSessionController session = UserSessionController.getInstance();</span>
+<span class="fc" id="L31">    private final ArchiveTextAnalysisService archiveTextAnalysisService = new ArchiveTextAnalysisService();</span>
+<span class="fc" id="L32">    private final ArchiveTermAnalysisService archiveTermAnalysisService = new ArchiveTermAnalysisService();</span>
+<span class="fc" id="L33">    private final Map&lt;String, TermAnalysisResult&gt; trackedTerms = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L34">    private final Set&lt;String&gt; savedTerms = new HashSet&lt;&gt;();</span>
+
+    private TextAnalysisResult currentTextAnalysis;
+    private boolean textAnalysisSaved;
+    private Text currentText;
+<span class="fc" id="L39">    private List&lt;Integer&gt; currentPageOffsets = List.of();</span>
+<span class="fc" id="L40">    private List&lt;SearchMatch&gt; currentSearchMatches = List.of();</span>
+<span class="fc" id="L41">    private int currentSearchMatchIndex = -1;</span>
+
+    public AnalyseController(
+            SearchServiceINT searchService,
+            TermAnalysisServiceINT termAnalysisService,
+<span class="fc" id="L46">            TextAnalysisServiceINT textAnalysisService) {</span>
+
+<span class="fc" id="L48">        this.searchService = searchService;</span>
+<span class="fc" id="L49">        this.termAnalysisService = termAnalysisService;</span>
+<span class="fc" id="L50">        this.textAnalysisService = textAnalysisService;</span>
+<span class="fc" id="L51">        this.quotationController = new QuotationController();</span>
+<span class="fc" id="L52">    }</span>
+
+    public TextAnalysisOutcome openText(Text text, List&lt;Integer&gt; pageOffsets) {
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        if (text == null)</span>
+<span class="fc" id="L56">            return TextAnalysisOutcome.error(&quot;No text was supplied.&quot;);</span>
+
+<span class="fc" id="L58">        currentText = text;</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">        currentPageOffsets = pageOffsets == null ? List.of() : List.copyOf(pageOffsets);</span>
+
+        try {
+<span class="fc" id="L62">            User user = session.getCurrentUser();</span>
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">            Integer userId = user == null ? null : user.getId();</span>
+<span class="fc" id="L64">            Integer textId = text.getId();</span>
+
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">            if (!java.util.Objects.equals(userId, text.getUserId())) {</span>
+<span class="nc" id="L67">                userId = null;</span>
+<span class="nc" id="L68">                textId = null;</span>
+            }
+
+<span class="fc" id="L71">            quotationController.openText(userId, textId);</span>
+<span class="fc" id="L72">            clearSearchState();</span>
+<span class="fc" id="L73">            textAnalysisSaved = false;</span>
+<span class="fc" id="L74">            trackedTerms.clear();</span>
+<span class="fc" id="L75">            savedTerms.clear();</span>
+<span class="fc" id="L76">            return TextAnalysisOutcome.ok(computeTextAnalysis());</span>
+<span class="fc" id="L77">        } catch (Exception e) {</span>
+<span class="fc" id="L78">            return TextAnalysisOutcome.error(</span>
+<span class="fc" id="L79">                    &quot;Could not process text analysis: &quot; + e.getMessage());</span>
+        }
+    }
+
+    public void configureScreen(
+            AnalyseScreen analyseScreen,
+            Text text,
+            List&lt;Integer&gt; pageOffsets,
+            File sourceFile) {
+
+<span class="fc" id="L89">        TextAnalysisOutcome outcome = openText(</span>
+                text,
+                pageOffsets);
+
+<span class="fc" id="L93">        analyseScreen.loadDocument(</span>
+<span class="fc" id="L94">                text.getTitle(),</span>
+<span class="fc" id="L95">                text.getFileName(),</span>
+<span class="fc" id="L96">                text.getContent(),</span>
+<span class="fc" id="L97">                text.getFileType(),</span>
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">                sourceFile == null</span>
+<span class="fc" id="L99">                        ? null</span>
+<span class="pc" id="L100">                        : sourceFile.toPath(),</span>
+                pageOffsets);
+
+<span class="fc" id="L103">        analyseScreen.setQuotations(</span>
+<span class="fc" id="L104">                quotationController.getQuotations());</span>
+
+<span class="fc bfc" id="L106" title="All 2 branches covered.">        if (!outcome.success()) {</span>
+<span class="fc" id="L107">            System.err.println(outcome.message());</span>
+<span class="fc" id="L108">            return;</span>
+        }
+
+<span class="fc" id="L111">        TextAnalysisResult analysis = outcome.result();</span>
+
+<span class="fc" id="L113">        analyseScreen.setTextAnalysis(</span>
+<span class="fc" id="L114">                analysis.frequentWords(),</span>
+<span class="fc" id="L115">                analysis.importantFragments());</span>
+
+<span class="fc" id="L117">        configureTermDetail(analyseScreen);</span>
+<span class="fc" id="L118">        configureQuotations(analyseScreen);</span>
+<span class="fc" id="L119">        configureSearch(analyseScreen);</span>
+<span class="fc" id="L120">    }</span>
+
+    public SearchOutcome search(String term) {
+<span class="fc" id="L123">        SearchOutcome outcome = search(term, false, false, false);</span>
+
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        if (outcome.success()) {</span>
+<span class="fc" id="L126">            currentSearchMatches = outcome.matches();</span>
+<span class="fc bfc" id="L127" title="All 2 branches covered.">            currentSearchMatchIndex = currentSearchMatches.isEmpty() ? -1 : 0;</span>
+<span class="fc bfc" id="L128" title="All 2 branches covered.">            if (!currentSearchMatches.isEmpty()) {</span>
+<span class="fc" id="L129">                trackedTerms.put(term, outcome.termAnalysis());</span>
+            }
+        } else {
+<span class="fc" id="L132">            clearSearchState();</span>
+        }
+
+<span class="fc" id="L135">        return outcome;</span>
+    }
+
+    public void untrackTerm(String term) {
+<span class="nc" id="L139">        trackedTerms.remove(term);</span>
+<span class="nc" id="L140">        savedTerms.remove(term);</span>
+<span class="nc" id="L141">    }</span>
+
+<span class="nc" id="L143">    public record SaveOutcome(boolean success, String message, int savedCount) {</span>
+
+        static SaveOutcome ok(int savedCount) {
+<span class="nc" id="L146">            return new SaveOutcome(true, null, savedCount);</span>
+        }
+
+        static SaveOutcome error(String message) {
+<span class="nc" id="L150">            return new SaveOutcome(false, message, 0);</span>
+        }
+    }
+
+    public SaveOutcome saveAnalysis() {
+<span class="nc bnc" id="L155" title="All 2 branches missed.">        if (currentText == null) {</span>
+<span class="nc" id="L156">            return SaveOutcome.error(&quot;No text is currently open.&quot;);</span>
+        }
+
+<span class="nc bnc" id="L159" title="All 4 branches missed.">        if (currentText.getUserId() == null || currentText.getId() == null) {</span>
+<span class="nc" id="L160">            return SaveOutcome.error(&quot;Log in and save the project to keep its analysis.&quot;);</span>
+        }
+
+<span class="nc" id="L163">        int saved = 0;</span>
+
+        try {
+<span class="nc bnc" id="L166" title="All 4 branches missed.">            if (currentTextAnalysis != null &amp;&amp; !textAnalysisSaved) {</span>
+<span class="nc" id="L167">                archiveTextAnalysisService.save(currentText, currentTextAnalysis);</span>
+<span class="nc" id="L168">                textAnalysisSaved = true;</span>
+<span class="nc" id="L169">                saved++;</span>
+            }
+
+<span class="nc bnc" id="L172" title="All 2 branches missed.">            for (Map.Entry&lt;String, TermAnalysisResult&gt; entry : trackedTerms.entrySet()) {</span>
+<span class="nc bnc" id="L173" title="All 2 branches missed.">                if (savedTerms.contains(entry.getKey())) {</span>
+<span class="nc" id="L174">                    continue;</span>
+                }
+<span class="nc" id="L176">                archiveTermAnalysisService.save(currentText, entry.getValue());</span>
+<span class="nc" id="L177">                savedTerms.add(entry.getKey());</span>
+<span class="nc" id="L178">                saved++;</span>
+<span class="nc" id="L179">            }</span>
+<span class="nc" id="L180">        } catch (SQLException | RuntimeException e) {</span>
+<span class="nc" id="L181">            return SaveOutcome.error(&quot;Could not save analysis: &quot; + e.getMessage());</span>
+<span class="nc" id="L182">        }</span>
+
+<span class="nc" id="L184">        return SaveOutcome.ok(saved);</span>
+    }
+
+    public SearchOutcome search(
+            String term,
+            boolean caseSensitive,
+            boolean fuzzy,
+            boolean wholeWordsOnly) {
+<span class="fc" id="L192">        return search(term, caseSensitive, fuzzy, wholeWordsOnly, false);</span>
+    }
+
+    public SearchOutcome search(
+            String term,
+            boolean caseSensitive,
+            boolean fuzzy,
+            boolean wholeWordsOnly,
+            boolean ignoreStopWords) {
+
+<span class="fc bfc" id="L202" title="All 2 branches covered.">        if (currentText == null) {</span>
+<span class="fc" id="L203">            return SearchOutcome.error(&quot;No text is currently open.&quot;);</span>
+        }
+
+<span class="fc bfc" id="L206" title="All 4 branches covered.">        if (term == null || term.isBlank()) {</span>
+<span class="fc" id="L207">            return SearchOutcome.error(&quot;Search term cannot be empty.&quot;);</span>
+        }
+
+        try {
+<span class="fc" id="L211">            SearchSettings settings = new SearchSettings(caseSensitive, fuzzy, wholeWordsOnly, ignoreStopWords);</span>
+
+<span class="fc" id="L213">            List&lt;SearchMatch&gt; matches = searchService.search(</span>
+<span class="fc" id="L214">                    currentText.getContent(),</span>
+                    term,
+                    settings,
+                    currentPageOffsets);
+
+<span class="fc" id="L219">            TermAnalysisResult termResult = computeTermAnalysis(term);</span>
+
+<span class="fc" id="L221">            return SearchOutcome.ok(matches, termResult);</span>
+
+<span class="fc" id="L223">        } catch (RuntimeException e) {</span>
+<span class="fc" id="L224">            return SearchOutcome.error(</span>
+<span class="fc" id="L225">                    &quot;Could not complete search: &quot; + e.getMessage());</span>
+        }
+    }
+
+    public SearchMatch nextMatch() {
+<span class="fc bfc" id="L230" title="All 2 branches covered.">        if (currentSearchMatches.isEmpty()) {</span>
+<span class="fc" id="L231">            return null;</span>
+        }
+
+<span class="fc" id="L234">        currentSearchMatchIndex = (currentSearchMatchIndex + 1)</span>
+<span class="fc" id="L235">                % currentSearchMatches.size();</span>
+<span class="fc" id="L236">        return currentSearchMatches.get(currentSearchMatchIndex);</span>
+    }
+
+    public SearchMatch previousMatch() {
+<span class="fc bfc" id="L240" title="All 2 branches covered.">        if (currentSearchMatches.isEmpty()) {</span>
+<span class="fc" id="L241">            return null;</span>
+        }
+
+<span class="fc" id="L244">        currentSearchMatchIndex = (currentSearchMatchIndex - 1</span>
+<span class="fc" id="L245">                + currentSearchMatches.size()) % currentSearchMatches.size();</span>
+<span class="fc" id="L246">        return currentSearchMatches.get(currentSearchMatchIndex);</span>
+    }
+
+    private void clearSearchState() {
+<span class="fc" id="L250">        currentSearchMatches = List.of();</span>
+<span class="fc" id="L251">        currentSearchMatchIndex = -1;</span>
+<span class="fc" id="L252">    }</span>
+
+    private TextAnalysisResult computeTextAnalysis() {
+<span class="fc" id="L255">        TextAnalysisResult result = textAnalysisService.analyzeText(currentText.getContent(), currentPageOffsets);</span>
+<span class="fc" id="L256">        currentTextAnalysis = result;</span>
+<span class="fc" id="L257">        return result;</span>
+    }
+
+    private TermAnalysisResult computeTermAnalysis(String term) {
+<span class="fc" id="L261">        TermAnalysisResult result = termAnalysisService.analyzeTerm(</span>
+<span class="fc" id="L262">                currentText.getContent(),</span>
+                term);
+
+        // TODO: Persist term analysis/statistics in the db.
+        // Currently analysis is calculated in memory only.
+        // IMPORTANT: do not remove in memory it is used for guests
+
+<span class="fc" id="L269">        return result;</span>
+    }
+
+    private void configureTermDetail(AnalyseScreen analyseScreen) {
+<span class="fc" id="L273">        analyseScreen.setOnTermDetailRequested(word -&gt; {</span>
+<span class="fc" id="L274">            SearchOutcome outcome = search(word, false, false, false);</span>
+
+<span class="fc bfc" id="L276" title="All 2 branches covered.">            if (!outcome.success()) {</span>
+<span class="fc" id="L277">                System.err.println(outcome.message());</span>
+<span class="fc" id="L278">                return;</span>
+            }
+
+<span class="fc" id="L281">            analyseScreen.showTermDetail(</span>
+                    word,
+<span class="fc" id="L283">                    outcome.termAnalysis(),</span>
+<span class="fc" id="L284">                    outcome.matches());</span>
+<span class="fc" id="L285">        });</span>
+<span class="fc" id="L286">    }</span>
+
+    private void configureQuotations(
+            AnalyseScreen analyseScreen) {
+
+<span class="fc" id="L291">        analyseScreen.setOnQuotationRequested(</span>
+                (quotationText, location) -&gt; {
+
+                    Quotation quotation;
+
+                    try {
+<span class="fc" id="L297">                        quotation = quotationController.addQuotation(</span>
+                                quotationText,
+                                location);
+<span class="nc" id="L300">                    } catch (Exception e) {</span>
+<span class="nc" id="L301">                        System.err.println(&quot;Could not save quotation: &quot; + e.getMessage());</span>
+<span class="nc" id="L302">                        return null;</span>
+<span class="fc" id="L303">                    }</span>
+
+<span class="pc bpc" id="L305" title="1 of 2 branches missed.">                    if (quotation == null) {</span>
+<span class="fc" id="L306">                        return null;</span>
+                    }
+
+<span class="nc" id="L309">                    analyseScreen.setQuotations(</span>
+<span class="nc" id="L310">                            quotationController.getQuotations());</span>
+
+<span class="nc" id="L312">                    return quotation.getId();</span>
+                });
+
+<span class="fc" id="L315">        analyseScreen.setOnQuotationDeleteRequested(</span>
+                quotation -&gt; {
+
+<span class="fc bfc" id="L318" title="All 2 branches covered.">                    if (quotation == null</span>
+<span class="pc bpc" id="L319" title="1 of 2 branches missed.">                            || quotation.getId() == null) {</span>
+<span class="fc" id="L320">                        return;</span>
+                    }
+
+<span class="fc" id="L323">                    int quotationId = quotation.getId();</span>
+
+                    boolean removed;
+
+                    try {
+<span class="fc" id="L328">                        removed = quotationController.removeQuotation(quotationId);</span>
+<span class="nc" id="L329">                    } catch (Exception e) {</span>
+<span class="nc" id="L330">                        System.err.println(&quot;Could not delete quotation: &quot; + e.getMessage());</span>
+<span class="nc" id="L331">                        return;</span>
+<span class="fc" id="L332">                    }</span>
+
+<span class="pc bpc" id="L334" title="1 of 2 branches missed.">                    if (!removed) {</span>
+<span class="fc" id="L335">                        return;</span>
+                    }
+
+<span class="nc" id="L338">                    analyseScreen.removeQuotationHighlight(</span>
+                            quotationId);
+
+<span class="nc" id="L341">                    analyseScreen.setQuotations(</span>
+<span class="nc" id="L342">                            quotationController.getQuotations());</span>
+<span class="nc" id="L343">                });</span>
+
+<span class="fc" id="L345">        analyseScreen.setOnQuotationEditRequested(</span>
+                quotation -&gt; {
+<span class="pc bpc" id="L347" title="3 of 4 branches missed.">                    if (quotation == null || quotation.getId() == null) {</span>
+<span class="fc" id="L348">                        return;</span>
+                    }
+
+                    try {
+<span class="nc" id="L352">                        boolean updated = quotationController.updateQuotation(quotation);</span>
+
+<span class="nc bnc" id="L354" title="All 2 branches missed.">                        if (!updated) {</span>
+<span class="nc" id="L355">                            quotationController.reloadQuotations();</span>
+                        }
+<span class="nc" id="L357">                    } catch (Exception e) {</span>
+<span class="nc" id="L358">                        System.err.println(&quot;Could not update quotation: &quot; + e.getMessage());</span>
+
+                        try {
+<span class="nc" id="L361">                            quotationController.reloadQuotations();</span>
+<span class="nc" id="L362">                        } catch (Exception reloadError) {</span>
+<span class="nc" id="L363">                            System.err.println(&quot;Could not reload quotations: &quot; + reloadError.getMessage());</span>
+<span class="nc" id="L364">                        }</span>
+<span class="nc" id="L365">                    }</span>
+
+<span class="nc" id="L367">                    analyseScreen.setQuotations(quotationController.getQuotations());</span>
+<span class="nc" id="L368">                });</span>
+<span class="fc" id="L369">    }</span>
+
+    private void configureSearch(AnalyseScreen analyseScreen) {
+<span class="fc" id="L372">        analyseScreen.setOnSearch(term -&gt; {</span>
+<span class="fc" id="L373">            SearchOutcome outcome = search(term);</span>
+
+<span class="fc bfc" id="L375" title="All 2 branches covered.">            if (!outcome.success()) {</span>
+<span class="fc" id="L376">                System.err.println(outcome.message());</span>
+<span class="fc" id="L377">                return;</span>
+            }
+
+<span class="fc" id="L380">            analyseScreen.showSearchResults(</span>
+                    term,
+<span class="fc" id="L382">                    outcome.matches(),</span>
+<span class="fc" id="L383">                    outcome.termAnalysis());</span>
+<span class="fc" id="L384">        });</span>
+
+<span class="fc" id="L386">        analyseScreen.setOnPreviousMatch(() -&gt; {</span>
+<span class="pc bpc" id="L387" title="1 of 2 branches missed.">            if (previousMatch() != null) {</span>
+<span class="nc" id="L388">                analyseScreen.showSearchMatch(</span>
+                        currentSearchMatches,
+                        currentSearchMatchIndex);
+            }
+<span class="fc" id="L392">        });</span>
+
+<span class="fc" id="L394">        analyseScreen.setOnNextMatch(() -&gt; {</span>
+<span class="fc bfc" id="L395" title="All 2 branches covered.">            if (nextMatch() != null) {</span>
+<span class="fc" id="L396">                analyseScreen.showSearchMatch(</span>
+                        currentSearchMatches,
+                        currentSearchMatchIndex);
+            }
+<span class="fc" id="L400">        });</span>
+
+<span class="fc" id="L402">        analyseScreen.setOnTrackedTermRemoved(this::untrackTerm);</span>
+<span class="fc" id="L403">    }</span>
+
+<span class="fc" id="L405">    public record TextAnalysisOutcome(</span>
+            boolean success,
+            String message,
+            TextAnalysisResult result) {
+
+        static TextAnalysisOutcome ok(TextAnalysisResult result) {
+<span class="fc" id="L411">            return new TextAnalysisOutcome(true, null, result);</span>
+        }
+
+        static TextAnalysisOutcome error(String message) {
+<span class="fc" id="L415">            return new TextAnalysisOutcome(false, message, null);</span>
+        }
+    }
+
+<span class="fc" id="L419">    public record SearchOutcome(</span>
+            boolean success,
+            String message,
+            List&lt;SearchMatch&gt; matches,
+            TermAnalysisResult termAnalysis) {
+
+        static SearchOutcome ok(
+                List&lt;SearchMatch&gt; matches,
+                TermAnalysisResult termAnalysis) {
+
+<span class="fc" id="L429">            return new SearchOutcome(true, null, matches, termAnalysis);</span>
+        }
+
+        static SearchOutcome error(String message) {
+<span class="fc" id="L433">            return new SearchOutcome(false, message, List.of(), null);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ArchiveScreen.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.screens</a> &gt; <span class="el_source">ArchiveScreen.java</span></div><h1>ArchiveScreen.java</h1><pre class="source lang-java linenums">package com.alexandria.view.screens;
+
+import com.alexandria.model.ArchiveTermAnalysis;
+import com.alexandria.model.ArchiveTextAnalysis;
+import com.alexandria.view.components.archive_screen.ArchiveAnalysisCard;
+import com.alexandria.view.components.archive_screen.ArchiveAnalysisModal;
+import com.alexandria.view.components.shared.EmptyState;
+import com.alexandria.view.components.shared.SearchInput;
+import com.alexandria.view.components.shared.toggle.Toggle;
+import com.alexandria.view.components.shared.modal.ConfirmationAlert;
+
+import javafx.geometry.Pos;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+
+import java.util.List;
+import java.util.function.Consumer;
+
+public class ArchiveScreen extends StackPane {
+
+<span class="fc" id="L26">    private final Toggle analysisFilter = new Toggle(</span>
+            &quot;Text analysis&quot;, &quot;Term analysis&quot;, &quot;Text comparisons&quot;);
+<span class="fc" id="L28">    private final SearchInput searchInput = new SearchInput(&quot;Search archive...&quot;);</span>
+<span class="fc" id="L29">    private final FlowPane analysisCards = new FlowPane(16, 16);</span>
+<span class="fc" id="L30">    private final StackPane contentArea = new StackPane();</span>
+<span class="fc" id="L31">    private final BorderPane archiveLayout = new BorderPane();</span>
+<span class="fc" id="L32">    private final VBox archiveBody = buildBody();</span>
+<span class="fc" id="L33">    private final ArchiveAnalysisModal analysisModal = new ArchiveAnalysisModal();</span>
+
+<span class="fc" id="L35">    private List&lt;ArchiveTextAnalysis&gt; textAnalyses = List.of();</span>
+<span class="fc" id="L36">    private List&lt;ArchiveTermAnalysis&gt; termAnalyses = List.of();</span>
+
+<span class="pc" id="L38">    private Consumer&lt;Integer&gt; onDeleteTextAnalysis = id -&gt; {};</span>
+<span class="pc" id="L39">    private Consumer&lt;Integer&gt; onDeleteTermAnalysis = id -&gt; {};</span>
+<span class="pc" id="L40">    private Runnable onShown = () -&gt; {};</span>
+
+<span class="fc" id="L42">    public ArchiveScreen() {</span>
+<span class="fc" id="L43">        getStyleClass().add(&quot;content-screen&quot;);</span>
+<span class="fc" id="L44">        searchInput.setMaxWidth(Double.MAX_VALUE);</span>
+
+<span class="fc" id="L46">        archiveLayout.setTop(buildHeader());</span>
+<span class="fc" id="L47">        archiveLayout.setCenter(archiveBody);</span>
+<span class="fc" id="L48">        archiveLayout.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);</span>
+
+<span class="fc" id="L50">        getChildren().addAll(archiveLayout, analysisModal);</span>
+<span class="fc" id="L51">        StackPane.setAlignment(archiveLayout, Pos.CENTER);</span>
+<span class="fc" id="L52">        StackPane.setAlignment(analysisModal, Pos.CENTER);</span>
+<span class="fc" id="L53">        analysisModal.prefWidthProperty().bind(widthProperty());</span>
+<span class="fc" id="L54">        analysisModal.prefHeightProperty().bind(heightProperty());</span>
+
+<span class="fc" id="L56">        configureActions();</span>
+<span class="fc" id="L57">        showStatistics();</span>
+
+<span class="fc" id="L59">        sceneProperty().addListener((observable, oldScene, newScene) -&gt; {</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">            if (newScene != null) {</span>
+<span class="nc" id="L61">                onShown.run();</span>
+            }
+<span class="nc" id="L63">        });</span>
+<span class="fc" id="L64">    }</span>
+
+    private VBox buildHeader() {
+<span class="fc" id="L67">        Label title = new Label(&quot;Archive&quot;);</span>
+<span class="fc" id="L68">        title.getStyleClass().add(&quot;heading-xl&quot;);</span>
+
+<span class="fc" id="L70">        Label subtitle = new Label(&quot;Saved text, term and comparison analyses&quot;);</span>
+<span class="fc" id="L71">        subtitle.getStyleClass().add(&quot;text-muted&quot;);</span>
+<span class="fc" id="L72">        subtitle.getStyleClass().add(&quot;archive-subtitle&quot;);</span>
+
+<span class="fc" id="L74">        VBox header = new VBox(6, title, subtitle);</span>
+<span class="fc" id="L75">        header.getStyleClass().add(&quot;content-screen-header&quot;);</span>
+<span class="fc" id="L76">        return header;</span>
+    }
+
+    private VBox buildBody() {
+<span class="fc" id="L80">        VBox archiveBody = new VBox(contentArea);</span>
+<span class="fc" id="L81">        archiveBody.getStyleClass().add(&quot;content-screen-body&quot;);</span>
+<span class="fc" id="L82">        VBox.setVgrow(contentArea, Priority.ALWAYS);</span>
+<span class="fc" id="L83">        return archiveBody;</span>
+    }
+
+    private void configureActions() {
+<span class="fc" id="L87">        analysisFilter.setOnToggle(index -&gt; showStatistics());</span>
+<span class="fc" id="L88">        searchInput.textProperty().addListener((observable, oldText, newText) -&gt; showStatistics());</span>
+<span class="fc" id="L89">    }</span>
+
+    public void setTextAnalyses(List&lt;ArchiveTextAnalysis&gt; textAnalyses) {
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">        this.textAnalyses = textAnalyses == null ? List.of() : List.copyOf(textAnalyses);</span>
+<span class="fc" id="L93">        showStatistics();</span>
+<span class="fc" id="L94">    }</span>
+
+    public void setTermAnalyses(List&lt;ArchiveTermAnalysis&gt; termAnalyses) {
+<span class="pc bpc" id="L97" title="1 of 2 branches missed.">        this.termAnalyses = termAnalyses == null ? List.of() : List.copyOf(termAnalyses);</span>
+<span class="fc" id="L98">        showStatistics();</span>
+<span class="fc" id="L99">    }</span>
+
+    public void setOnDeleteTextAnalysis(Consumer&lt;Integer&gt; handler) {
+<span class="nc bnc" id="L102" title="All 2 branches missed.">        onDeleteTextAnalysis = handler == null ? id -&gt; {} : handler;</span>
+<span class="nc" id="L103">    }</span>
+
+    public void setOnDeleteTermAnalysis(Consumer&lt;Integer&gt; handler) {
+<span class="nc bnc" id="L106" title="All 2 branches missed.">        onDeleteTermAnalysis = handler == null ? id -&gt; {} : handler;</span>
+<span class="nc" id="L107">    }</span>
+
+    public void setOnShown(Runnable handler) {
+<span class="nc bnc" id="L110" title="All 2 branches missed.">        onShown = handler == null ? () -&gt; {} : handler;</span>
+<span class="nc" id="L111">    }</span>
+
+    public void showSignInMessage() {
+<span class="fc" id="L114">        EmptyState emptyState = new EmptyState(</span>
+                &quot;Sign in to view your archive&quot;,
+                &quot;Create an account to save and view text and term analyses here&quot;);
+<span class="fc" id="L117">        archiveLayout.setCenter(emptyState);</span>
+<span class="fc" id="L118">        BorderPane.setAlignment(emptyState, Pos.CENTER);</span>
+<span class="fc" id="L119">    }</span>
+
+    private void showStatistics() {
+<span class="fc" id="L122">        archiveLayout.setCenter(archiveBody);</span>
+
+<span class="fc" id="L124">        analysisCards.getChildren().clear();</span>
+
+<span class="fc bfc" id="L126" title="All 2 branches covered.">        if (analysisFilter.getSelectedIndex() == 0) {</span>
+<span class="fc bfc" id="L127" title="All 2 branches covered.">            for (ArchiveTextAnalysis analysis : textAnalyses) {</span>
+<span class="fc bfc" id="L128" title="All 2 branches covered.">                if (matchesSearch(</span>
+<span class="fc" id="L129">                        analysis.getProjectTitle(),</span>
+<span class="fc" id="L130">                        analysis.getSourceFileName())) {</span>
+<span class="fc" id="L131">                    ArchiveAnalysisCard card = new ArchiveAnalysisCard(analysis);</span>
+<span class="fc" id="L132">                    card.getDeleteButton().setOnAction(event -&gt; {</span>
+<span class="nc bnc" id="L133" title="All 2 branches missed.">                        if (ConfirmationAlert.show(</span>
+                                &quot;Delete Analysis&quot;,
+                                &quot;Delete this analysis?&quot;,
+                                &quot;This action is permanent and cannot be undone.&quot;)) {
+<span class="nc" id="L137">                            onDeleteTextAnalysis.accept(analysis.getId());</span>
+                        }
+<span class="nc" id="L139">                    });</span>
+<span class="pc" id="L140">                    card.getOpenButton().setOnAction(event -&gt; analysisModal.showTextAnalysis(analysis));</span>
+<span class="fc" id="L141">                    analysisCards.getChildren().add(card);</span>
+                }
+<span class="fc" id="L143">            }</span>
+        }
+
+<span class="fc bfc" id="L146" title="All 2 branches covered.">        if (analysisFilter.getSelectedIndex() == 1) {</span>
+<span class="fc bfc" id="L147" title="All 2 branches covered.">            for (ArchiveTermAnalysis analysis : termAnalyses) {</span>
+<span class="pc bpc" id="L148" title="1 of 2 branches missed.">                if (matchesSearch(</span>
+<span class="fc" id="L149">                        analysis.getProjectTitle(),</span>
+<span class="fc" id="L150">                        analysis.getSourceFileName(),</span>
+<span class="fc" id="L151">                        analysis.getTerm())) {</span>
+<span class="fc" id="L152">                    ArchiveAnalysisCard card = new ArchiveAnalysisCard(analysis);</span>
+<span class="fc" id="L153">                    card.getDeleteButton().setOnAction(event -&gt; {</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">                        if (ConfirmationAlert.show(</span>
+                                &quot;Delete Analysis&quot;,
+                                &quot;Delete this analysis?&quot;,
+                                &quot;This action is permanent and cannot be undone.&quot;)) {
+<span class="nc" id="L158">                            onDeleteTermAnalysis.accept(analysis.getId());</span>
+                        }
+<span class="nc" id="L160">                    });</span>
+<span class="pc" id="L161">                    card.getOpenButton().setOnAction(event -&gt; analysisModal.showTermAnalysis(analysis));</span>
+<span class="fc" id="L162">                    analysisCards.getChildren().add(card);</span>
+                }
+<span class="fc" id="L164">            }</span>
+        }
+
+<span class="fc" id="L167">        StackPane statisticsContent = new StackPane();</span>
+<span class="fc" id="L168">        statisticsContent.getStyleClass().add(&quot;archive-content&quot;);</span>
+
+<span class="fc bfc" id="L170" title="All 2 branches covered.">        if (analysisCards.getChildren().isEmpty()) {</span>
+<span class="fc" id="L171">            EmptyState empty = new EmptyState(</span>
+<span class="fc" id="L172">                    emptyStatisticsMessage(),</span>
+<span class="fc" id="L173">                    emptyStatisticsSubtitle());</span>
+<span class="fc" id="L174">            statisticsContent.getChildren().add(empty);</span>
+<span class="fc" id="L175">            StackPane.setAlignment(empty, Pos.CENTER);</span>
+<span class="fc" id="L176">        } else {</span>
+<span class="fc" id="L177">            ScrollPane cardsScroll = new ScrollPane(analysisCards);</span>
+<span class="fc" id="L178">            cardsScroll.getStyleClass().add(&quot;shared-scroll&quot;);</span>
+<span class="fc" id="L179">            cardsScroll.setFitToWidth(true);</span>
+<span class="fc" id="L180">            cardsScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);</span>
+<span class="fc" id="L181">            cardsScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);</span>
+<span class="fc" id="L182">            statisticsContent.getChildren().add(cardsScroll);</span>
+        }
+
+<span class="fc" id="L185">        VBox statistics = new VBox(18, analysisFilter, searchInput, statisticsContent);</span>
+<span class="fc" id="L186">        VBox.setVgrow(statisticsContent, Priority.ALWAYS);</span>
+
+<span class="fc" id="L188">        contentArea.getChildren().setAll(statistics);</span>
+<span class="fc" id="L189">    }</span>
+
+    private String emptyStatisticsMessage() {
+<span class="fc bfc" id="L192" title="All 2 branches covered.">        if (!searchInput.getText().isBlank()) {</span>
+<span class="fc" id="L193">            return &quot;Nothing found&quot;;</span>
+        }
+
+<span class="pc bpc" id="L196" title="1 of 2 branches missed.">        if (analysisFilter.getSelectedIndex() == 1) {</span>
+<span class="nc" id="L197">            return &quot;No saved term analyses yet&quot;;</span>
+        }
+<span class="pc bpc" id="L199" title="1 of 2 branches missed.">        if (analysisFilter.getSelectedIndex() == 2) {</span>
+<span class="nc" id="L200">            return &quot;No saved text comparisons yet&quot;;</span>
+        }
+<span class="fc" id="L202">        return &quot;No saved text analyses yet&quot;;</span>
+    }
+
+    private String emptyStatisticsSubtitle() {
+<span class="fc bfc" id="L206" title="All 2 branches covered.">        if (!searchInput.getText().isBlank()) {</span>
+<span class="fc" id="L207">            return &quot;Try changing your search query&quot;;</span>
+        }
+
+<span class="pc bpc" id="L210" title="1 of 2 branches missed.">        if (analysisFilter.getSelectedIndex() == 2) {</span>
+<span class="nc" id="L211">            return &quot;Run a text comparison and save it to view it here&quot;;</span>
+        }
+<span class="fc" id="L213">        return &quot;Run an analysis and save it to view it here&quot;;</span>
+    }
+
+    private boolean matchesSearch(String... values) {
+<span class="fc" id="L217">        String searchText = searchInput.getText().trim().toLowerCase();</span>
+
+<span class="fc bfc" id="L219" title="All 2 branches covered.">        if (searchText.isEmpty()) {</span>
+<span class="fc" id="L220">            return true;</span>
+        }
+
+<span class="fc bfc" id="L223" title="All 2 branches covered.">        for (String value : values) {</span>
+<span class="pc bpc" id="L224" title="2 of 4 branches missed.">            if (value != null &amp;&amp; value.toLowerCase().contains(searchText)) {</span>
+<span class="nc" id="L225">                return true;</span>
+            }
+        }
+
+<span class="fc" id="L229">        return false;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

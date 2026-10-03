@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CompareScreen.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.screens</a> &gt; <span class="el_source">CompareScreen.java</span></div><h1>CompareScreen.java</h1><pre class="source lang-java linenums">package com.alexandria.view.screens;
+
+import com.alexandria.model.FileType;
+import com.alexandria.model.Text;
+import com.alexandria.view.components.compare_screen.CompareHeader;
+import com.alexandria.view.components.compare_screen.ComparisonDocumentView;
+import com.alexandria.view.components.compare_screen.ComparisonSidePanel;
+
+import javafx.geometry.Pos;
+import javafx.scene.control.Label;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+
+import java.io.File;
+import java.nio.file.Path;
+import java.util.function.BiFunction;
+
+public class CompareScreen extends StackPane {
+
+<span class="fc" id="L23">    private final CompareHeader header = new CompareHeader();</span>
+<span class="fc" id="L24">    private final ComparisonDocumentView documentView = new ComparisonDocumentView();</span>
+<span class="fc" id="L25">    private final ComparisonSidePanel comparisonSidePanel = new ComparisonSidePanel();</span>
+
+<span class="fc" id="L27">    private final VBox emptyState = buildEmptyState();</span>
+<span class="fc" id="L28">    private final BorderPane loadedState = new BorderPane();</span>
+<span class="fc" id="L29">    private final StackPane centerSwitcher = new StackPane();</span>
+
+<span class="pc" id="L31">    private BiFunction&lt;String, String, Integer&gt; onQuotationRequested = (text, location) -&gt; null;</span>
+<span class="fc" id="L32">    private Runnable onSaveFindings = () -&gt; {</span>
+<span class="nc" id="L33">    };</span>
+
+<span class="fc" id="L35">    public CompareScreen() {</span>
+<span class="fc" id="L36">        getStyleClass().add(&quot;compare-screen&quot;);</span>
+
+<span class="fc" id="L38">        emptyState.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);</span>
+
+<span class="fc" id="L40">        loadedState.setTop(header);</span>
+<span class="fc" id="L41">        loadedState.setCenter(buildBody());</span>
+<span class="fc" id="L42">        loadedState.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);</span>
+
+<span class="fc" id="L44">        getChildren().addAll(emptyState, loadedState);</span>
+
+<span class="fc" id="L46">        StackPane.setAlignment(emptyState, Pos.CENTER);</span>
+<span class="fc" id="L47">        StackPane.setAlignment(loadedState, Pos.CENTER);</span>
+
+<span class="fc" id="L49">        loadedState.setVisible(false);</span>
+<span class="fc" id="L50">        loadedState.setManaged(false);</span>
+
+<span class="fc" id="L52">        wireCallbacks();</span>
+<span class="fc" id="L53">    }</span>
+
+    private static final double SIDE_PANEL_WIDTH_RATIO = 0.360;
+
+    private HBox buildBody() {
+<span class="fc" id="L58">        centerSwitcher.getChildren().setAll(documentView);</span>
+<span class="fc" id="L59">        centerSwitcher.setMinSize(0, 0);</span>
+<span class="fc" id="L60">        centerSwitcher.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);</span>
+<span class="fc" id="L61">        HBox.setHgrow(centerSwitcher, Priority.ALWAYS);</span>
+
+<span class="fc" id="L63">        HBox body = new HBox(0, centerSwitcher, comparisonSidePanel);</span>
+<span class="fc" id="L64">        body.getStyleClass().add(&quot;compare-body&quot;);</span>
+<span class="fc" id="L65">        body.setFillHeight(true);</span>
+<span class="fc" id="L66">        body.setMinSize(0, 0);</span>
+<span class="fc" id="L67">        body.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);</span>
+
+<span class="fc" id="L69">        comparisonSidePanel.setMinWidth(320);</span>
+<span class="fc" id="L70">        comparisonSidePanel.setMaxWidth(640);</span>
+<span class="fc" id="L71">        comparisonSidePanel.prefWidthProperty().bind(</span>
+<span class="fc" id="L72">                body.widthProperty().multiply(SIDE_PANEL_WIDTH_RATIO));</span>
+
+<span class="fc" id="L74">        return body;</span>
+    }
+
+    private void wireCallbacks() {
+<span class="pc" id="L78">        header.setOnSave(() -&gt; onSaveFindings.run());</span>
+<span class="fc" id="L79">        header.setOnViewChange(index -&gt; {</span>
+<span class="nc bnc" id="L80" title="All 2 branches missed.">            if (index == 1) {</span>
+<span class="nc" id="L81">                showQuotations();</span>
+            } else {
+<span class="nc" id="L83">                showReader();</span>
+            }
+<span class="nc" id="L85">        });</span>
+
+<span class="fc" id="L87">        documentView.setOnQuotationRequested(</span>
+<span class="nc" id="L88">                (text, location) -&gt; onQuotationRequested.apply(text, location));</span>
+<span class="fc" id="L89">    }</span>
+
+    private void showReader() {
+<span class="nc" id="L92">        centerSwitcher.getChildren().setAll(documentView);</span>
+<span class="nc" id="L93">    }</span>
+
+    private void showQuotations() {
+        // TODO: quotations view for the compare screen.
+<span class="nc" id="L97">        centerSwitcher.getChildren().setAll(documentView);</span>
+<span class="nc" id="L98">    }</span>
+
+    private VBox buildEmptyState() {
+<span class="fc" id="L101">        Label title = new Label(&quot;No documents selected&quot;);</span>
+<span class="fc" id="L102">        title.getStyleClass().add(&quot;heading-lg&quot;);</span>
+
+<span class="fc" id="L104">        Label subtitle = new Label(&quot;Select two documents to compare them.&quot;);</span>
+<span class="fc" id="L105">        subtitle.getStyleClass().add(&quot;text-muted&quot;);</span>
+
+<span class="fc" id="L107">        VBox box = new VBox(8, title, subtitle);</span>
+<span class="fc" id="L108">        box.getStyleClass().add(&quot;empty-state&quot;);</span>
+<span class="fc" id="L109">        box.setAlignment(Pos.CENTER);</span>
+<span class="fc" id="L110">        return box;</span>
+    }
+
+    public void loadDocuments(
+            String documentATitle, String contentA, FileType fileTypeA, Path sourcePathA,
+            String documentBTitle, String contentB, FileType fileTypeB, Path sourcePathB) {
+
+<span class="nc" id="L117">        emptyState.setVisible(false);</span>
+<span class="nc" id="L118">        emptyState.setManaged(false);</span>
+
+<span class="nc" id="L120">        loadedState.setVisible(true);</span>
+<span class="nc" id="L121">        loadedState.setManaged(true);</span>
+
+<span class="nc" id="L123">        header.setSimilarity(null); // TODO: set from the comparison result</span>
+<span class="nc" id="L124">        header.resetToReader();</span>
+<span class="nc" id="L125">        showReader();</span>
+
+<span class="nc" id="L127">        documentView.loadDocuments(</span>
+                contentA, fileTypeA, sourcePathA,
+                contentB, fileTypeB, sourcePathB);
+
+<span class="nc" id="L131">        applyCss();</span>
+<span class="nc" id="L132">        layout();</span>
+<span class="nc" id="L133">    }</span>
+
+    public void loadTexts(Text textA, File fileA, Text textB, File fileB) {
+<span class="nc" id="L136">        loadDocuments(</span>
+<span class="nc" id="L137">                displayTitle(textA), textA.getContent(), textA.getFileType(), toPath(fileA),</span>
+<span class="nc" id="L138">                displayTitle(textB), textB.getContent(), textB.getFileType(), toPath(fileB));</span>
+
+<span class="nc" id="L140">        documentView.setDocumentNames(textA.getFileName(), textB.getFileName());</span>
+<span class="nc" id="L141">    }</span>
+
+    private String displayTitle(Text text) {
+<span class="nc bnc" id="L144" title="All 4 branches missed.">        if (text.getTitle() != null &amp;&amp; !text.getTitle().isBlank()) {</span>
+<span class="nc" id="L145">            return text.getTitle();</span>
+        }
+<span class="nc" id="L147">        return text.getFileName();</span>
+    }
+
+    private Path toPath(File file) {
+<span class="nc bnc" id="L151" title="All 2 branches missed.">        return file == null ? null : file.toPath();</span>
+    }
+
+    public void setSimilarity(Double percent) {
+<span class="nc" id="L155">        header.setSimilarity(percent);</span>
+<span class="nc" id="L156">    }</span>
+
+    public void clearComparison() {
+<span class="nc" id="L159">        documentView.clear();</span>
+<span class="nc" id="L160">        comparisonSidePanel.clear();</span>
+
+<span class="nc" id="L162">        loadedState.setVisible(false);</span>
+<span class="nc" id="L163">        loadedState.setManaged(false);</span>
+
+<span class="nc" id="L165">        emptyState.setVisible(true);</span>
+<span class="nc" id="L166">        emptyState.setManaged(true);</span>
+<span class="nc" id="L167">    }</span>
+
+    public void dispose() {
+<span class="nc" id="L170">        documentView.dispose();</span>
+<span class="nc" id="L171">        comparisonSidePanel.clear();</span>
+<span class="nc" id="L172">    }</span>
+
+    public ComparisonDocumentView getDocumentView() {
+<span class="nc" id="L175">        return documentView;</span>
+    }
+
+    public ComparisonSidePanel getComparisonSidePanel() {
+<span class="nc" id="L179">        return comparisonSidePanel;</span>
+    }
+
+    public CompareHeader getHeader() {
+<span class="nc" id="L183">        return header;</span>
+    }
+
+    public void setOnQuotationRequested(BiFunction&lt;String, String, Integer&gt; handler) {
+<span class="nc bnc" id="L187" title="All 2 branches missed.">        onQuotationRequested = handler == null ? (text, location) -&gt; null : handler;</span>
+<span class="nc" id="L188">        documentView.setOnQuotationRequested(onQuotationRequested);</span>
+<span class="nc" id="L189">    }</span>
+
+    public void setOnSaveFindings(Runnable handler) {
+<span class="pc bpc" id="L192" title="1 of 2 branches missed.">        onSaveFindings = handler == null ? () -&gt; {</span>
+<span class="pc" id="L193">        } : handler;</span>
+<span class="fc" id="L194">    }</span>
+
+    public void goToDocumentAPage(Integer page, Integer paragraph) {
+<span class="nc" id="L197">        documentView.goToPageA(page, paragraph);</span>
+<span class="nc" id="L198">    }</span>
+
+    public void goToDocumentBPage(Integer page, Integer paragraph) {
+<span class="nc" id="L201">        documentView.goToPageB(page, paragraph);</span>
+<span class="nc" id="L202">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

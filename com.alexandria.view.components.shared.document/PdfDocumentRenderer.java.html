@@ -1,0 +1,584 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PdfDocumentRenderer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.shared.document</a> &gt; <span class="el_source">PdfDocumentRenderer.java</span></div><h1>PdfDocumentRenderer.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.shared.document;
+
+import com.alexandria.service.analysis.SearchMatch;
+import com.alexandria.view.components.analyse_screen.QuotationLocation;
+import com.alexandria.view.components.shared.document.highlight.PdfHighlight;
+import com.alexandria.view.components.shared.document.highlight.PdfTextLayout;
+import com.alexandria.view.components.shared.selection.QuotationSelectionPopup;
+import javafx.application.Platform;
+import javafx.embed.swing.SwingFXUtils;
+import javafx.geometry.Pos;
+import javafx.scene.Cursor;
+import javafx.scene.Node;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.rendering.ImageType;
+import org.apache.pdfbox.rendering.PDFRenderer;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+
+public class PdfDocumentRenderer {
+    private static final float BASE_DPI = 144f;
+    private static final double BASE_PAGE_WIDTH = 620.0;
+    private static final double PAGE_MARGIN = 30.0;
+    private static final String LIVE_SELECTION_STYLE_CLASS = &quot;pdf-selection-rect&quot;;
+
+<span class="nc" id="L44">    private final BorderPane root = new BorderPane();</span>
+<span class="nc" id="L45">    private final ScrollPane scrollPane = new ScrollPane();</span>
+<span class="nc" id="L46">    private final StackPane pageHost = new StackPane();</span>
+<span class="nc" id="L47">    private final ImageView imageView = new ImageView();</span>
+<span class="nc" id="L48">    private final Label errorLabel = new Label();</span>
+<span class="nc" id="L49">    private final Pane selectionOverlay = new Pane();</span>
+<span class="nc" id="L50">    private final StackPane contentStack = new StackPane();</span>
+<span class="nc" id="L51">    private final Map&lt;Integer, Integer&gt; quotationPageById = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L52">    private final Map&lt;Integer, List&lt;double[]&gt;&gt; quotationRectsById = new HashMap&lt;&gt;();</span>
+
+    private PDDocument document;
+    private PDFRenderer renderer;
+<span class="nc" id="L56">    private int currentPage = 0;</span>
+<span class="nc" id="L57">    private double zoom = 1.0;</span>
+    private BufferedImage currentImage;
+    private PdfTextLayout currentLayout;
+    private double imageOffsetX;
+    private double imageOffsetY;
+<span class="nc" id="L62">    private double displayScaleX = 1;</span>
+<span class="nc" id="L63">    private double displayScaleY = 1;</span>
+    private boolean dragActive;
+<span class="nc" id="L65">    private int dragStartGlyphIndex = -1;</span>
+    private QuotationSelectionPopup quotationPopup;
+<span class="nc" id="L67">    private Consumer&lt;Integer&gt; onVisiblePageChanged = ignored -&gt; {</span>
+<span class="nc" id="L68">    };</span>
+<span class="nc" id="L69">    private BiFunction&lt;String, String, Integer&gt; onQuotationRequested = (quotationText, location) -&gt; null;</span>
+
+<span class="nc" id="L71">    public PdfDocumentRenderer() {</span>
+<span class="nc" id="L72">        root.getStyleClass().add(&quot;pdf-renderer&quot;);</span>
+
+<span class="nc" id="L74">        pageHost.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L75">        pageHost.setMinSize(0, 0);</span>
+<span class="nc" id="L76">        pageHost.getStyleClass().add(&quot;pdf-page-host&quot;);</span>
+
+<span class="nc" id="L78">        imageView.setPreserveRatio(true);</span>
+<span class="nc" id="L79">        imageView.setSmooth(true);</span>
+<span class="nc" id="L80">        imageView.setCursor(Cursor.TEXT);</span>
+<span class="nc" id="L81">        pageHost.getChildren().add(imageView);</span>
+
+<span class="nc" id="L83">        imageView.setOnMousePressed(this::beginSelection);</span>
+<span class="nc" id="L84">        imageView.setOnMouseDragged(this::updateSelection);</span>
+<span class="nc" id="L85">        imageView.setOnMouseReleased(this::endSelection);</span>
+
+<span class="nc" id="L87">        scrollPane.setContent(pageHost);</span>
+<span class="nc" id="L88">        scrollPane.setFitToWidth(false);</span>
+<span class="nc" id="L89">        scrollPane.setFitToHeight(false);</span>
+<span class="nc" id="L90">        scrollPane.setPannable(true);</span>
+<span class="nc" id="L91">        scrollPane.getStyleClass().add(&quot;viewer-scroll&quot;);</span>
+
+<span class="nc" id="L93">        selectionOverlay.setPickOnBounds(false);</span>
+<span class="nc" id="L94">        selectionOverlay.prefWidthProperty().bind(contentStack.widthProperty());</span>
+<span class="nc" id="L95">        selectionOverlay.prefHeightProperty().bind(contentStack.heightProperty());</span>
+
+<span class="nc" id="L97">        contentStack.getChildren().addAll(scrollPane, selectionOverlay);</span>
+<span class="nc" id="L98">        root.setCenter(contentStack);</span>
+
+<span class="nc" id="L100">        errorLabel.getStyleClass().add(&quot;pdf-error&quot;);</span>
+<span class="nc" id="L101">        errorLabel.setWrapText(true);</span>
+<span class="nc" id="L102">        errorLabel.setMaxWidth(500);</span>
+<span class="nc" id="L103">        errorLabel.setVisible(false);</span>
+<span class="nc" id="L104">    }</span>
+
+    public void setPdf(Path path) {
+<span class="nc" id="L107">        closeDocument();</span>
+
+<span class="nc bnc" id="L109" title="All 6 branches missed.">        if (path == null || !Files.isRegularFile(path) || !Files.isReadable(path)) {</span>
+<span class="nc" id="L110">            showError(&quot;The PDF file could not be opened:\n&quot; + path);</span>
+<span class="nc" id="L111">            return;</span>
+        }
+
+        try {
+<span class="nc" id="L115">            document = Loader.loadPDF(path.toFile());</span>
+<span class="nc" id="L116">            renderer = new PDFRenderer(document);</span>
+<span class="nc" id="L117">            renderer.setSubsamplingAllowed(true);</span>
+<span class="nc" id="L118">            currentPage = 0;</span>
+<span class="nc" id="L119">            zoom = 1.0;</span>
+<span class="nc" id="L120">            renderCurrentPage();</span>
+<span class="nc" id="L121">        } catch (IOException | RuntimeException e) {</span>
+<span class="nc" id="L122">            showError(&quot;Could not open PDF:\n&quot; + e.getMessage());</span>
+<span class="nc" id="L123">        }</span>
+<span class="nc" id="L124">    }</span>
+
+    private void renderCurrentPage() {
+<span class="nc bnc" id="L127" title="All 4 branches missed.">        if (renderer == null || document == null)</span>
+<span class="nc" id="L128">            return;</span>
+
+<span class="nc" id="L130">        hideQuotationPopup();</span>
+<span class="nc" id="L131">        dragActive = false;</span>
+
+        try {
+<span class="nc" id="L134">            currentImage = renderer.renderImageWithDPI(currentPage, BASE_DPI, ImageType.RGB);</span>
+<span class="nc" id="L135">            imageView.setImage(SwingFXUtils.toFXImage(currentImage, null));</span>
+
+            try {
+<span class="nc" id="L138">                currentLayout = PdfTextLayout.forPage(document, currentPage, BASE_DPI);</span>
+<span class="nc" id="L139">            } catch (IOException | RuntimeException e) {</span>
+<span class="nc" id="L140">                currentLayout = null;</span>
+<span class="nc" id="L141">            }</span>
+
+<span class="nc" id="L143">            updateImageSize();</span>
+<span class="nc" id="L144">            errorLabel.setVisible(false);</span>
+<span class="nc" id="L145">            restorePageHost();</span>
+<span class="nc" id="L146">            onVisiblePageChanged.accept(currentPage + 1);</span>
+<span class="nc" id="L147">        } catch (IOException | RuntimeException e) {</span>
+<span class="nc" id="L148">            showError(</span>
+                    &quot;Could not render PDF page &quot;
+                            + (currentPage + 1)
+                            + &quot;:\n&quot;
+<span class="nc" id="L152">                            + e.getMessage());</span>
+<span class="nc" id="L153">        }</span>
+<span class="nc" id="L154">    }</span>
+
+    private double[] rasterToDisplay(double[] rasterBounds) {
+<span class="nc" id="L157">        return new double[] {</span>
+                imageOffsetX + rasterBounds[0] * displayScaleX,
+                imageOffsetY + rasterBounds[1] * displayScaleY,
+                rasterBounds[2] * displayScaleX,
+                rasterBounds[3] * displayScaleY
+        };
+    }
+
+    private void convertRasterRectangleToDisplay(Rectangle rectangle) {
+<span class="nc" id="L166">        double x = rectangle.getX();</span>
+<span class="nc" id="L167">        double y = rectangle.getY();</span>
+<span class="nc" id="L168">        double w = rectangle.getWidth();</span>
+<span class="nc" id="L169">        double h = rectangle.getHeight();</span>
+
+<span class="nc" id="L171">        rectangle.setX(imageOffsetX + x * displayScaleX);</span>
+<span class="nc" id="L172">        rectangle.setY(imageOffsetY + y * displayScaleY);</span>
+<span class="nc" id="L173">        rectangle.setWidth(w * displayScaleX);</span>
+<span class="nc" id="L174">        rectangle.setHeight(h * displayScaleY);</span>
+<span class="nc" id="L175">    }</span>
+
+    private void restoreQuotationHighlights() {
+<span class="nc bnc" id="L178" title="All 2 branches missed.">        for (Map.Entry&lt;Integer, Integer&gt; entry : quotationPageById.entrySet()) {</span>
+<span class="nc bnc" id="L179" title="All 2 branches missed.">            if (entry.getValue() != currentPage)</span>
+<span class="nc" id="L180">                continue;</span>
+
+<span class="nc" id="L182">            List&lt;double[]&gt; rects = quotationRectsById.get(entry.getKey());</span>
+<span class="nc bnc" id="L183" title="All 2 branches missed.">            if (rects == null)</span>
+<span class="nc" id="L184">                continue;</span>
+
+<span class="nc bnc" id="L186" title="All 2 branches missed.">            for (double[] rect : rects)</span>
+<span class="nc" id="L187">                drawQuotationRect(rect);</span>
+<span class="nc" id="L188">        }</span>
+<span class="nc" id="L189">    }</span>
+
+    private void drawQuotationRect(double[] rasterBounds) {
+<span class="nc" id="L192">        double[] display = rasterToDisplay(rasterBounds);</span>
+<span class="nc" id="L193">        Rectangle rectangle = new Rectangle(display[0], display[1], display[2], display[3]);</span>
+
+<span class="nc" id="L195">        rectangle.setManaged(false);</span>
+<span class="nc" id="L196">        rectangle.setFill(Color.TRANSPARENT);</span>
+<span class="nc" id="L197">        rectangle.getStyleClass().add(PdfHighlight.QUOTATION_STYLE_CLASS);</span>
+<span class="nc" id="L198">        rectangle.setMouseTransparent(true);</span>
+
+<span class="nc" id="L200">        pageHost.getChildren().add(rectangle);</span>
+<span class="nc" id="L201">        imageView.toBack();</span>
+<span class="nc" id="L202">    }</span>
+
+    public void removeQuotationHighlight(int quotationId) {
+<span class="nc" id="L205">        Integer page = quotationPageById.remove(quotationId);</span>
+<span class="nc" id="L206">        quotationRectsById.remove(quotationId);</span>
+
+<span class="nc bnc" id="L208" title="All 4 branches missed.">        if (page != null &amp;&amp; page == currentPage) {</span>
+<span class="nc" id="L209">            clearHighlights();</span>
+<span class="nc" id="L210">            restoreQuotationHighlights();</span>
+        }
+<span class="nc" id="L212">    }</span>
+
+    public void highlight(String text, String styleClass) {
+<span class="nc bnc" id="L215" title="All 8 branches missed.">        if (document == null || currentImage == null || text == null || text.isBlank())</span>
+<span class="nc" id="L216">            return;</span>
+
+        try {
+<span class="nc" id="L219">            List&lt;Rectangle&gt; highlights = PdfHighlight.findHighlights(</span>
+                    document,
+                    currentPage,
+                    text,
+                    BASE_DPI,
+                    styleClass);
+
+<span class="nc bnc" id="L226" title="All 2 branches missed.">            for (Rectangle rectangle : highlights) {</span>
+<span class="nc" id="L227">                convertRasterRectangleToDisplay(rectangle);</span>
+<span class="nc" id="L228">                rectangle.setManaged(false);</span>
+<span class="nc" id="L229">                rectangle.setMouseTransparent(true);</span>
+<span class="nc" id="L230">            }</span>
+
+<span class="nc" id="L232">            pageHost.getChildren().addAll(highlights);</span>
+<span class="nc" id="L233">            imageView.toBack();</span>
+<span class="nc" id="L234">        } catch (IOException | RuntimeException ignored) {</span>
+<span class="nc" id="L235">        }</span>
+<span class="nc" id="L236">    }</span>
+
+    public void highlightSearch(String searchTerm) {
+<span class="nc" id="L239">        clearHighlights();</span>
+<span class="nc" id="L240">        highlight(searchTerm, PdfHighlight.SEARCH_STYLE_CLASS);</span>
+<span class="nc" id="L241">        restoreQuotationHighlights();</span>
+<span class="nc" id="L242">    }</span>
+
+    private void drawGlyphRange(int[] range, String styleClass) {
+<span class="nc bnc" id="L245" title="All 2 branches missed.">        for (double[] raster : currentLayout.selectionRectangles(range[0], range[1])) {</span>
+<span class="nc" id="L246">            double[] d = rasterToDisplay(raster);</span>
+<span class="nc" id="L247">            Rectangle rectangle = new Rectangle(d[0], d[1], d[2], d[3]);</span>
+<span class="nc" id="L248">            rectangle.setManaged(false);</span>
+<span class="nc" id="L249">            rectangle.setMouseTransparent(true);</span>
+<span class="nc" id="L250">            rectangle.getStyleClass().add(styleClass);</span>
+<span class="nc" id="L251">            pageHost.getChildren().add(rectangle);</span>
+<span class="nc" id="L252">        }</span>
+<span class="nc" id="L253">        imageView.toBack();</span>
+<span class="nc" id="L254">    }</span>
+
+    public void highlightPassage(String passage) {
+<span class="nc" id="L257">        clearHighlights();</span>
+
+<span class="nc bnc" id="L259" title="All 4 branches missed.">        if (currentLayout != null &amp;&amp; passage != null) {</span>
+<span class="nc" id="L260">            int[] range = currentLayout.findGlyphRange(passage);</span>
+<span class="nc bnc" id="L261" title="All 2 branches missed.">            if (range != null)</span>
+<span class="nc" id="L262">                drawGlyphRange(range, PdfHighlight.SEARCH_STYLE_CLASS);</span>
+        }
+
+<span class="nc" id="L265">        restoreQuotationHighlights();</span>
+<span class="nc" id="L266">    }</span>
+
+    public void highlightSearchMatches(List&lt;SearchMatch&gt; matches, int activeIndex) {
+<span class="nc" id="L269">        clearHighlights();</span>
+
+<span class="nc bnc" id="L271" title="All 6 branches missed.">        if (currentLayout == null || matches == null || matches.isEmpty()) {</span>
+<span class="nc" id="L272">            restoreQuotationHighlights();</span>
+<span class="nc" id="L273">            return;</span>
+        }
+
+<span class="nc" id="L276">        int pageNumber = currentPage + 1;</span>
+
+<span class="nc" id="L278">        List&lt;Integer&gt; pageMatchIndices = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L279" title="All 2 branches missed.">        for (int i = 0; i &lt; matches.size(); i++) {</span>
+<span class="nc" id="L280">            SearchMatch match = matches.get(i);</span>
+<span class="nc bnc" id="L281" title="All 6 branches missed.">            if (match != null &amp;&amp; match.page() != null &amp;&amp; match.page() == pageNumber) {</span>
+<span class="nc" id="L282">                pageMatchIndices.add(i);</span>
+            }
+        }
+
+<span class="nc bnc" id="L286" title="All 2 branches missed.">        if (!pageMatchIndices.isEmpty()) {</span>
+<span class="nc" id="L287">            String term = matches.get(pageMatchIndices.get(0)).text();</span>
+<span class="nc" id="L288">            List&lt;int[]&gt; ranges = currentLayout.findAllGlyphRanges(term);</span>
+<span class="nc bnc" id="L289" title="All 2 branches missed.">            boolean countsMatch = ranges.size() == pageMatchIndices.size();</span>
+
+<span class="nc bnc" id="L291" title="All 2 branches missed.">            for (int i = 0; i &lt; ranges.size(); i++) {</span>
+<span class="nc" id="L292">                String styleClass = PdfHighlight.SEARCH_STYLE_CLASS;</span>
+<span class="nc bnc" id="L293" title="All 4 branches missed.">                if (countsMatch &amp;&amp; pageMatchIndices.get(i) == activeIndex) {</span>
+<span class="nc" id="L294">                    styleClass = PdfHighlight.ACTIVE_SEARCH_STYLE_CLASS;</span>
+                }
+<span class="nc" id="L296">                drawGlyphRange(ranges.get(i), styleClass);</span>
+            }
+        }
+
+<span class="nc" id="L300">        restoreQuotationHighlights();</span>
+<span class="nc" id="L301">    }</span>
+
+    public void highlightQuotation(String quotedText) {
+<span class="nc" id="L304">        clearHighlights();</span>
+<span class="nc" id="L305">        highlight(quotedText, PdfHighlight.QUOTATION_STYLE_CLASS);</span>
+<span class="nc" id="L306">    }</span>
+
+    public void clearHighlights() {
+<span class="nc" id="L309">        pageHost.getChildren().removeIf(</span>
+<span class="nc" id="L310">                node -&gt; node instanceof Rectangle rectangle</span>
+<span class="nc bnc" id="L311" title="All 4 branches missed.">                        &amp;&amp; !rectangle.getStyleClass().contains(LIVE_SELECTION_STYLE_CLASS));</span>
+<span class="nc" id="L312">    }</span>
+
+    private void clearLiveSelectionRects() {
+<span class="nc" id="L315">        pageHost.getChildren().removeIf(</span>
+<span class="nc" id="L316">                node -&gt; node instanceof Rectangle rectangle</span>
+<span class="nc bnc" id="L317" title="All 4 branches missed.">                        &amp;&amp; rectangle.getStyleClass().contains(LIVE_SELECTION_STYLE_CLASS));</span>
+<span class="nc" id="L318">    }</span>
+
+    private void updateImageSize() {
+<span class="nc bnc" id="L321" title="All 2 branches missed.">        if (currentImage == null)</span>
+<span class="nc" id="L322">            return;</span>
+
+<span class="nc" id="L324">        double baseScale = BASE_PAGE_WIDTH / currentImage.getWidth();</span>
+<span class="nc" id="L325">        double pageWidth = BASE_PAGE_WIDTH * zoom;</span>
+<span class="nc" id="L326">        double pageHeight = currentImage.getHeight() * baseScale * zoom;</span>
+<span class="nc" id="L327">        double viewportWidth = scrollPane.getViewportBounds().getWidth();</span>
+<span class="nc" id="L328">        double viewportHeight = scrollPane.getViewportBounds().getHeight();</span>
+<span class="nc" id="L329">        double hostWidth = Math.max(pageWidth + PAGE_MARGIN * 2, viewportWidth);</span>
+<span class="nc" id="L330">        double hostHeight = Math.max(pageHeight + PAGE_MARGIN * 2, viewportHeight);</span>
+
+<span class="nc" id="L332">        pageHost.setPrefWidth(hostWidth);</span>
+<span class="nc" id="L333">        pageHost.setPrefHeight(hostHeight);</span>
+<span class="nc" id="L334">        pageHost.setMinWidth(hostWidth);</span>
+<span class="nc" id="L335">        pageHost.setMinHeight(hostHeight);</span>
+
+<span class="nc" id="L337">        imageView.setFitWidth(pageWidth);</span>
+<span class="nc" id="L338">        imageView.setFitHeight(pageHeight);</span>
+
+<span class="nc" id="L340">        imageOffsetX = (hostWidth - pageWidth) / 2.0;</span>
+<span class="nc" id="L341">        imageOffsetY = (hostHeight - pageHeight) / 2.0;</span>
+<span class="nc" id="L342">        displayScaleX = pageWidth / currentImage.getWidth();</span>
+<span class="nc" id="L343">        displayScaleY = pageHeight / currentImage.getHeight();</span>
+
+<span class="nc" id="L345">        clearHighlights();</span>
+<span class="nc" id="L346">        clearLiveSelectionRects();</span>
+<span class="nc" id="L347">        restoreQuotationHighlights();</span>
+
+<span class="nc" id="L349">        Platform.runLater(this::centerPage);</span>
+<span class="nc" id="L350">    }</span>
+
+    private void centerPage() {
+<span class="nc bnc" id="L353" title="All 2 branches missed.">        if (currentImage == null)</span>
+<span class="nc" id="L354">            return;</span>
+
+<span class="nc" id="L356">        double viewportWidth = scrollPane.getViewportBounds().getWidth();</span>
+<span class="nc" id="L357">        double viewportHeight = scrollPane.getViewportBounds().getHeight();</span>
+<span class="nc" id="L358">        double contentWidth = pageHost.getWidth();</span>
+<span class="nc" id="L359">        double contentHeight = pageHost.getHeight();</span>
+<span class="nc" id="L360">        double maxX = Math.max(0, contentWidth - viewportWidth);</span>
+<span class="nc" id="L361">        double maxY = Math.max(0, contentHeight - viewportHeight);</span>
+
+<span class="nc bnc" id="L363" title="All 2 branches missed.">        scrollPane.setHvalue(maxX &lt;= 0 ? 0.5 : 0.5);</span>
+<span class="nc bnc" id="L364" title="All 2 branches missed.">        scrollPane.setVvalue(maxY &lt;= 0 ? 0.5 : 0.5);</span>
+<span class="nc" id="L365">    }</span>
+
+    private void showError(String message) {
+<span class="nc bnc" id="L368" title="All 2 branches missed.">        errorLabel.setText(message == null ? &quot;Unknown PDF error.&quot; : message);</span>
+<span class="nc" id="L369">        errorLabel.setVisible(true);</span>
+
+<span class="nc" id="L371">        VBox errorBox = new VBox(12, errorLabel);</span>
+<span class="nc" id="L372">        errorBox.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L373">        root.setCenter(errorBox);</span>
+<span class="nc" id="L374">    }</span>
+
+    private void restorePageHost() {
+<span class="nc bnc" id="L377" title="All 2 branches missed.">        if (root.getCenter() != contentStack)</span>
+<span class="nc" id="L378">            root.setCenter(contentStack);</span>
+<span class="nc" id="L379">    }</span>
+
+    public Node getNode() {
+<span class="nc" id="L382">        return root;</span>
+    }
+
+    public void goToPage(Integer page, Integer paragraph) {
+<span class="nc bnc" id="L386" title="All 6 branches missed.">        if (document == null || page == null || document.getNumberOfPages() == 0)</span>
+<span class="nc" id="L387">            return;</span>
+
+<span class="nc" id="L389">        currentPage = Math.max(</span>
+                0,
+<span class="nc" id="L391">                Math.min(page - 1, document.getNumberOfPages() - 1));</span>
+
+<span class="nc" id="L393">        renderCurrentPage();</span>
+<span class="nc" id="L394">    }</span>
+
+    public void setZoom(double value) {
+<span class="nc" id="L397">        zoom = Math.max(0.5, Math.min(2.0, value));</span>
+<span class="nc" id="L398">        updateImageSize();</span>
+<span class="nc" id="L399">    }</span>
+
+    public int getPageCount() {
+<span class="nc bnc" id="L402" title="All 2 branches missed.">        return document == null ? 0 : document.getNumberOfPages();</span>
+    }
+
+    public void setOnVisiblePageChanged(Consumer&lt;Integer&gt; handler) {
+<span class="nc bnc" id="L406" title="All 2 branches missed.">        onVisiblePageChanged = handler == null ? ignored -&gt; {</span>
+<span class="nc" id="L407">        } : handler;</span>
+<span class="nc" id="L408">    }</span>
+
+    public void setOnQuotationRequested(BiFunction&lt;String, String, Integer&gt; handler) {
+<span class="nc bnc" id="L411" title="All 2 branches missed.">        onQuotationRequested = handler == null</span>
+<span class="nc" id="L412">                ? (quotationText, location) -&gt; null</span>
+<span class="nc" id="L413">                : handler;</span>
+<span class="nc" id="L414">    }</span>
+
+    private void beginSelection(MouseEvent event) {
+<span class="nc" id="L417">        hideQuotationPopup();</span>
+<span class="nc" id="L418">        clearLiveSelectionRects();</span>
+
+<span class="nc bnc" id="L420" title="All 6 branches missed.">        if (currentImage == null || currentLayout == null || currentLayout.isEmpty())</span>
+<span class="nc" id="L421">            return;</span>
+
+<span class="nc" id="L423">        scrollPane.setPannable(false);</span>
+<span class="nc" id="L424">        event.consume();</span>
+
+<span class="nc" id="L426">        dragStartGlyphIndex = glyphIndexAt(event);</span>
+<span class="nc bnc" id="L427" title="All 2 branches missed.">        dragActive = dragStartGlyphIndex &gt;= 0;</span>
+<span class="nc" id="L428">        updateLiveSelectionRects(dragStartGlyphIndex, dragStartGlyphIndex);</span>
+<span class="nc" id="L429">    }</span>
+
+    private void updateSelection(MouseEvent event) {
+<span class="nc bnc" id="L432" title="All 4 branches missed.">        if (!dragActive || currentLayout == null)</span>
+<span class="nc" id="L433">            return;</span>
+
+<span class="nc" id="L435">        event.consume();</span>
+<span class="nc" id="L436">        int currentIndex = glyphIndexAt(event);</span>
+<span class="nc" id="L437">        updateLiveSelectionRects(dragStartGlyphIndex, currentIndex);</span>
+<span class="nc" id="L438">    }</span>
+
+    private void endSelection(MouseEvent event) {
+<span class="nc" id="L441">        scrollPane.setPannable(true);</span>
+<span class="nc bnc" id="L442" title="All 2 branches missed.">        if (!dragActive)</span>
+<span class="nc" id="L443">            return;</span>
+
+<span class="nc" id="L445">        dragActive = false;</span>
+<span class="nc" id="L446">        event.consume();</span>
+
+<span class="nc bnc" id="L448" title="All 4 branches missed.">        if (currentLayout == null || document == null) {</span>
+<span class="nc" id="L449">            clearLiveSelectionRects();</span>
+<span class="nc" id="L450">            return;</span>
+        }
+
+<span class="nc" id="L453">        int endIndex = glyphIndexAt(event);</span>
+<span class="nc" id="L454">        int startIndex = dragStartGlyphIndex;</span>
+
+<span class="nc bnc" id="L456" title="All 6 branches missed.">        if (startIndex &lt; 0 || endIndex &lt; 0 || startIndex == endIndex) {</span>
+<span class="nc" id="L457">            clearLiveSelectionRects();</span>
+<span class="nc" id="L458">            return;</span>
+        }
+
+<span class="nc" id="L461">        String selectedText = currentLayout.textFor(startIndex, endIndex);</span>
+<span class="nc bnc" id="L462" title="All 2 branches missed.">        if (selectedText.isBlank()) {</span>
+<span class="nc" id="L463">            clearLiveSelectionRects();</span>
+<span class="nc" id="L464">            return;</span>
+        }
+
+<span class="nc" id="L467">        List&lt;double[]&gt; rasterRects = currentLayout.selectionRectangles(startIndex, endIndex);</span>
+<span class="nc bnc" id="L468" title="All 2 branches missed.">        if (rasterRects.isEmpty()) {</span>
+<span class="nc" id="L469">            clearLiveSelectionRects();</span>
+<span class="nc" id="L470">            return;</span>
+        }
+
+<span class="nc" id="L473">        String rawLocation = &quot;page:&quot; + (currentPage + 1);</span>
+
+<span class="nc" id="L475">        showQuotationPopup(</span>
+<span class="nc" id="L476">                event.getScreenX(),</span>
+<span class="nc" id="L477">                event.getScreenY(),</span>
+                selectedText,
+                rawLocation,
+                rasterRects);
+<span class="nc" id="L481">    }</span>
+
+    private int glyphIndexAt(MouseEvent event) {
+<span class="nc bnc" id="L484" title="All 6 branches missed.">        if (currentLayout == null || displayScaleX &lt;= 0 || displayScaleY &lt;= 0)</span>
+<span class="nc" id="L485">            return -1;</span>
+
+<span class="nc" id="L487">        double rasterX = event.getX() / displayScaleX;</span>
+<span class="nc" id="L488">        double rasterY = event.getY() / displayScaleY;</span>
+
+<span class="nc" id="L490">        return currentLayout.nearestGlyphIndex(rasterX, rasterY);</span>
+    }
+
+    private void updateLiveSelectionRects(int startIndex, int endIndex) {
+<span class="nc" id="L494">        clearLiveSelectionRects();</span>
+<span class="nc bnc" id="L495" title="All 6 branches missed.">        if (currentLayout == null || startIndex &lt; 0 || endIndex &lt; 0)</span>
+<span class="nc" id="L496">            return;</span>
+
+<span class="nc bnc" id="L498" title="All 2 branches missed.">        for (double[] rasterRect : currentLayout.selectionRectangles(startIndex, endIndex)) {</span>
+<span class="nc" id="L499">            double[] display = rasterToDisplay(rasterRect);</span>
+<span class="nc" id="L500">            Rectangle rectangle = new Rectangle(</span>
+                    display[0],
+                    display[1],
+                    display[2],
+                    display[3]);
+
+<span class="nc" id="L506">            rectangle.setManaged(false);</span>
+<span class="nc" id="L507">            rectangle.setMouseTransparent(true);</span>
+<span class="nc" id="L508">            rectangle.getStyleClass().add(LIVE_SELECTION_STYLE_CLASS);</span>
+<span class="nc" id="L509">            pageHost.getChildren().add(rectangle);</span>
+<span class="nc" id="L510">        }</span>
+
+<span class="nc" id="L512">        imageView.toBack();</span>
+<span class="nc" id="L513">    }</span>
+
+    private void showQuotationPopup(
+            double screenX,
+            double screenY,
+            String selectedText,
+            String rawLocation,
+            List&lt;double[]&gt; rasterRects) {
+
+<span class="nc" id="L522">        int page = currentPage;</span>
+
+<span class="nc" id="L524">        quotationPopup = new QuotationSelectionPopup(type -&gt; {</span>
+<span class="nc" id="L525">            String location = QuotationLocation.encode(type, rawLocation);</span>
+<span class="nc" id="L526">            Integer quotationId = onQuotationRequested.apply(selectedText, location);</span>
+
+<span class="nc bnc" id="L528" title="All 2 branches missed.">            if (quotationId != null) {</span>
+<span class="nc" id="L529">                quotationPageById.put(quotationId, page);</span>
+<span class="nc" id="L530">                quotationRectsById.put(quotationId, rasterRects);</span>
+
+<span class="nc bnc" id="L532" title="All 2 branches missed.">                for (double[] rect : rasterRects)</span>
+<span class="nc" id="L533">                    drawQuotationRect(rect);</span>
+            }
+
+<span class="nc" id="L536">            hideQuotationPopup();</span>
+<span class="nc" id="L537">            clearLiveSelectionRects();</span>
+<span class="nc" id="L538">        });</span>
+
+<span class="nc" id="L540">        quotationPopup.showAt(selectionOverlay, screenX, screenY);</span>
+<span class="nc" id="L541">    }</span>
+
+    private void hideQuotationPopup() {
+<span class="nc bnc" id="L544" title="All 2 branches missed.">        if (quotationPopup != null) {</span>
+<span class="nc" id="L545">            quotationPopup.hide();</span>
+<span class="nc" id="L546">            quotationPopup = null;</span>
+        }
+<span class="nc" id="L548">    }</span>
+
+    public void dispose() {
+<span class="nc" id="L551">        closeDocument();</span>
+<span class="nc" id="L552">    }</span>
+
+    private void closeDocument() {
+<span class="nc" id="L555">        hideQuotationPopup();</span>
+<span class="nc" id="L556">        clearLiveSelectionRects();</span>
+<span class="nc" id="L557">        scrollPane.setPannable(true);</span>
+
+<span class="nc" id="L559">        quotationPageById.clear();</span>
+<span class="nc" id="L560">        quotationRectsById.clear();</span>
+
+<span class="nc" id="L562">        dragActive = false;</span>
+<span class="nc" id="L563">        dragStartGlyphIndex = -1;</span>
+<span class="nc" id="L564">        currentLayout = null;</span>
+
+<span class="nc bnc" id="L566" title="All 2 branches missed.">        if (document != null) {</span>
+            try {
+<span class="nc" id="L568">                document.close();</span>
+<span class="nc" id="L569">            } catch (IOException ignored) {</span>
+<span class="nc" id="L570">            }</span>
+        }
+
+<span class="nc" id="L573">        document = null;</span>
+<span class="nc" id="L574">        renderer = null;</span>
+<span class="nc" id="L575">        currentImage = null;</span>
+
+<span class="nc" id="L577">        imageView.setImage(null);</span>
+<span class="nc" id="L578">        clearHighlights();</span>
+
+<span class="nc" id="L580">        currentPage = 0;</span>
+<span class="nc" id="L581">        zoom = 1.0;</span>
+<span class="nc" id="L582">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

@@ -1,0 +1,771 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TextDocumentRenderer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.shared.document</a> &gt; <span class="el_source">TextDocumentRenderer.java</span></div><h1>TextDocumentRenderer.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.shared.document;
+
+import com.alexandria.service.analysis.SearchMatch;
+import com.alexandria.view.components.analyse_screen.QuotationLocation;
+import com.alexandria.view.components.shared.document.highlight.TextPaginator;
+import com.alexandria.view.components.shared.document.highlight.TxtHighlight;
+import com.alexandria.view.components.shared.document.highlight.TxtTextLayout;
+import com.alexandria.view.components.shared.selection.QuotationSelectionPopup;
+
+import javafx.application.Platform;
+import javafx.geometry.Point2D;
+import javafx.geometry.Pos;
+import javafx.scene.Cursor;
+import javafx.scene.Node;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
+import javafx.geometry.Bounds;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+
+public class TextDocumentRenderer {
+    private static final double BASE_PAGE_WIDTH = 620.0;
+    private static final String LIVE_SELECTION_STYLE_CLASS = &quot;txt-selection-rect&quot;;
+
+<span class="nc" id="L34">    private final ScrollPane scrollPane = new ScrollPane();</span>
+<span class="nc" id="L35">    private final VBox pagesHost = new VBox(24);</span>
+<span class="nc" id="L36">    private final Pane selectionOverlay = new Pane();</span>
+<span class="nc" id="L37">    private final StackPane container = new StackPane();</span>
+<span class="nc" id="L38">    private final Map&lt;Integer, Integer&gt; quotationPageById = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L39">    private final Map&lt;Integer, TxtHighlight.Range&gt; quotationRangeById = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L40">    private final Map&lt;Integer, TextFlow&gt; pageFlows = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L41">    private final Map&lt;Integer, Pane&gt; pageOverlays = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L42">    private final Map&lt;Integer, String&gt; pageTexts = new HashMap&lt;&gt;();</span>
+
+<span class="nc" id="L44">    private String content = &quot;&quot;;</span>
+<span class="nc" id="L45">    private List&lt;Integer&gt; pageStarts = List.of();</span>
+<span class="nc" id="L46">    private int currentVisiblePage = 1;</span>
+<span class="nc" id="L47">    private double zoom = 1.0;</span>
+<span class="nc" id="L48">    private int activeSelectionPage = -1;</span>
+<span class="nc" id="L49">    private int selectionStartIndex = -1;</span>
+<span class="nc" id="L50">    private int pendingQuotationPage = -1;</span>
+    private QuotationSelectionPopup quotationPopup;
+<span class="nc" id="L52">    private Consumer&lt;Integer&gt; onVisiblePageChanged = ignored -&gt; {</span>
+<span class="nc" id="L53">    };</span>
+<span class="nc" id="L54">    private BiFunction&lt;String, String, Integer&gt; onQuotationRequested = (quotationText, location) -&gt; null;</span>
+
+<span class="nc" id="L56">    public TextDocumentRenderer(String content) {</span>
+<span class="nc" id="L57">        pagesHost.setAlignment(Pos.TOP_CENTER);</span>
+<span class="nc" id="L58">        pagesHost.getStyleClass().add(&quot;document-pages&quot;);</span>
+
+<span class="nc" id="L60">        scrollPane.setContent(pagesHost);</span>
+<span class="nc" id="L61">        scrollPane.setFitToWidth(false);</span>
+<span class="nc" id="L62">        scrollPane.setFitToHeight(false);</span>
+<span class="nc" id="L63">        scrollPane.setPannable(true);</span>
+<span class="nc" id="L64">        scrollPane.getStyleClass().add(&quot;viewer-scroll&quot;);</span>
+<span class="nc" id="L65">        scrollPane.vvalueProperty().addListener((obs, oldValue, newValue) -&gt; updateVisiblePage());</span>
+
+<span class="nc" id="L67">        selectionOverlay.setPickOnBounds(false);</span>
+<span class="nc" id="L68">        selectionOverlay.prefWidthProperty().bind(container.widthProperty());</span>
+<span class="nc" id="L69">        selectionOverlay.prefHeightProperty().bind(container.heightProperty());</span>
+
+<span class="nc" id="L71">        container.getChildren().addAll(scrollPane, selectionOverlay);</span>
+
+<span class="nc" id="L73">        setText(content);</span>
+<span class="nc" id="L74">    }</span>
+
+    private void setText(String content) {
+<span class="nc bnc" id="L77" title="All 2 branches missed.">        this.content = content == null ? &quot;&quot; : content;</span>
+<span class="nc" id="L78">        pageStarts = TextPaginator.paginate(this.content, TextPaginator.CHARS_PER_PAGE);</span>
+
+<span class="nc bnc" id="L80" title="All 2 branches missed.">        if (pageStarts.isEmpty()) {</span>
+<span class="nc" id="L81">            pageStarts = List.of(0);</span>
+        }
+
+<span class="nc" id="L84">        rebuild();</span>
+
+<span class="nc" id="L86">        Platform.runLater(() -&gt; {</span>
+<span class="nc" id="L87">            updatePageSizes();</span>
+<span class="nc" id="L88">            resetScrollPosition();</span>
+<span class="nc" id="L89">            updateVisiblePage();</span>
+<span class="nc" id="L90">        });</span>
+<span class="nc" id="L91">    }</span>
+
+    private void rebuild() {
+<span class="nc" id="L94">        pagesHost.getChildren().clear();</span>
+<span class="nc" id="L95">        pageFlows.clear();</span>
+<span class="nc" id="L96">        pageOverlays.clear();</span>
+<span class="nc" id="L97">        pageTexts.clear();</span>
+<span class="nc" id="L98">        pendingQuotationPage = -1;</span>
+
+<span class="nc bnc" id="L100" title="All 2 branches missed.">        for (int i = 0; i &lt; pageStarts.size(); i++) {</span>
+<span class="nc" id="L101">            int pageIndex = i;</span>
+<span class="nc" id="L102">            int start = pageStarts.get(i);</span>
+<span class="nc bnc" id="L103" title="All 2 branches missed.">            int end = i + 1 &lt; pageStarts.size()</span>
+<span class="nc" id="L104">                    ? pageStarts.get(i + 1)</span>
+<span class="nc" id="L105">                    : content.length();</span>
+
+<span class="nc" id="L107">            end = Math.min(end, content.length());</span>
+
+<span class="nc" id="L109">            String pageText = content.substring(start, end);</span>
+<span class="nc" id="L110">            pageTexts.put(pageIndex, pageText);</span>
+
+<span class="nc" id="L112">            Text text = new Text(pageText);</span>
+<span class="nc" id="L113">            text.getStyleClass().add(&quot;document-page-content&quot;);</span>
+<span class="nc" id="L114">            TextFlow flow = new TextFlow(text);</span>
+
+<span class="nc" id="L116">            flow.getStyleClass().add(&quot;document-page-text&quot;);</span>
+<span class="nc" id="L117">            flow.setCursor(Cursor.TEXT);</span>
+
+<span class="nc" id="L119">            Pane highlightOverlay = new Pane();</span>
+<span class="nc" id="L120">            highlightOverlay.setMouseTransparent(true);</span>
+<span class="nc" id="L121">            highlightOverlay.setPickOnBounds(false);</span>
+
+<span class="nc" id="L123">            StackPane pageStack = new StackPane(highlightOverlay, flow);</span>
+<span class="nc" id="L124">            pageStack.setAlignment(Pos.TOP_LEFT);</span>
+<span class="nc" id="L125">            pageStack.getStyleClass().add(&quot;document-page&quot;);</span>
+
+<span class="nc" id="L127">            flow.setOnMousePressed(event -&gt; beginSelection(pageIndex, flow, event));</span>
+<span class="nc" id="L128">            flow.setOnMouseDragged(event -&gt; updateSelection(pageIndex, flow, highlightOverlay, event));</span>
+<span class="nc" id="L129">            flow.setOnMouseReleased(event -&gt; endSelection(</span>
+                    pageIndex,
+                    flow,
+                    pageText,
+                    highlightOverlay,
+                    event));
+
+<span class="nc" id="L136">            pageFlows.put(pageIndex, flow);</span>
+<span class="nc" id="L137">            pageOverlays.put(pageIndex, highlightOverlay);</span>
+
+<span class="nc" id="L139">            applyQuotationHighlights(pageIndex, flow, highlightOverlay);</span>
+<span class="nc" id="L140">            pagesHost.getChildren().add(pageStack);</span>
+        }
+<span class="nc" id="L142">    }</span>
+
+    private void updatePageSizes() {
+<span class="nc" id="L145">        double pageWidth = BASE_PAGE_WIDTH * zoom;</span>
+<span class="nc" id="L146">        double viewportWidth = scrollPane.getViewportBounds().getWidth();</span>
+
+<span class="nc" id="L148">        pagesHost.setPrefWidth(Math.max(pageWidth, viewportWidth));</span>
+
+<span class="nc bnc" id="L150" title="All 2 branches missed.">        for (Node node : pagesHost.getChildren()) {</span>
+<span class="nc bnc" id="L151" title="All 2 branches missed.">            if (node instanceof StackPane pageStack) {</span>
+<span class="nc" id="L152">                pageStack.setPrefWidth(pageWidth);</span>
+<span class="nc" id="L153">                pageStack.setMinWidth(pageWidth);</span>
+<span class="nc" id="L154">                pageStack.setMaxWidth(pageWidth);</span>
+            }
+<span class="nc" id="L156">        }</span>
+<span class="nc" id="L157">    }</span>
+
+    private void resetScrollPosition() {
+<span class="nc" id="L160">        scrollPane.setVvalue(0);</span>
+<span class="nc" id="L161">        scrollPane.setHvalue(0);</span>
+
+<span class="nc" id="L163">        Platform.runLater(() -&gt; {</span>
+<span class="nc" id="L164">            scrollPane.setVvalue(0);</span>
+<span class="nc" id="L165">            scrollPane.setHvalue(0);</span>
+<span class="nc" id="L166">        });</span>
+<span class="nc" id="L167">    }</span>
+
+    public Node getNode() {
+<span class="nc" id="L170">        return container;</span>
+    }
+
+    public void goToPage(Integer page, Integer paragraph) {
+<span class="nc bnc" id="L174" title="All 4 branches missed.">        if (page == null || pagesHost.getChildren().isEmpty()) {</span>
+<span class="nc" id="L175">            return;</span>
+        }
+
+<span class="nc" id="L178">        int safe = Math.max(</span>
+                0,
+<span class="nc" id="L180">                Math.min(</span>
+<span class="nc" id="L181">                        page - 1,</span>
+<span class="nc" id="L182">                        pagesHost.getChildren().size() - 1));</span>
+
+<span class="nc" id="L184">        Node pageNode = pagesHost.getChildren().get(safe);</span>
+
+<span class="nc" id="L186">        Platform.runLater(() -&gt; {</span>
+<span class="nc" id="L187">            updatePageSizes();</span>
+<span class="nc" id="L188">            centerPage(pageNode);</span>
+<span class="nc" id="L189">        });</span>
+<span class="nc" id="L190">    }</span>
+
+    public void highlightPassage(Integer page, String passage) {
+<span class="nc" id="L193">        clearSearchHighlights();</span>
+<span class="nc bnc" id="L194" title="All 6 branches missed.">        if (page == null || passage == null || passage.isBlank())</span>
+<span class="nc" id="L195">            return;</span>
+
+<span class="nc" id="L197">        int pageIndex = page - 1;</span>
+<span class="nc" id="L198">        String pageText = pageTexts.get(pageIndex);</span>
+<span class="nc" id="L199">        TextFlow flow = pageFlows.get(pageIndex);</span>
+<span class="nc" id="L200">        Pane overlay = pageOverlays.get(pageIndex);</span>
+<span class="nc bnc" id="L201" title="All 6 branches missed.">        if (pageText == null || flow == null || overlay == null)</span>
+<span class="nc" id="L202">            return;</span>
+
+<span class="nc" id="L204">        String needle = passage.strip();</span>
+<span class="nc" id="L205">        int start = pageText.indexOf(needle);</span>
+<span class="nc bnc" id="L206" title="All 2 branches missed.">        if (start &lt; 0) {</span>
+<span class="nc" id="L207">            needle = needle.substring(0, Math.min(40, needle.length()));</span>
+<span class="nc" id="L208">            start = pageText.indexOf(needle);</span>
+        }
+<span class="nc bnc" id="L210" title="All 2 branches missed.">        if (start &lt; 0)</span>
+<span class="nc" id="L211">            return;</span>
+
+<span class="nc" id="L213">        Node shape = TxtTextLayout.shapeFor(</span>
+<span class="nc" id="L214">                flow, start, start + needle.length(),</span>
+                TxtHighlight.SEARCH_STYLE_CLASS);
+<span class="nc" id="L216">        overlay.getChildren().add(shape);</span>
+<span class="nc" id="L217">        scrollToShape(shape);</span>
+<span class="nc" id="L218">    }</span>
+
+    private void centerPage(Node pageNode) {
+<span class="nc bnc" id="L221" title="All 2 branches missed.">        if (pageNode == null) {</span>
+<span class="nc" id="L222">            return;</span>
+        }
+
+<span class="nc" id="L225">        double viewportWidth = scrollPane.getViewportBounds().getWidth();</span>
+<span class="nc" id="L226">        double viewportHeight = scrollPane.getViewportBounds().getHeight();</span>
+<span class="nc" id="L227">        double contentWidth = pagesHost.getWidth();</span>
+<span class="nc" id="L228">        double contentHeight = pagesHost.getHeight();</span>
+
+<span class="nc" id="L230">        double pageX = pageNode.getBoundsInParent().getMinX();</span>
+<span class="nc" id="L231">        double pageY = pageNode.getBoundsInParent().getMinY();</span>
+<span class="nc" id="L232">        double pageWidth = pageNode.getBoundsInParent().getWidth();</span>
+<span class="nc" id="L233">        double pageHeight = pageNode.getBoundsInParent().getHeight();</span>
+
+<span class="nc" id="L235">        double targetX = pageX + pageWidth / 2.0 - viewportWidth / 2.0;</span>
+<span class="nc" id="L236">        double targetY = pageY + pageHeight / 2.0 - viewportHeight / 2.0;</span>
+
+<span class="nc" id="L238">        double maxX = Math.max(0, contentWidth - viewportWidth);</span>
+<span class="nc" id="L239">        double maxY = Math.max(0, contentHeight - viewportHeight);</span>
+
+<span class="nc bnc" id="L241" title="All 2 branches missed.">        double horizontal = maxX == 0 ? 0 : targetX / maxX;</span>
+<span class="nc bnc" id="L242" title="All 2 branches missed.">        double vertical = maxY == 0 ? 0 : targetY / maxY;</span>
+
+<span class="nc" id="L244">        scrollPane.setHvalue(clamp(horizontal));</span>
+<span class="nc" id="L245">        scrollPane.setVvalue(clamp(vertical));</span>
+<span class="nc" id="L246">    }</span>
+
+    private double clamp(double value) {
+<span class="nc" id="L249">        return Math.max(0, Math.min(1, value));</span>
+    }
+
+    private void updateVisiblePage() {
+<span class="nc bnc" id="L253" title="All 2 branches missed.">        if (pagesHost.getChildren().isEmpty()) {</span>
+<span class="nc" id="L254">            return;</span>
+        }
+
+<span class="nc" id="L257">        double viewportHeight = scrollPane.getViewportBounds().getHeight();</span>
+<span class="nc" id="L258">        double scrollableHeight = Math.max(</span>
+                0,
+<span class="nc" id="L260">                pagesHost.getHeight() - viewportHeight);</span>
+
+<span class="nc" id="L262">        double viewportCenter = scrollPane.getVvalue()</span>
+                * scrollableHeight
+                + viewportHeight / 2.0;
+
+<span class="nc" id="L266">        int closest = 0;</span>
+<span class="nc" id="L267">        double best = Double.MAX_VALUE;</span>
+
+<span class="nc bnc" id="L269" title="All 2 branches missed.">        for (int i = 0; i &lt; pagesHost.getChildren().size(); i++) {</span>
+<span class="nc" id="L270">            Node node = pagesHost.getChildren().get(i);</span>
+
+<span class="nc" id="L272">            double center = node.getBoundsInParent().getMinY()</span>
+<span class="nc" id="L273">                    + node.getBoundsInParent().getHeight() / 2.0;</span>
+
+<span class="nc" id="L275">            double distance = Math.abs(center - viewportCenter);</span>
+
+<span class="nc bnc" id="L277" title="All 2 branches missed.">            if (distance &lt; best) {</span>
+<span class="nc" id="L278">                best = distance;</span>
+<span class="nc" id="L279">                closest = i;</span>
+            }
+        }
+
+<span class="nc" id="L283">        int page = closest + 1;</span>
+
+<span class="nc bnc" id="L285" title="All 2 branches missed.">        if (page != currentVisiblePage) {</span>
+<span class="nc" id="L286">            currentVisiblePage = page;</span>
+<span class="nc" id="L287">            onVisiblePageChanged.accept(page);</span>
+        }
+<span class="nc" id="L289">    }</span>
+
+    public void setZoom(double zoom) {
+<span class="nc" id="L292">        this.zoom = Math.max(0.75, Math.min(1.5, zoom));</span>
+
+<span class="nc" id="L294">        updatePageSizes();</span>
+
+<span class="nc" id="L296">        Platform.runLater(() -&gt; {</span>
+<span class="nc" id="L297">            updatePageSizes();</span>
+
+<span class="nc" id="L299">            pendingQuotationPage = -1;</span>
+<span class="nc" id="L300">            hideQuotationPopup();</span>
+<span class="nc" id="L301">            refreshAllQuotationHighlights();</span>
+
+<span class="nc" id="L303">            updateVisiblePage();</span>
+<span class="nc" id="L304">        });</span>
+<span class="nc" id="L305">    }</span>
+
+    public int getPageCount() {
+<span class="nc" id="L308">        return pageStarts.size();</span>
+    }
+
+    public void setOnVisiblePageChanged(Consumer&lt;Integer&gt; handler) {
+<span class="nc bnc" id="L312" title="All 2 branches missed.">        onVisiblePageChanged = handler == null</span>
+<span class="nc" id="L313">                ? ignored -&gt; {</span>
+<span class="nc" id="L314">                }</span>
+<span class="nc" id="L315">                : handler;</span>
+<span class="nc" id="L316">    }</span>
+
+    public void setOnQuotationRequested(
+            BiFunction&lt;String, String, Integer&gt; handler) {
+
+<span class="nc bnc" id="L321" title="All 2 branches missed.">        onQuotationRequested = handler == null</span>
+<span class="nc" id="L322">                ? (quotationText, location) -&gt; null</span>
+<span class="nc" id="L323">                : handler;</span>
+<span class="nc" id="L324">    }</span>
+
+    private void applyQuotationHighlights(
+            int pageIndex,
+            TextFlow flow,
+            Pane overlay) {
+
+<span class="nc" id="L331">        overlay.getChildren().clear();</span>
+
+<span class="nc bnc" id="L333" title="All 2 branches missed.">        for (Map.Entry&lt;Integer, Integer&gt; entry : quotationPageById.entrySet()) {</span>
+<span class="nc bnc" id="L334" title="All 2 branches missed.">            if (entry.getValue() != pageIndex) {</span>
+<span class="nc" id="L335">                continue;</span>
+            }
+
+<span class="nc" id="L338">            TxtHighlight.Range range = quotationRangeById.get(entry.getKey());</span>
+
+<span class="nc bnc" id="L340" title="All 2 branches missed.">            if (range != null) {</span>
+<span class="nc" id="L341">                overlay.getChildren().add(</span>
+<span class="nc" id="L342">                        TxtTextLayout.shapeFor(</span>
+                                flow,
+<span class="nc" id="L344">                                range.start(),</span>
+<span class="nc" id="L345">                                range.end(),</span>
+                                TxtHighlight.QUOTATION_STYLE_CLASS));
+            }
+<span class="nc" id="L348">        }</span>
+<span class="nc" id="L349">    }</span>
+
+    private void refreshAllQuotationHighlights() {
+<span class="nc bnc" id="L352" title="All 2 branches missed.">        for (Map.Entry&lt;Integer, Pane&gt; entry : pageOverlays.entrySet()) {</span>
+<span class="nc" id="L353">            int pageIndex = entry.getKey();</span>
+<span class="nc" id="L354">            TextFlow flow = pageFlows.get(pageIndex);</span>
+
+<span class="nc bnc" id="L356" title="All 2 branches missed.">            if (flow != null) {</span>
+<span class="nc" id="L357">                applyQuotationHighlights(</span>
+                        pageIndex,
+                        flow,
+<span class="nc" id="L360">                        entry.getValue());</span>
+            }
+<span class="nc" id="L362">        }</span>
+<span class="nc" id="L363">    }</span>
+
+    public void removeQuotationHighlight(int quotationId) {
+<span class="nc" id="L366">        Integer page = quotationPageById.remove(quotationId);</span>
+<span class="nc" id="L367">        quotationRangeById.remove(quotationId);</span>
+
+<span class="nc bnc" id="L369" title="All 2 branches missed.">        if (page != null) {</span>
+<span class="nc" id="L370">            TextFlow flow = pageFlows.get(page);</span>
+<span class="nc" id="L371">            Pane overlay = pageOverlays.get(page);</span>
+
+<span class="nc bnc" id="L373" title="All 4 branches missed.">            if (flow != null &amp;&amp; overlay != null) {</span>
+<span class="nc" id="L374">                applyQuotationHighlights(</span>
+<span class="nc" id="L375">                        page,</span>
+                        flow,
+                        overlay);
+            }
+        }
+<span class="nc" id="L380">    }</span>
+
+    private void cancelPendingSelection() {
+<span class="nc bnc" id="L383" title="All 2 branches missed.">        if (pendingQuotationPage &lt; 0) {</span>
+<span class="nc" id="L384">            return;</span>
+        }
+
+<span class="nc" id="L387">        TextFlow flow = pageFlows.get(pendingQuotationPage);</span>
+<span class="nc" id="L388">        Pane overlay = pageOverlays.get(pendingQuotationPage);</span>
+
+<span class="nc bnc" id="L390" title="All 4 branches missed.">        if (flow != null &amp;&amp; overlay != null) {</span>
+<span class="nc" id="L391">            applyQuotationHighlights(</span>
+                    pendingQuotationPage,
+                    flow,
+                    overlay);
+        }
+
+<span class="nc" id="L397">        pendingQuotationPage = -1;</span>
+<span class="nc" id="L398">    }</span>
+
+    private void beginSelection(
+            int pageIndex,
+            TextFlow flow,
+            MouseEvent event) {
+
+<span class="nc" id="L405">        hideQuotationPopup();</span>
+<span class="nc" id="L406">        cancelPendingSelection();</span>
+
+<span class="nc" id="L408">        scrollPane.setPannable(false);</span>
+<span class="nc" id="L409">        event.consume();</span>
+
+<span class="nc" id="L411">        activeSelectionPage = pageIndex;</span>
+<span class="nc" id="L412">        selectionStartIndex = charIndexAt(flow, event);</span>
+<span class="nc" id="L413">    }</span>
+
+    private void updateSelection(
+            int pageIndex,
+            TextFlow flow,
+            Pane overlay,
+            MouseEvent event) {
+
+<span class="nc bnc" id="L421" title="All 4 branches missed.">        if (activeSelectionPage != pageIndex</span>
+                || selectionStartIndex &lt; 0) {
+<span class="nc" id="L423">            return;</span>
+        }
+
+<span class="nc" id="L426">        event.consume();</span>
+
+<span class="nc" id="L428">        int current = charIndexAt(flow, event);</span>
+
+<span class="nc" id="L430">        applyQuotationHighlights(</span>
+                pageIndex,
+                flow,
+                overlay);
+
+<span class="nc bnc" id="L435" title="All 2 branches missed.">        if (current != selectionStartIndex) {</span>
+<span class="nc" id="L436">            overlay.getChildren().add(</span>
+<span class="nc" id="L437">                    TxtTextLayout.shapeFor(</span>
+                            flow,
+                            selectionStartIndex,
+                            current,
+                            LIVE_SELECTION_STYLE_CLASS));
+        }
+<span class="nc" id="L443">    }</span>
+
+    private void endSelection(
+            int pageIndex,
+            TextFlow flow,
+            String pageText,
+            Pane overlay,
+            MouseEvent event) {
+
+<span class="nc" id="L452">        scrollPane.setPannable(true);</span>
+
+<span class="nc bnc" id="L454" title="All 4 branches missed.">        if (activeSelectionPage != pageIndex</span>
+                || selectionStartIndex &lt; 0) {
+<span class="nc" id="L456">            return;</span>
+        }
+
+<span class="nc" id="L459">        event.consume();</span>
+
+<span class="nc" id="L461">        int current = charIndexAt(flow, event);</span>
+
+<span class="nc" id="L463">        int start = Math.min(</span>
+                selectionStartIndex,
+                current);
+
+<span class="nc" id="L467">        int end = Math.max(</span>
+                selectionStartIndex,
+                current);
+
+<span class="nc" id="L471">        activeSelectionPage = -1;</span>
+<span class="nc" id="L472">        selectionStartIndex = -1;</span>
+
+<span class="nc bnc" id="L474" title="All 2 branches missed.">        if (end &lt;= start) {</span>
+<span class="nc" id="L475">            applyQuotationHighlights(</span>
+                    pageIndex,
+                    flow,
+                    overlay);
+<span class="nc" id="L479">            return;</span>
+        }
+
+<span class="nc" id="L482">        start = Math.max(0, Math.min(start, pageText.length()));</span>
+<span class="nc" id="L483">        end = Math.max(0, Math.min(end, pageText.length()));</span>
+
+<span class="nc bnc" id="L485" title="All 2 branches missed.">        if (end &lt;= start) {</span>
+<span class="nc" id="L486">            applyQuotationHighlights(</span>
+                    pageIndex,
+                    flow,
+                    overlay);
+<span class="nc" id="L490">            return;</span>
+        }
+
+<span class="nc" id="L493">        String selectedText = pageText</span>
+<span class="nc" id="L494">                .substring(start, end)</span>
+<span class="nc" id="L495">                .strip();</span>
+
+<span class="nc bnc" id="L497" title="All 2 branches missed.">        if (selectedText.isEmpty()) {</span>
+<span class="nc" id="L498">            applyQuotationHighlights(</span>
+                    pageIndex,
+                    flow,
+                    overlay);
+<span class="nc" id="L502">            return;</span>
+        }
+
+<span class="nc" id="L505">        pendingQuotationPage = pageIndex;</span>
+
+<span class="nc" id="L507">        String rawLocation = &quot;page:&quot;</span>
+                + (pageIndex + 1)
+                + &quot;;offset:&quot;
+                + start
+                + &quot;-&quot;
+                + end;
+
+<span class="nc" id="L514">        showQuotationPopup(</span>
+<span class="nc" id="L515">                event.getScreenX(),</span>
+<span class="nc" id="L516">                event.getScreenY(),</span>
+                selectedText,
+                rawLocation,
+                pageIndex,
+                flow,
+                overlay,
+                start,
+                end);
+<span class="nc" id="L524">    }</span>
+
+    private int charIndexAt(
+            TextFlow flow,
+            MouseEvent event) {
+
+<span class="nc" id="L530">        int index = flow.hitTest(</span>
+                new Point2D(
+<span class="nc" id="L532">                        event.getX(),</span>
+<span class="nc" id="L533">                        event.getY()))</span>
+<span class="nc" id="L534">                .getCharIndex();</span>
+
+<span class="nc bnc" id="L536" title="All 2 branches missed.">        if (index &lt; 0) {</span>
+<span class="nc" id="L537">            return 0;</span>
+        }
+
+<span class="nc" id="L540">        String pageText = pageTexts.get(</span>
+<span class="nc bnc" id="L541" title="All 2 branches missed.">                activeSelectionPage &gt;= 0</span>
+<span class="nc" id="L542">                        ? activeSelectionPage</span>
+<span class="nc" id="L543">                        : currentVisiblePage - 1);</span>
+
+<span class="nc bnc" id="L545" title="All 2 branches missed.">        if (pageText != null) {</span>
+<span class="nc" id="L546">            return Math.min(index, pageText.length());</span>
+        }
+
+<span class="nc" id="L549">        return index;</span>
+    }
+
+    private void showQuotationPopup(
+            double screenX,
+            double screenY,
+            String selectedText,
+            String rawLocation,
+            int pageIndex,
+            TextFlow flow,
+            Pane overlay,
+            int start,
+            int end) {
+
+<span class="nc" id="L563">        quotationPopup = new QuotationSelectionPopup(type -&gt; {</span>
+<span class="nc" id="L564">            String location = QuotationLocation.encode(</span>
+                    type,
+                    rawLocation);
+
+<span class="nc" id="L568">            Integer quotationId = onQuotationRequested.apply(</span>
+                    selectedText,
+                    location);
+
+<span class="nc bnc" id="L572" title="All 2 branches missed.">            if (quotationId != null) {</span>
+<span class="nc" id="L573">                quotationPageById.put(</span>
+                        quotationId,
+<span class="nc" id="L575">                        pageIndex);</span>
+
+<span class="nc" id="L577">                quotationRangeById.put(</span>
+                        quotationId,
+                        new TxtHighlight.Range(
+                                start,
+                                end));
+            }
+
+<span class="nc" id="L584">            applyQuotationHighlights(</span>
+                    pageIndex,
+                    flow,
+                    overlay);
+
+<span class="nc" id="L589">            pendingQuotationPage = -1;</span>
+<span class="nc" id="L590">            hideQuotationPopup();</span>
+<span class="nc" id="L591">        });</span>
+
+<span class="nc" id="L593">        quotationPopup.showAt(</span>
+                selectionOverlay,
+                screenX,
+                screenY);
+<span class="nc" id="L597">    }</span>
+
+    private void hideQuotationPopup() {
+<span class="nc bnc" id="L600" title="All 2 branches missed.">        if (quotationPopup != null) {</span>
+<span class="nc" id="L601">            quotationPopup.hide();</span>
+<span class="nc" id="L602">            quotationPopup = null;</span>
+        }
+<span class="nc" id="L604">    }</span>
+
+    public void dispose() {
+<span class="nc" id="L607">        hideQuotationPopup();</span>
+
+<span class="nc" id="L609">        pendingQuotationPage = -1;</span>
+<span class="nc" id="L610">        activeSelectionPage = -1;</span>
+<span class="nc" id="L611">        selectionStartIndex = -1;</span>
+
+<span class="nc" id="L613">        quotationPageById.clear();</span>
+<span class="nc" id="L614">        quotationRangeById.clear();</span>
+<span class="nc" id="L615">        pageFlows.clear();</span>
+<span class="nc" id="L616">        pageOverlays.clear();</span>
+<span class="nc" id="L617">        pageTexts.clear();</span>
+
+<span class="nc" id="L619">        pagesHost.getChildren().clear();</span>
+<span class="nc" id="L620">    }</span>
+
+    public void highlightSearchMatches(
+            List&lt;SearchMatch&gt; matches,
+            int activeIndex) {
+
+<span class="nc" id="L626">        clearSearchHighlights();</span>
+
+<span class="nc bnc" id="L628" title="All 4 branches missed.">        if (matches == null || matches.isEmpty()) {</span>
+<span class="nc" id="L629">            return;</span>
+        }
+
+<span class="nc bnc" id="L632" title="All 2 branches missed.">        for (int i = 0; i &lt; matches.size(); i++) {</span>
+<span class="nc" id="L633">            SearchMatch match = matches.get(i);</span>
+
+<span class="nc bnc" id="L635" title="All 4 branches missed.">            if (match == null || match.page() == null) {</span>
+<span class="nc" id="L636">                continue;</span>
+            }
+
+<span class="nc" id="L639">            int pageIndex = match.page() - 1;</span>
+
+<span class="nc bnc" id="L641" title="All 2 branches missed.">            if (pageIndex &lt; 0</span>
+<span class="nc bnc" id="L642" title="All 2 branches missed.">                    || pageIndex &gt;= pageStarts.size()) {</span>
+<span class="nc" id="L643">                continue;</span>
+            }
+
+<span class="nc" id="L646">            TextFlow flow = pageFlows.get(pageIndex);</span>
+<span class="nc" id="L647">            Pane overlay = pageOverlays.get(pageIndex);</span>
+
+<span class="nc bnc" id="L649" title="All 4 branches missed.">            if (flow == null || overlay == null) {</span>
+<span class="nc" id="L650">                continue;</span>
+            }
+
+<span class="nc" id="L653">            int pageStart = pageStarts.get(pageIndex);</span>
+
+<span class="nc" id="L655">            int localStart = match.matchStart() - pageStart;</span>
+<span class="nc" id="L656">            int localEnd = match.matchEnd() - pageStart;</span>
+
+<span class="nc bnc" id="L658" title="All 2 branches missed.">            if (localEnd &lt;= 0) {</span>
+<span class="nc" id="L659">                continue;</span>
+            }
+
+<span class="nc" id="L662">            String pageText = pageTexts.get(pageIndex);</span>
+
+<span class="nc bnc" id="L664" title="All 2 branches missed.">            if (pageText == null) {</span>
+<span class="nc" id="L665">                continue;</span>
+            }
+
+<span class="nc" id="L668">            int pageLength = pageText.length();</span>
+
+<span class="nc" id="L670">            localStart = Math.max(</span>
+                    0,
+                    localStart);
+
+<span class="nc" id="L674">            localEnd = Math.min(</span>
+                    pageLength,
+                    localEnd);
+
+<span class="nc bnc" id="L678" title="All 2 branches missed.">            if (localStart &gt;= localEnd) {</span>
+<span class="nc" id="L679">                continue;</span>
+            }
+
+<span class="nc bnc" id="L682" title="All 2 branches missed.">            String styleClass = i == activeIndex</span>
+<span class="nc" id="L683">                    ? TxtHighlight.ACTIVE_SEARCH_STYLE_CLASS</span>
+<span class="nc" id="L684">                    : TxtHighlight.SEARCH_STYLE_CLASS;</span>
+
+<span class="nc" id="L686">            Node shape = TxtTextLayout.shapeFor(flow, localStart, localEnd, styleClass);</span>
+<span class="nc" id="L687">            overlay.getChildren().add(shape);</span>
+
+<span class="nc bnc" id="L689" title="All 2 branches missed.">            if (i == activeIndex) {</span>
+<span class="nc" id="L690">                scrollToShape(shape);</span>
+            }
+        }
+<span class="nc" id="L693">    }</span>
+
+    public void highlightSearchMatch(SearchMatch match) {
+<span class="nc" id="L696">        clearSearchHighlights();</span>
+
+<span class="nc bnc" id="L698" title="All 2 branches missed.">        if (match == null</span>
+<span class="nc bnc" id="L699" title="All 2 branches missed.">                || match.page() == null) {</span>
+<span class="nc" id="L700">            return;</span>
+        }
+
+<span class="nc" id="L703">        int pageIndex = match.page() - 1;</span>
+
+<span class="nc bnc" id="L705" title="All 2 branches missed.">        if (pageIndex &lt; 0</span>
+<span class="nc bnc" id="L706" title="All 2 branches missed.">                || pageIndex &gt;= pageStarts.size()) {</span>
+<span class="nc" id="L707">            return;</span>
+        }
+
+<span class="nc" id="L710">        TextFlow flow = pageFlows.get(pageIndex);</span>
+<span class="nc" id="L711">        Pane overlay = pageOverlays.get(pageIndex);</span>
+
+<span class="nc bnc" id="L713" title="All 4 branches missed.">        if (flow == null || overlay == null) {</span>
+<span class="nc" id="L714">            return;</span>
+        }
+
+<span class="nc" id="L717">        int pageStart = pageStarts.get(pageIndex);</span>
+
+<span class="nc" id="L719">        int localStart = match.matchStart() - pageStart;</span>
+<span class="nc" id="L720">        int localEnd = match.matchEnd() - pageStart;</span>
+
+<span class="nc" id="L722">        String pageText = pageTexts.get(pageIndex);</span>
+
+<span class="nc bnc" id="L724" title="All 2 branches missed.">        if (pageText == null) {</span>
+<span class="nc" id="L725">            return;</span>
+        }
+
+<span class="nc" id="L728">        int pageLength = pageText.length();</span>
+
+<span class="nc" id="L730">        localStart = Math.max(</span>
+                0,
+                localStart);
+
+<span class="nc" id="L734">        localEnd = Math.min(</span>
+                pageLength,
+                localEnd);
+
+<span class="nc bnc" id="L738" title="All 2 branches missed.">        if (localStart &gt;= localEnd) {</span>
+<span class="nc" id="L739">            return;</span>
+        }
+
+<span class="nc" id="L742">        overlay.getChildren().add(</span>
+<span class="nc" id="L743">                TxtTextLayout.shapeFor(</span>
+                        flow,
+                        localStart,
+                        localEnd,
+                        TxtHighlight.ACTIVE_SEARCH_STYLE_CLASS));
+<span class="nc" id="L748">    }</span>
+
+    private void scrollToShape(Node shape) {
+<span class="nc" id="L751">        Platform.runLater(() -&gt; {</span>
+<span class="nc" id="L752">            Bounds b = pagesHost.sceneToLocal(shape.localToScene(shape.getBoundsInLocal()));</span>
+<span class="nc" id="L753">            double viewportHeight = scrollPane.getViewportBounds().getHeight();</span>
+<span class="nc" id="L754">            double maxY = Math.max(0, pagesHost.getHeight() - viewportHeight);</span>
+
+<span class="nc bnc" id="L756" title="All 4 branches missed.">            if (b == null || maxY == 0)</span>
+<span class="nc" id="L757">                return;</span>
+
+<span class="nc" id="L759">            scrollPane.setVvalue(clamp((b.getMinY() - viewportHeight / 3.0) / maxY));</span>
+<span class="nc" id="L760">        });</span>
+<span class="nc" id="L761">    }</span>
+
+    public void clearSearchHighlights() {
+<span class="nc bnc" id="L764" title="All 2 branches missed.">        for (Pane overlay : pageOverlays.values()) {</span>
+<span class="nc" id="L765">            overlay.getChildren().clear();</span>
+<span class="nc" id="L766">        }</span>
+
+<span class="nc" id="L768">        refreshAllQuotationHighlights();</span>
+<span class="nc" id="L769">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

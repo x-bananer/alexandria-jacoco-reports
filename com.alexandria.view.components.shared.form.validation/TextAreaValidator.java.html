@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TextAreaValidator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.shared.form.validation</a> &gt; <span class="el_source">TextAreaValidator.java</span></div><h1>TextAreaValidator.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.shared.form.validation;
+
+import java.nio.charset.StandardCharsets;
+
+import com.alexandria.view.components.shared.form.FieldValidator;
+import com.alexandria.view.components.shared.form.FormField;
+
+<span class="fc" id="L8">public final class TextAreaValidator implements FieldValidator {</span>
+
+    private static final long MAX_SIZE = 50L * 1024 * 1024;
+
+    @Override
+    public String validate(String value, FormField field) {
+<span class="fc" id="L14">        long size = value.getBytes(StandardCharsets.UTF_8).length;</span>
+
+<span class="fc bfc" id="L16" title="All 2 branches covered.">        if (size &gt; MAX_SIZE) {</span>
+<span class="fc" id="L17">            return field.label() + &quot; must not exceed 50 MiB.&quot;;</span>
+        }
+
+<span class="fc" id="L20">        return null;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

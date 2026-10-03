@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserGuideTourData.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.user_guide</a> &gt; <span class="el_source">UserGuideTourData.java</span></div><h1>UserGuideTourData.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.user_guide;
+
+import com.alexandria.model.ArchiveTextAnalysis;
+import com.alexandria.model.FileType;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+public final class UserGuideTourData {
+
+    public static final String PROJECT_TITLE = &quot;Guided Tour Text&quot;;
+    public static final String FILE_NAME = &quot;tour.txt&quot;;
+<span class="nc" id="L13">    public static final FileType FILE_TYPE = FileType.MANUAL;</span>
+    public static final String TEXT = &quot;&quot;&quot;
+            Research begins with careful reading. A text can reveal patterns when we look at its words,
+            phrases, and repeated ideas. Alexandria helps researchers return to the text, compare evidence,
+            and keep useful findings together. Careful reading makes patterns visible, and patterns help
+            researchers ask better questions about a text.
+            &quot;&quot;&quot;;
+
+    public static final String QUOTATION =
+            &quot;A text can reveal patterns when we look at its words,\nphrases, and repeated ideas.&quot;;
+
+    public static List&lt;ArchiveTextAnalysis&gt; archiveExamples() {
+<span class="nc" id="L25">        ArchiveTextAnalysis example = new ArchiveTextAnalysis(</span>
+                null,
+                null,
+                PROJECT_TITLE,
+                FILE_NAME,
+<span class="nc" id="L30">                LocalDateTime.now(),</span>
+                null);
+<span class="nc" id="L32">        return List.of(example, example);</span>
+    }
+
+    private UserGuideTourData() {
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

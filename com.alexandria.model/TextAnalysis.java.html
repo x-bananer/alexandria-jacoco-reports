@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TextAnalysis.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.model</a> &gt; <span class="el_source">TextAnalysis.java</span></div><h1>TextAnalysis.java</h1><pre class="source lang-java linenums">package com.alexandria.model;
+
+import java.time.LocalDateTime;
+
+/**
+ * Text Analysis.
+ *
+ * Stores analysis for one text: total words, unique words, sentences,
+ * paragraphs, most frequently used words, and important text fragments.
+ */
+public class TextAnalysis {
+	private Integer id;
+	private Integer userId;
+	private Integer textId;
+	private String analysisData;
+	private LocalDateTime createdAt;
+
+<span class="nc" id="L18">	public TextAnalysis() {</span>
+<span class="nc" id="L19">	}</span>
+
+<span class="fc" id="L21">	public TextAnalysis(Integer userId, Integer textId, String analysisData) {</span>
+<span class="fc" id="L22">		this.userId = userId;</span>
+<span class="fc" id="L23">		this.textId = textId;</span>
+<span class="fc" id="L24">		this.analysisData = analysisData;</span>
+<span class="fc" id="L25">	}</span>
+
+	public TextAnalysis(Integer id, Integer userId, Integer textId,
+<span class="fc" id="L28">			String analysisData, LocalDateTime createdAt) {</span>
+<span class="fc" id="L29">		this.id = id;</span>
+<span class="fc" id="L30">		this.userId = userId;</span>
+<span class="fc" id="L31">		this.textId = textId;</span>
+<span class="fc" id="L32">		this.analysisData = analysisData;</span>
+<span class="fc" id="L33">		this.createdAt = createdAt;</span>
+<span class="fc" id="L34">	}</span>
+
+	public Integer getId() {
+<span class="fc" id="L37">		return id;</span>
+	}
+
+	public void setId(Integer id) {
+<span class="fc" id="L41">		this.id = id;</span>
+<span class="fc" id="L42">	}</span>
+
+	public Integer getUserId() {
+<span class="fc" id="L45">		return userId;</span>
+	}
+
+	public void setUserId(Integer userId) {
+<span class="nc" id="L49">		this.userId = userId;</span>
+<span class="nc" id="L50">	}</span>
+
+	public Integer getTextId() {
+<span class="fc" id="L53">		return textId;</span>
+	}
+
+	public void setTextId(Integer textId) {
+<span class="nc" id="L57">		this.textId = textId;</span>
+<span class="nc" id="L58">	}</span>
+
+	public String getAnalysisData() {
+<span class="fc" id="L61">		return analysisData;</span>
+	}
+
+	public void setAnalysisData(String analysisData) {
+<span class="fc" id="L65">		this.analysisData = analysisData;</span>
+<span class="fc" id="L66">	}</span>
+
+	public LocalDateTime getCreatedAt() {
+<span class="fc" id="L69">		return createdAt;</span>
+	}
+
+	public void setCreatedAt(LocalDateTime createdAt) {
+<span class="nc" id="L73">		this.createdAt = createdAt;</span>
+<span class="nc" id="L74">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

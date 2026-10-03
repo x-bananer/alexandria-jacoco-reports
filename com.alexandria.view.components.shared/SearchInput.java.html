@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SearchInput.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.shared</a> &gt; <span class="el_source">SearchInput.java</span></div><h1>SearchInput.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.shared;
+
+import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
+import org.kordamp.ikonli.javafx.FontIcon;
+
+import java.util.function.Consumer;
+import javafx.beans.property.StringProperty;
+import javafx.geometry.Pos;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+
+public class SearchInput extends HBox {
+<span class="fc" id="L14">    private final TextField input = new TextField();</span>
+<span class="fc" id="L15">    private Consumer&lt;String&gt; onSearch = term -&gt; {</span>
+<span class="nc" id="L16">    };</span>
+
+<span class="fc" id="L18">    public SearchInput(String promptText) {</span>
+<span class="fc" id="L19">        FontIcon searchIcon = new FontIcon(FontAwesomeSolid.SEARCH);</span>
+<span class="fc" id="L20">        searchIcon.getStyleClass().add(&quot;text-muted&quot;);</span>
+
+<span class="fc" id="L22">        input.setPromptText(promptText);</span>
+<span class="fc" id="L23">        input.getStyleClass().add(&quot;search-input-field&quot;);</span>
+<span class="fc" id="L24">        HBox.setHgrow(input, Priority.ALWAYS);</span>
+
+<span class="fc" id="L26">        getStyleClass().add(&quot;search-input&quot;);</span>
+<span class="fc" id="L27">        setAlignment(Pos.CENTER_LEFT);</span>
+<span class="fc" id="L28">        setSpacing(8);</span>
+<span class="fc" id="L29">        getChildren().addAll(searchIcon, input);</span>
+<span class="fc" id="L30">    }</span>
+
+    public String getText() {
+<span class="fc" id="L33">        return input.getText();</span>
+    }
+
+    public StringProperty textProperty() {
+<span class="fc" id="L37">        return input.textProperty();</span>
+    }
+
+    public void setOnSearch(Consumer&lt;String&gt; handler) {
+<span class="pc bpc" id="L41" title="1 of 2 branches missed.">        onSearch = handler == null ? term -&gt; {</span>
+<span class="pc" id="L42">        } : handler;</span>
+
+<span class="fc" id="L44">        input.setOnAction(event -&gt; {</span>
+<span class="nc" id="L45">            onSearch.accept(input.getText());</span>
+<span class="nc" id="L46">        });</span>
+<span class="fc" id="L47">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FormRenderer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.shared.form</a> &gt; <span class="el_source">FormRenderer.java</span></div><h1>FormRenderer.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.shared.form;
+
+import java.io.File;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TextInputControl;
+import javafx.scene.Node;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
+
+<span class="fc" id="L20">public final class FormRenderer {</span>
+
+<span class="fc" id="L22">    private final Map&lt;String, TextInputControl&gt; inputs = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L23">    private final Map&lt;String, File&gt; files = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L24">    private final Map&lt;String, Node&gt; fieldNodes = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L25">    private final Map&lt;String, Label&gt; fileLabels = new LinkedHashMap&lt;&gt;();</span>
+
+    public void render(VBox container, List&lt;FormField&gt; fields) {
+<span class="fc bfc" id="L28" title="All 2 branches covered.">        for (FormField field : fields) {</span>
+<span class="fc" id="L29">            Node fieldRow = buildFieldRow(container, field);</span>
+<span class="fc" id="L30">            fieldNodes.put(field.key(), fieldRow);</span>
+<span class="fc" id="L31">            container.getChildren().add(fieldRow);</span>
+<span class="fc" id="L32">        }</span>
+<span class="fc" id="L33">    }</span>
+
+    private VBox buildFieldRow(VBox container, FormField field) {
+<span class="fc bfc" id="L36" title="All 2 branches covered.">        Label label = new Label(field.label() + (field.required() ? &quot; *&quot; : &quot;&quot;));</span>
+<span class="fc" id="L37">        label.getStyleClass().add(&quot;form-label&quot;);</span>
+
+<span class="fc" id="L39">        VBox row = new VBox(6, label);</span>
+<span class="pc bpc" id="L40" title="1 of 4 branches missed.">        row.getChildren().add(switch (field.type()) {</span>
+<span class="fc" id="L41">            case TEXT -&gt; buildTextField(field);</span>
+<span class="fc" id="L42">            case PASSWORD -&gt; buildPasswordField(field);</span>
+<span class="nc" id="L43">            case TEXT_AREA -&gt; buildTextArea(field);</span>
+<span class="fc" id="L44">            case IMG_FILE, DOCUMENT_FILE -&gt; buildFilePicker(container, field);</span>
+        });
+<span class="fc" id="L46">        return row;</span>
+    }
+
+    private TextField buildTextField(FormField field) {
+<span class="fc" id="L50">        TextField input = new TextField();</span>
+<span class="fc" id="L51">        input.getStyleClass().add(&quot;form-input&quot;);</span>
+<span class="fc" id="L52">        inputs.put(field.key(), input);</span>
+<span class="fc" id="L53">        return input;</span>
+    }
+
+    private PasswordField buildPasswordField(FormField field) {
+<span class="fc" id="L57">        PasswordField input = new PasswordField();</span>
+<span class="fc" id="L58">        input.getStyleClass().add(&quot;form-input&quot;);</span>
+<span class="fc" id="L59">        inputs.put(field.key(), input);</span>
+<span class="fc" id="L60">        return input;</span>
+    }
+
+    private TextArea buildTextArea(FormField field) {
+<span class="nc" id="L64">        TextArea input = new TextArea();</span>
+<span class="nc" id="L65">        input.setWrapText(true);</span>
+<span class="nc" id="L66">        input.getStyleClass().add(&quot;form-input&quot;);</span>
+<span class="nc" id="L67">        inputs.put(field.key(), input);</span>
+<span class="nc" id="L68">        return input;</span>
+    }
+
+    private HBox buildFilePicker(VBox container, FormField field) {
+<span class="fc" id="L72">        Label fileLabel = new Label(&quot;No file selected&quot;);</span>
+<span class="fc" id="L73">        fileLabels.put(field.key(), fileLabel);</span>
+<span class="fc" id="L74">        fileLabel.getStyleClass().add(&quot;file-name&quot;);</span>
+
+
+<span class="fc" id="L77">        Button chooseButton = new Button(&quot;Choose File&quot;);</span>
+<span class="fc" id="L78">        chooseButton.getStyleClass().addAll(&quot;button&quot;, &quot;secondary&quot;);</span>
+<span class="pc" id="L79">        chooseButton.setOnAction(e -&gt; chooseFile(container, field, fileLabel));</span>
+<span class="fc" id="L80">        chooseButton.setMinWidth(Region.USE_PREF_SIZE);</span>
+
+<span class="fc" id="L82">        return new HBox(10, chooseButton, fileLabel);</span>
+    }
+
+    private void chooseFile(VBox container, FormField field, Label fileLabel) {
+<span class="nc bnc" id="L86" title="All 4 branches missed.">        if (container.getScene() == null || container.getScene().getWindow() == null) {</span>
+<span class="nc" id="L87">            return;</span>
+        }
+
+<span class="nc" id="L90">        FileChooser chooser = new FileChooser();</span>
+<span class="nc" id="L91">        chooser.setTitle(&quot;Select &quot; + field.label());</span>
+<span class="nc" id="L92">        setInitialDirectory(chooser);</span>
+
+<span class="nc bnc" id="L94" title="All 3 branches missed.">        switch (field.type()) {</span>
+<span class="nc" id="L95">            case IMG_FILE -&gt; chooser.getExtensionFilters().add(</span>
+                    new FileChooser.ExtensionFilter(
+                            &quot;Images&quot;, &quot;*.png&quot;, &quot;*.jpg&quot;, &quot;*.jpeg&quot;));
+
+<span class="nc" id="L99">            case DOCUMENT_FILE -&gt; chooser.getExtensionFilters().add(</span>
+                    new FileChooser.ExtensionFilter(
+                            &quot;Documents&quot;, &quot;*.pdf&quot;, &quot;*.txt&quot;));
+
+            default -&gt; {
+<span class="nc" id="L104">                return;</span>
+            }
+        }
+
+<span class="nc" id="L108">        File selectedFile = chooser.showOpenDialog(</span>
+<span class="nc" id="L109">                container.getScene().getWindow());</span>
+
+<span class="nc bnc" id="L111" title="All 2 branches missed.">        if (selectedFile == null) {</span>
+<span class="nc" id="L112">            return;</span>
+        }
+
+<span class="nc" id="L115">        files.put(field.key(), selectedFile);</span>
+<span class="nc" id="L116">        fileLabel.setText(selectedFile.getName());</span>
+
+<span class="nc" id="L118">        fileLabel.getStyleClass().remove(&quot;file-name&quot;);</span>
+<span class="nc" id="L119">        fileLabel.getStyleClass().add(&quot;file-name-selected&quot;);</span>
+<span class="nc" id="L120">    }</span>
+
+    private void setInitialDirectory(FileChooser chooser) {
+<span class="nc" id="L123">        File directory = new File(System.getProperty(&quot;alexandria.file.chooser.dir&quot;, &quot;/host&quot;));</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">        if (directory.isDirectory()) {</span>
+<span class="nc" id="L125">            chooser.setInitialDirectory(directory);</span>
+        }
+<span class="nc" id="L127">    }</span>
+
+    public Map&lt;String, String&gt; getValues() {
+<span class="fc" id="L130">        Map&lt;String, String&gt; values = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L131">        inputs.forEach((key, input) -&gt; values.put(key, input.getText()));</span>
+<span class="pc" id="L132">        files.forEach((key, file) -&gt; values.put(key, file.getAbsolutePath()));</span>
+<span class="fc" id="L133">        return values;</span>
+    }
+
+    public String getValue(String key) {
+<span class="nc" id="L137">        TextInputControl input = inputs.get(key);</span>
+<span class="nc bnc" id="L138" title="All 2 branches missed.">        return input == null ? null : input.getText();</span>
+    }
+
+    public String getValue(FormField field) {
+<span class="nc bnc" id="L142" title="All 2 branches missed.">        if (isFileField(field)) {</span>
+<span class="nc" id="L143">            File file = files.get(field.key());</span>
+<span class="nc bnc" id="L144" title="All 2 branches missed.">            return file == null ? null : file.getAbsolutePath();</span>
+        }
+<span class="nc" id="L146">        return getValue(field.key());</span>
+    }
+
+    public File getFile(String key) {
+<span class="nc" id="L150">        return files.get(key);</span>
+    }
+
+    public Node getFieldNode(String key) {
+<span class="nc" id="L154">        return fieldNodes.get(key);</span>
+    }
+
+    public boolean isEmpty(FormField field) {
+<span class="nc" id="L158">        String value = getValue(field);</span>
+<span class="nc bnc" id="L159" title="All 4 branches missed.">        return value == null || value.isBlank();</span>
+    }
+
+    public void setValue(String key, String value) {
+<span class="fc" id="L163">        TextInputControl input = inputs.get(key);</span>
+<span class="pc bpc" id="L164" title="1 of 2 branches missed.">        if (input != null) {</span>
+<span class="pc bpc" id="L165" title="1 of 2 branches missed.">            input.setText(value == null ? &quot;&quot; : value);</span>
+        }
+<span class="fc" id="L167">    }</span>
+
+    public void reset() {
+<span class="fc" id="L170">        inputs.values().forEach(TextInputControl::clear);</span>
+<span class="fc" id="L171">        files.clear();</span>
+<span class="fc" id="L172">        fileLabels.values().forEach(label -&gt; {</span>
+<span class="fc" id="L173">            label.setText(&quot;No file selected&quot;);</span>
+<span class="fc" id="L174">            label.getStyleClass().remove(&quot;file-name-selected&quot;);</span>
+<span class="pc bpc" id="L175" title="1 of 2 branches missed.">            if (!label.getStyleClass().contains(&quot;file-name&quot;)) {</span>
+<span class="nc" id="L176">                label.getStyleClass().add(&quot;file-name&quot;);</span>
+            }
+<span class="fc" id="L178">        });</span>
+<span class="fc" id="L179">    }</span>
+
+    private boolean isFileField(FormField field) {
+<span class="nc bnc" id="L182" title="All 2 branches missed.">        return switch (field.type()) {</span>
+<span class="nc" id="L183">            case IMG_FILE, DOCUMENT_FILE -&gt; true;</span>
+<span class="nc" id="L184">            default -&gt; false;</span>
+        };
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

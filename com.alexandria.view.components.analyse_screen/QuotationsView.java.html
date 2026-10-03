@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>QuotationsView.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.analyse_screen</a> &gt; <span class="el_source">QuotationsView.java</span></div><h1>QuotationsView.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.analyse_screen;
+
+import com.alexandria.model.Quotation;
+
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+
+import java.util.List;
+import java.util.function.Consumer;
+
+public class QuotationsView extends VBox {
+<span class="fc" id="L18">        private final GridPane cardsContainer = new GridPane();</span>
+<span class="fc" id="L19">        private Consumer&lt;Quotation&gt; onGoTo = quotation -&gt; {</span>
+<span class="nc" id="L20">        };</span>
+<span class="fc" id="L21">        private Consumer&lt;Quotation&gt; onDelete = quotation -&gt; {</span>
+<span class="nc" id="L22">        };</span>
+<span class="fc" id="L23">        private Consumer&lt;Quotation&gt; onEdit = quotation -&gt; {</span>
+<span class="nc" id="L24">        };</span>
+
+<span class="fc" id="L26">        public QuotationsView() {</span>
+<span class="fc" id="L27">                getStyleClass().add(&quot;quotations-view&quot;);</span>
+
+<span class="fc" id="L29">                setPadding(new Insets(24));</span>
+
+<span class="fc" id="L31">                cardsContainer.setAlignment(Pos.TOP_LEFT);</span>
+<span class="fc" id="L32">                cardsContainer.setHgap(16);</span>
+<span class="fc" id="L33">                cardsContainer.setVgap(24);</span>
+
+<span class="fc" id="L35">                ColumnConstraints firstColumn = new ColumnConstraints();</span>
+<span class="fc" id="L36">                firstColumn.setMinWidth(280);</span>
+<span class="fc" id="L37">                firstColumn.setPrefWidth(280);</span>
+<span class="fc" id="L38">                firstColumn.setHgrow(Priority.NEVER);</span>
+
+<span class="fc" id="L40">                ColumnConstraints secondColumn = new ColumnConstraints();</span>
+<span class="fc" id="L41">                secondColumn.setMinWidth(280);</span>
+<span class="fc" id="L42">                secondColumn.setPrefWidth(280);</span>
+<span class="fc" id="L43">                secondColumn.setHgrow(Priority.NEVER);</span>
+
+<span class="fc" id="L45">                cardsContainer.getColumnConstraints().addAll(firstColumn, secondColumn);</span>
+<span class="fc" id="L46">                ScrollPane scroll = new ScrollPane(cardsContainer);</span>
+
+<span class="fc" id="L48">                scroll.setFitToWidth(false);</span>
+<span class="fc" id="L49">                scroll.setFitToHeight(false);</span>
+<span class="fc" id="L50">                scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);</span>
+<span class="fc" id="L51">                scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);</span>
+<span class="fc" id="L52">                scroll.getStyleClass().add(&quot;shared-scroll&quot;);</span>
+
+<span class="fc" id="L54">                VBox.setVgrow(scroll, Priority.ALWAYS);</span>
+<span class="fc" id="L55">                getChildren().add(scroll);</span>
+<span class="fc" id="L56">        }</span>
+
+        public void setQuotations(List&lt;Quotation&gt; quotations) {
+<span class="fc" id="L59">                cardsContainer.getChildren().clear();</span>
+
+<span class="pc bpc" id="L61" title="2 of 4 branches missed.">                if (quotations == null || quotations.isEmpty()) {</span>
+<span class="fc" id="L62">                        Label empty = new Label(&quot;No quotations yet.&quot;);</span>
+<span class="fc" id="L63">                        empty.getStyleClass().add(&quot;text-muted&quot;);</span>
+
+<span class="fc" id="L65">                        cardsContainer.setAlignment(Pos.TOP_LEFT);</span>
+<span class="fc" id="L66">                        cardsContainer.add(empty, 0, 0);</span>
+
+<span class="fc" id="L68">                        return;</span>
+                }
+
+<span class="nc" id="L71">                cardsContainer.setAlignment(Pos.TOP_LEFT);</span>
+
+<span class="nc bnc" id="L73" title="All 2 branches missed.">                for (int i = 0; i &lt; quotations.size(); i++) {</span>
+<span class="nc" id="L74">                        Quotation quotation = quotations.get(i);</span>
+
+<span class="nc" id="L76">                        QuotationCard card = new QuotationCard(quotation);</span>
+
+<span class="nc" id="L78">                        card.getGoToButton().setOnAction(event -&gt; onGoTo.accept(quotation));</span>
+<span class="nc" id="L79">                        card.getDeleteButton().setOnAction(event -&gt; onDelete.accept(quotation));</span>
+<span class="nc" id="L80">                        card.setOnEdit(onEdit);</span>
+
+<span class="nc" id="L82">                        int column = i % 2;</span>
+<span class="nc" id="L83">                        int row = i / 2;</span>
+
+<span class="nc" id="L85">                        cardsContainer.add(card, column, row);</span>
+                }
+<span class="nc" id="L87">        }</span>
+
+        public void setOnGoTo(Consumer&lt;Quotation&gt; handler) {
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">                onGoTo = handler == null ? quotation -&gt; {</span>
+<span class="pc" id="L91">                } : handler;</span>
+<span class="fc" id="L92">        }</span>
+
+        public void setOnDelete(Consumer&lt;Quotation&gt; handler) {
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">                onDelete = handler == null ? quotation -&gt; {</span>
+<span class="pc" id="L96">                } : handler;</span>
+<span class="fc" id="L97">        }</span>
+
+        public void setOnEdit(Consumer&lt;Quotation&gt; handler) {
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">                onEdit = handler == null ? quotation -&gt; {</span>
+<span class="pc" id="L101">                } : handler;</span>
+<span class="fc" id="L102">        }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

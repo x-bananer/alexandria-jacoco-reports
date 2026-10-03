@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ArchiveController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.controller</a> &gt; <span class="el_source">ArchiveController.java</span></div><h1>ArchiveController.java</h1><pre class="source lang-java linenums">package com.alexandria.controller;
+
+import com.alexandria.model.User;
+import com.alexandria.service.ArchiveTermAnalysisService;
+import com.alexandria.service.ArchiveTextAnalysisService;
+import com.alexandria.view.components.shared.modal.ErrorAlert;
+import com.alexandria.view.screens.ArchiveScreen;
+
+import java.sql.SQLException;
+import java.util.List;
+
+public class ArchiveController {
+    private final ArchiveTextAnalysisService archiveTextAnalysisService;
+    private final ArchiveTermAnalysisService archiveTermAnalysisService;
+
+    private final ArchiveScreen archiveScreen;
+<span class="fc" id="L17">    private final UserSessionController session = UserSessionController.getInstance();</span>
+
+    public ArchiveController(ArchiveScreen archiveScreen) {
+<span class="nc" id="L20">        this(new ArchiveTextAnalysisService(), new ArchiveTermAnalysisService(), archiveScreen);</span>
+<span class="nc" id="L21">    }</span>
+
+    ArchiveController(
+            ArchiveTextAnalysisService archiveTextAnalysisService,
+            ArchiveTermAnalysisService archiveTermAnalysisService,
+<span class="fc" id="L26">            ArchiveScreen archiveScreen) {</span>
+
+<span class="fc" id="L28">        this.archiveTextAnalysisService = archiveTextAnalysisService;</span>
+<span class="fc" id="L29">        this.archiveTermAnalysisService = archiveTermAnalysisService;</span>
+
+<span class="fc" id="L31">        this.archiveScreen = archiveScreen;</span>
+<span class="fc" id="L32">        archiveScreen.setOnShown(this::loadAnalyses);</span>
+
+<span class="fc" id="L34">        archiveScreen.setOnDeleteTextAnalysis(this::deleteTextAnalysis);</span>
+<span class="fc" id="L35">        archiveScreen.setOnDeleteTermAnalysis(this::deleteTermAnalysis);</span>
+		
+<span class="fc" id="L37">        session.addListener(user -&gt; loadAnalyses());</span>
+<span class="fc" id="L38">    }</span>
+
+    void loadAnalyses() {
+<span class="fc" id="L41">        User user = session.getCurrentUser();</span>
+
+<span class="fc bfc" id="L43" title="All 2 branches covered.">        if (user == null) {</span>
+<span class="fc" id="L44">            archiveScreen.showSignInMessage();</span>
+<span class="fc" id="L45">            return;</span>
+        }
+
+        try {
+<span class="fc" id="L49">            archiveScreen.setTextAnalyses(archiveTextAnalysisService.findAllByUserId(user.getId()));</span>
+<span class="fc" id="L50">            archiveScreen.setTermAnalyses(archiveTermAnalysisService.findAllByUserId(user.getId()));</span>
+<span class="nc" id="L51">        } catch (SQLException e) {</span>
+<span class="nc" id="L52">            System.err.println(&quot;Could not load archive: &quot; + e.getMessage());</span>
+<span class="nc" id="L53">            ErrorAlert.show(&quot;Could not load saved analyses.&quot;);</span>
+
+<span class="nc" id="L55">            archiveScreen.setTextAnalyses(List.of());</span>
+<span class="nc" id="L56">            archiveScreen.setTermAnalyses(List.of());</span>
+<span class="fc" id="L57">        }</span>
+<span class="fc" id="L58">    }</span>
+
+    void deleteTextAnalysis(Integer id) {
+<span class="fc" id="L61">        User user = session.getCurrentUser();</span>
+
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">        if (user == null) {</span>
+<span class="nc" id="L64">            return;</span>
+        }
+
+        try {
+<span class="fc" id="L68">            archiveTextAnalysisService.deleteById(id, user.getId());</span>
+<span class="fc" id="L69">            loadAnalyses();</span>
+<span class="nc" id="L70">        } catch (SQLException | IllegalArgumentException e) {</span>
+<span class="nc" id="L71">            System.err.println(&quot;Could not delete text analysis: &quot; + e.getMessage());</span>
+<span class="nc" id="L72">            ErrorAlert.show(&quot;Could not delete text analysis.&quot;);</span>
+<span class="fc" id="L73">        }</span>
+<span class="fc" id="L74">    }</span>
+
+    void deleteTermAnalysis(Integer id) {
+<span class="fc" id="L77">        User user = session.getCurrentUser();</span>
+
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">        if (user == null) {</span>
+<span class="nc" id="L80">            return;</span>
+        }
+
+        try {
+<span class="fc" id="L84">            archiveTermAnalysisService.deleteById(id, user.getId());</span>
+<span class="fc" id="L85">            loadAnalyses();</span>
+<span class="nc" id="L86">        } catch (SQLException | IllegalArgumentException e) {</span>
+<span class="nc" id="L87">            System.err.println(&quot;Could not delete term analysis: &quot; + e.getMessage());</span>
+<span class="nc" id="L88">            ErrorAlert.show(&quot;Could not delete term analysis.&quot;);</span>
+<span class="fc" id="L89">        }</span>
+<span class="fc" id="L90">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TextContextPanel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.analyse_screen.text_term_analyze</a> &gt; <span class="el_source">TextContextPanel.java</span></div><h1>TextContextPanel.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.analyse_screen.text_term_analyze;
+
+import com.alexandria.service.analysis.TextFragment;
+
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Hyperlink;
+import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+
+import java.util.List;
+import java.util.function.Consumer;
+
+public class TextContextPanel extends VBox {
+    private static final int SNIPPET_CHAR_BUDGET = 180;
+
+<span class="fc" id="L19">    private final VBox cardsHost = new VBox(10);</span>
+<span class="fc" id="L20">    private final Label emptyLabel = new Label(&quot;Open a document to see relevant paragraphs.&quot;);</span>
+<span class="fc" id="L21">    private Consumer&lt;TextFragment&gt; onJump = fragment -&gt; {</span>
+<span class="nc" id="L22">    };</span>
+
+<span class="fc" id="L24">    public TextContextPanel() {</span>
+<span class="fc" id="L25">        getStyleClass().addAll(&quot;card&quot;, &quot;text-context-panel&quot;);</span>
+<span class="fc" id="L26">        setSpacing(12);</span>
+<span class="fc" id="L27">        setPadding(new Insets(16));</span>
+
+<span class="fc" id="L29">        Label heading = new Label(&quot;Key Paragraphs&quot;);</span>
+<span class="fc" id="L30">        heading.getStyleClass().add(&quot;heading-sm&quot;);</span>
+<span class="fc" id="L31">        emptyLabel.getStyleClass().add(&quot;text-muted&quot;);</span>
+
+<span class="fc" id="L33">        getChildren().addAll(heading, cardsHost);</span>
+<span class="fc" id="L34">        showEmpty();</span>
+<span class="fc" id="L35">    }</span>
+
+    public void setResults(List&lt;TextFragment&gt; fragments) {
+<span class="fc" id="L38">        cardsHost.getChildren().clear();</span>
+<span class="pc bpc" id="L39" title="2 of 4 branches missed.">        if (fragments == null || fragments.isEmpty()) {</span>
+<span class="fc" id="L40">            showEmpty();</span>
+<span class="fc" id="L41">            return;</span>
+        }
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        for (int i = 0; i &lt; fragments.size(); i++)</span>
+<span class="nc" id="L44">            cardsHost.getChildren().add(buildCard(i + 1, fragments.get(i)));</span>
+<span class="nc" id="L45">    }</span>
+
+    private VBox buildCard(int rank, TextFragment fragment) {
+<span class="nc" id="L48">        Label rankLabel = new Label(&quot;#&quot; + rank + &quot; · &quot; + formatPageLabel(fragment.page(), fragment.paragraph()));</span>
+<span class="nc" id="L49">        rankLabel.getStyleClass().add(&quot;context-match-page&quot;);</span>
+
+<span class="nc" id="L51">        HBox spacer = new HBox();</span>
+<span class="nc" id="L52">        HBox.setHgrow(spacer, Priority.ALWAYS);</span>
+
+<span class="nc" id="L54">        Hyperlink jumpLink = new Hyperlink(&quot;Go to →&quot;);</span>
+<span class="nc" id="L55">        jumpLink.getStyleClass().add(&quot;hyperlink&quot;);</span>
+<span class="nc" id="L56">        jumpLink.setOnAction(e -&gt; onJump.accept(fragment));</span>
+
+<span class="nc" id="L58">        HBox topRow = new HBox(rankLabel, spacer, jumpLink);</span>
+<span class="nc" id="L59">        topRow.setAlignment(Pos.CENTER_LEFT);</span>
+
+<span class="nc" id="L61">        Label snippet = new Label(truncateToSnippet(fragment.text()));</span>
+<span class="nc" id="L62">        snippet.setWrapText(true);</span>
+<span class="nc" id="L63">        snippet.getStyleClass().add(&quot;context-match-snippet&quot;);</span>
+
+<span class="nc" id="L65">        VBox card = new VBox(4, topRow, snippet);</span>
+<span class="nc" id="L66">        card.getStyleClass().add(&quot;context-match-card&quot;);</span>
+<span class="nc" id="L67">        return card;</span>
+    }
+
+    public void setOnJump(Consumer&lt;TextFragment&gt; handler) {
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">        this.onJump = handler == null ? fragment -&gt; {</span>
+<span class="pc" id="L72">        } : handler;</span>
+<span class="fc" id="L73">    }</span>
+
+    private void showEmpty() {
+<span class="fc" id="L76">        cardsHost.getChildren().setAll(emptyLabel);</span>
+<span class="fc" id="L77">    }</span>
+
+    private static String formatPageLabel(Integer page, Integer paragraph) {
+<span class="nc bnc" id="L80" title="All 4 branches missed.">        if (page != null &amp;&amp; paragraph != null)</span>
+<span class="nc" id="L81">            return &quot;Page &quot; + page + &quot; · Para &quot; + paragraph;</span>
+<span class="nc bnc" id="L82" title="All 2 branches missed.">        if (page != null)</span>
+<span class="nc" id="L83">            return &quot;Page &quot; + page;</span>
+<span class="nc bnc" id="L84" title="All 2 branches missed.">        if (paragraph != null)</span>
+<span class="nc" id="L85">            return &quot;Para &quot; + paragraph;</span>
+<span class="nc" id="L86">        return &quot;&quot;;</span>
+    }
+
+    private static String truncateToSnippet(String text) {
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        if (text == null)</span>
+<span class="nc" id="L91">            return &quot;&quot;;</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">        if (text.length() &lt;= SNIPPET_CHAR_BUDGET)</span>
+<span class="nc" id="L93">            return text;</span>
+
+<span class="nc" id="L95">        int cut = text.lastIndexOf(' ', SNIPPET_CHAR_BUDGET);</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">        if (cut &lt;= 0)</span>
+<span class="nc" id="L97">            cut = SNIPPET_CHAR_BUDGET;</span>
+
+<span class="nc" id="L99">        return text.substring(0, cut).stripTrailing() + &quot;…&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

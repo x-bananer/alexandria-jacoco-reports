@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SideNavbarNavigation.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.side_navbar</a> &gt; <span class="el_source">SideNavbarNavigation.java</span></div><h1>SideNavbarNavigation.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.side_navbar;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+
+import org.kordamp.ikonli.Ikon;
+import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
+import org.kordamp.ikonli.javafx.FontIcon;
+
+import javafx.geometry.Pos;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
+import javafx.scene.layout.VBox;
+
+public class SideNavbarNavigation {
+
+<span class="fc" id="L19">    private final ToggleGroup navGroup = new ToggleGroup();</span>
+<span class="fc" id="L20">    private final Map&lt;String, ToggleButton&gt; navButtons = new HashMap&lt;&gt;();</span>
+
+    private final VBox mainNavigation;
+    private final VBox footerNavigation;
+
+<span class="fc" id="L25">    private Consumer&lt;String&gt; onNavigate = id -&gt; {</span>
+<span class="nc" id="L26">    };</span>
+<span class="fc" id="L27">    private Consumer&lt;String&gt; onFooterNavigate = id -&gt; {</span>
+<span class="nc" id="L28">    };</span>
+
+<span class="fc" id="L30">    public SideNavbarNavigation() {</span>
+<span class="fc" id="L31">        mainNavigation = buildMainNavigation();</span>
+<span class="fc" id="L32">        footerNavigation = buildFooterNavigation();</span>
+<span class="fc" id="L33">    }</span>
+
+    private VBox buildMainNavigation() {
+<span class="fc" id="L36">        return buildNavGroup(List.of(</span>
+                new NavItem(&quot;library&quot;, &quot;Library&quot;, FontAwesomeSolid.FOLDER),
+                new NavItem(&quot;analyze&quot;, &quot;Analyze&quot;, FontAwesomeSolid.CHART_BAR),
+                new NavItem(&quot;compare&quot;, &quot;Compare&quot;, FontAwesomeSolid.BALANCE_SCALE),
+                new NavItem(&quot;archive&quot;, &quot;Archive&quot;, FontAwesomeSolid.ARCHIVE)),
+                false);
+    }
+
+    private VBox buildFooterNavigation() {
+<span class="fc" id="L45">        return buildNavGroup(List.of(</span>
+                new NavItem(&quot;settings&quot;, &quot;Settings&quot;, FontAwesomeSolid.COG),
+                new NavItem(&quot;userguide&quot;, &quot;User Guide&quot;, FontAwesomeSolid.QUESTION_CIRCLE),
+                new NavItem(&quot;profile&quot;, &quot;Profile&quot;, FontAwesomeSolid.USER)),
+                true);
+    }
+
+    private VBox buildNavGroup(List&lt;NavItem&gt; items, boolean footer) {
+<span class="fc" id="L53">        VBox container = new VBox(2);</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        for (NavItem item : items) {</span>
+<span class="fc" id="L55">            ToggleButton button = createNavButton(item, footer);</span>
+<span class="fc" id="L56">            container.getChildren().add(button);</span>
+<span class="fc" id="L57">        }</span>
+
+<span class="fc" id="L59">        return container;</span>
+    }
+
+    private ToggleButton createNavButton(NavItem item, boolean footer) {
+<span class="fc" id="L63">        ToggleButton button = new ToggleButton(item.label());</span>
+
+<span class="fc" id="L65">        FontIcon icon = new FontIcon(item.icon());</span>
+<span class="fc" id="L66">        icon.setIconSize(15);</span>
+<span class="fc" id="L67">        icon.getStyleClass().add(&quot;nav-item-icon&quot;);</span>
+
+<span class="fc" id="L69">        button.setGraphic(icon);</span>
+<span class="fc" id="L70">        button.setToggleGroup(navGroup);</span>
+<span class="fc" id="L71">        button.setMaxWidth(Double.MAX_VALUE);</span>
+<span class="fc" id="L72">        button.setAlignment(Pos.CENTER_LEFT);</span>
+<span class="fc" id="L73">        button.getStyleClass().add(&quot;nav-item&quot;);</span>
+<span class="fc" id="L74">        button.setOnAction(e -&gt; {</span>
+<span class="nc bnc" id="L75" title="All 2 branches missed.">            if (!button.isSelected()) {</span>
+<span class="nc" id="L76">                return;</span>
+            }
+
+<span class="nc bnc" id="L79" title="All 2 branches missed.">            if (footer) {</span>
+<span class="nc" id="L80">                onFooterNavigate.accept(item.id());</span>
+            } else {
+<span class="nc" id="L82">                onNavigate.accept(item.id());</span>
+            }
+<span class="nc" id="L84">        });</span>
+
+<span class="fc" id="L86">        navButtons.put(item.id(), button);</span>
+<span class="fc" id="L87">        return button;</span>
+    }
+
+    public VBox getMainNavigation() {
+<span class="fc" id="L91">        return mainNavigation;</span>
+    }
+
+    public VBox getFooterNavigation() {
+<span class="fc" id="L95">        return footerNavigation;</span>
+    }
+
+    public void selectItem(String id) {
+<span class="fc" id="L99">        ToggleButton button = navButtons.get(id);</span>
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">        if (button != null) {</span>
+<span class="fc" id="L101">            button.setSelected(true);</span>
+        }
+<span class="fc" id="L103">    }</span>
+
+    public void setOnNavigate(Consumer&lt;String&gt; handler) {
+<span class="nc" id="L106">        this.onNavigate = handler;</span>
+<span class="nc" id="L107">    }</span>
+
+    public void setOnFooterNavigate(Consumer&lt;String&gt; handler) {
+<span class="nc" id="L110">        this.onFooterNavigate = handler;</span>
+<span class="nc" id="L111">    }</span>
+
+    public ToggleButton getButton(String id) {
+<span class="nc" id="L114">        return navButtons.get(id);</span>
+    }
+
+<span class="fc" id="L117">    private record NavItem(</span>
+            String id,
+            String label,
+            Ikon icon) {
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>
