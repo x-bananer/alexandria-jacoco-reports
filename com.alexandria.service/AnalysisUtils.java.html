@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AnalysisUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.service</a> &gt; <span class="el_source">AnalysisUtils.java</span></div><h1>AnalysisUtils.java</h1><pre class="source lang-java linenums">package com.alexandria.service;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import com.alexandria.service.analysis.WordFrequency;
+
+<span class="nc" id="L15">class AnalysisUtils {</span>
+
+    static Integer resolveIndex(int offset, List&lt;Integer&gt; offsets) {
+<span class="fc bfc" id="L18" title="All 4 branches covered.">        if (offsets == null || offsets.isEmpty()) {</span>
+<span class="fc" id="L19">            return null;</span>
+        }
+<span class="fc" id="L21">        int idx = Collections.binarySearch(offsets, offset);</span>
+<span class="fc bfc" id="L22" title="All 2 branches covered.">        if (idx &gt;= 0) {</span>
+<span class="fc" id="L23">            return idx + 1;</span>
+        }
+<span class="fc" id="L25">        int insertionPoint = -idx - 1;</span>
+<span class="fc" id="L26">        return Math.max(1, insertionPoint);</span>
+    }
+
+    static Integer resolvePage(int offset, List&lt;Integer&gt; pageOffsets) {
+<span class="fc" id="L30">        return resolveIndex(offset, pageOffsets);</span>
+    }
+
+    static Integer resolveParagraph(int offset, List&lt;Integer&gt; paragraphOffsets) {
+<span class="fc" id="L34">        return resolveIndex(offset, paragraphOffsets);</span>
+    }
+
+    static List&lt;Integer&gt; resolveParagraphOffsets(String content) {
+<span class="pc bpc" id="L38" title="2 of 4 branches missed.">        if (content == null || content.isBlank()) {</span>
+<span class="nc" id="L39">            return Collections.emptyList();</span>
+        }
+<span class="fc" id="L41">        List&lt;Integer&gt; offsets = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L42">        String[] paragraphs = PARAGRAPH_SPLIT_PATTERN.split(content);</span>
+<span class="fc" id="L43">        int searchFrom = 0;</span>
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        for (String paragraph : paragraphs) {</span>
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">            if (paragraph.isBlank()) {</span>
+<span class="nc" id="L46">                continue;</span>
+            }
+<span class="fc" id="L48">            int idx = content.indexOf(paragraph, searchFrom);</span>
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">            if (idx &gt;= 0) {</span>
+<span class="fc" id="L50">                offsets.add(idx);</span>
+<span class="fc" id="L51">                searchFrom = idx + paragraph.length();</span>
+            }
+        }
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">        if (offsets.isEmpty()) {</span>
+<span class="nc" id="L55">            offsets.add(0);</span>
+        }
+<span class="fc" id="L57">        return offsets;</span>
+    }
+
+
+<span class="fc" id="L61">    static final Pattern WORD_PATTERN = Pattern.compile(&quot;[\\p{L}]+&quot;);</span>
+<span class="fc" id="L62">    static final Pattern SENTENCE_PATTERN = Pattern.compile(&quot;[^.!?]+[.!?]*&quot;);</span>
+<span class="fc" id="L63">    static final Pattern PARAGRAPH_SPLIT_PATTERN = Pattern.compile(&quot;(\\r?\\n\\s*){2,}&quot;);</span>
+
+<span class="fc" id="L65">    static final Set&lt;String&gt; STOP_WORDS = Set.of(</span>
+        &quot;a&quot;, &quot;about&quot;, &quot;above&quot;, &quot;after&quot;, &quot;again&quot;, &quot;against&quot;, &quot;all&quot;, &quot;am&quot;, &quot;an&quot;, &quot;and&quot;,
+        &quot;any&quot;, &quot;are&quot;, &quot;as&quot;, &quot;at&quot;, &quot;be&quot;, &quot;because&quot;, &quot;been&quot;, &quot;before&quot;, &quot;being&quot;, &quot;below&quot;,
+        &quot;between&quot;, &quot;both&quot;, &quot;but&quot;, &quot;by&quot;, &quot;can&quot;, &quot;cannot&quot;, &quot;could&quot;, &quot;did&quot;, &quot;do&quot;, &quot;does&quot;,
+        &quot;doing&quot;, &quot;down&quot;, &quot;during&quot;, &quot;each&quot;, &quot;few&quot;, &quot;for&quot;, &quot;from&quot;, &quot;further&quot;, &quot;had&quot;, &quot;has&quot;,
+        &quot;have&quot;, &quot;having&quot;, &quot;he&quot;, &quot;her&quot;, &quot;here&quot;, &quot;hers&quot;, &quot;herself&quot;, &quot;him&quot;, &quot;himself&quot;, &quot;his&quot;,
+        &quot;how&quot;, &quot;i&quot;, &quot;if&quot;, &quot;in&quot;, &quot;into&quot;, &quot;is&quot;, &quot;it&quot;, &quot;its&quot;, &quot;itself&quot;, &quot;me&quot;,
+        &quot;more&quot;, &quot;most&quot;, &quot;my&quot;, &quot;myself&quot;, &quot;no&quot;, &quot;nor&quot;, &quot;not&quot;, &quot;of&quot;, &quot;off&quot;, &quot;on&quot;,
+        &quot;once&quot;, &quot;only&quot;, &quot;or&quot;, &quot;other&quot;, &quot;our&quot;, &quot;ours&quot;, &quot;ourselves&quot;, &quot;out&quot;, &quot;over&quot;, &quot;own&quot;,
+        &quot;s&quot;, &quot;same&quot;, &quot;she&quot;, &quot;should&quot;, &quot;so&quot;, &quot;some&quot;, &quot;such&quot;, &quot;than&quot;, &quot;that&quot;, &quot;the&quot;, &quot;their&quot;,
+        &quot;theirs&quot;, &quot;them&quot;, &quot;themselves&quot;, &quot;then&quot;, &quot;there&quot;, &quot;these&quot;, &quot;they&quot;, &quot;thou&quot;, &quot;thy&quot;, &quot;this&quot;, &quot;those&quot;, &quot;through&quot;,
+        &quot;to&quot;, &quot;too&quot;, &quot;under&quot;, &quot;until&quot;, &quot;up&quot;, &quot;very&quot;, &quot;was&quot;, &quot;we&quot;, &quot;were&quot;, &quot;what&quot;,
+        &quot;when&quot;, &quot;where&quot;, &quot;which&quot;, &quot;while&quot;, &quot;who&quot;, &quot;whom&quot;, &quot;why&quot;, &quot;will&quot;, &quot;with&quot;, &quot;would&quot;,
+        &quot;you&quot;, &quot;your&quot;, &quot;yours&quot;, &quot;yourself&quot;, &quot;yourselves&quot;
+    );
+
+    static List&lt;String&gt; extractWords(String content) {
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">        if (content == null) return Collections.emptyList();</span>
+<span class="fc" id="L83">        return WORD_PATTERN.matcher(content).results().map(m -&gt; m.group().toLowerCase(Locale.ROOT)).toList();</span>
+    }
+
+    static Map&lt;String, Long&gt; countWordFrequencies(List&lt;String&gt; words) {
+<span class="fc" id="L87">        return words.stream()</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">            .filter(w -&gt; !STOP_WORDS.contains(w))</span>
+<span class="fc" id="L89">            .collect(Collectors.groupingBy(w -&gt; w, Collectors.counting()));</span>
+    }
+
+    static int countMatches(String content, Pattern pattern) {
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">        if (content == null) return 0;</span>
+<span class="fc" id="L94">        return (int) pattern.matcher(content).results().count();</span>
+    }
+
+    static int countParagraphs(String content) {
+<span class="pc bpc" id="L98" title="2 of 4 branches missed.">        if (content == null || content.isBlank()) return 0;</span>
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">        return (int) Arrays.stream(PARAGRAPH_SPLIT_PATTERN.split(content.strip())).filter(p -&gt; !p.isBlank()).count();</span>
+    }
+
+    static int countContaining(String content, Pattern splitter, Pattern searcher) {
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">        if (content == null) return 0;</span>
+<span class="fc" id="L104">        return (int) splitter.matcher(content).results().filter(m -&gt; searcher.matcher(m.group()).find()).count();</span>
+    }
+
+    static int countContainingParagraphs(String content, Pattern searcher) {
+<span class="pc bpc" id="L108" title="2 of 4 branches missed.">        if (content == null || content.isBlank()) return 0;</span>
+<span class="fc" id="L109">        return (int) Arrays.stream(PARAGRAPH_SPLIT_PATTERN.split(content.strip())).filter(p -&gt; searcher.matcher(p).find()).count();</span>
+    }
+
+    static double calculateRelativeFrequency(int count, double total) {
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">        if (total &gt; 0) {</span>
+<span class="fc" id="L114">            return (count / total) * 1000.0;</span>
+        }
+<span class="nc" id="L116">        return 0.0;</span>
+    }
+
+    static List&lt;WordFrequency&gt; getTopWords(Map&lt;String, Long&gt; frequencies, double totalWords, int limit) {
+<span class="fc" id="L120">        return frequencies.entrySet().stream()</span>
+<span class="fc" id="L121">            .sorted(Map.Entry.&lt;String, Long&gt;comparingByValue().reversed())</span>
+<span class="fc" id="L122">            .limit(limit)</span>
+<span class="fc" id="L123">            .map(e -&gt; new WordFrequency(e.getKey(), e.getValue().intValue(), calculateRelativeFrequency(e.getValue().intValue(), totalWords), null, null))</span>
+<span class="fc" id="L124">            .toList();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

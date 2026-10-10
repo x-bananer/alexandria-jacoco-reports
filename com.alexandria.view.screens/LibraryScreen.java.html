@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LibraryScreen.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.screens</a> &gt; <span class="el_source">LibraryScreen.java</span></div><h1>LibraryScreen.java</h1><pre class="source lang-java linenums">package com.alexandria.view.screens;
+
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+
+import org.kordamp.ikonli.javafx.FontIcon;
+
+import com.alexandria.model.Text;
+import com.alexandria.view.components.shared.Card;
+import com.alexandria.view.components.shared.EmptyState;
+import com.alexandria.view.components.shared.SearchInput;
+import com.alexandria.view.components.shared.modal.ConfirmationAlert;
+import com.alexandria.view.components.shared.modal.Modal;
+import com.alexandria.view.components.library_screen.ComparisonTextModal;
+
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+
+public class LibraryScreen extends StackPane {
+
+<span class="fc" id="L32">    private static final DateTimeFormatter DATE_FORMAT =</span>
+<span class="fc" id="L33">            DateTimeFormatter.ofPattern(&quot;d.MM.uuuu&quot;);</span>
+
+<span class="fc" id="L35">    private final SearchInput searchInput = new SearchInput(&quot;Search library...&quot;);</span>
+<span class="fc" id="L36">    private final FlowPane cardsPane = new FlowPane(16, 16);</span>
+<span class="fc" id="L37">    private final StackPane contentArea = new StackPane();</span>
+<span class="fc" id="L38">    private final BorderPane libraryLayout = new BorderPane();</span>
+<span class="fc" id="L39">    private final VBox libraryBody = buildBody();</span>
+<span class="fc" id="L40">    private final Modal modal = new Modal();</span>
+<span class="fc" id="L41">    private final ComparisonTextModal comparisonTextModal = new ComparisonTextModal();</span>
+<span class="fc" id="L42">    private final HBox filterBar = new HBox(8);</span>
+<span class="fc" id="L43">    private String activeFilter = &quot;ALL&quot;;</span>
+
+<span class="fc" id="L45">    private List&lt;Text&gt; texts = List.of();</span>
+
+<span class="pc" id="L47">    private Consumer&lt;Text&gt; onOpenInAnalysis = text -&gt; {};</span>
+<span class="pc" id="L48">    private BiConsumer&lt;Text, Text&gt; onCompare = (firstText, secondText) -&gt; {};</span>
+<span class="pc" id="L49">    private Consumer&lt;Text&gt; onAddNewComparisonText = text -&gt; {};</span>
+<span class="pc" id="L50">    private Consumer&lt;Integer&gt; onDeleteText = id -&gt; {};</span>
+<span class="pc" id="L51">    private Runnable onNewProject = () -&gt; {};</span>
+<span class="pc" id="L52">    private Runnable onShown = () -&gt; {};</span>
+
+<span class="fc" id="L54">    public LibraryScreen() {</span>
+<span class="fc" id="L55">        getStyleClass().add(&quot;content-screen&quot;);</span>
+<span class="fc" id="L56">        searchInput.setMaxWidth(Double.MAX_VALUE);</span>
+
+<span class="fc" id="L58">        updateFilterButtons();</span>
+<span class="fc" id="L59">        libraryLayout.setTop(buildHeader());</span>
+<span class="fc" id="L60">        libraryLayout.setCenter(libraryBody);</span>
+<span class="fc" id="L61">        libraryLayout.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);</span>
+
+<span class="fc" id="L63">        getChildren().addAll(libraryLayout, modal);</span>
+<span class="fc" id="L64">        StackPane.setAlignment(libraryLayout, Pos.CENTER);</span>
+<span class="fc" id="L65">        StackPane.setAlignment(modal, Pos.CENTER);</span>
+<span class="fc" id="L66">        modal.prefWidthProperty().bind(widthProperty());</span>
+<span class="fc" id="L67">        modal.prefHeightProperty().bind(heightProperty());</span>
+
+<span class="fc" id="L69">        configureActions();</span>
+<span class="fc" id="L70">        comparisonTextModal.setOnCompare((firstText, secondText) -&gt; {</span>
+<span class="fc" id="L71">            modal.hide();</span>
+<span class="fc" id="L72">            onCompare.accept(firstText, secondText);</span>
+<span class="fc" id="L73">        });</span>
+<span class="fc" id="L74">        comparisonTextModal.setOnCancel(modal::hide);</span>
+<span class="fc" id="L75">        comparisonTextModal.setOnAddNewText(firstText -&gt; {</span>
+<span class="nc" id="L76">            modal.hide();</span>
+<span class="nc" id="L77">            onAddNewComparisonText.accept(firstText);</span>
+<span class="nc" id="L78">        });</span>
+<span class="fc" id="L79">        showTexts();</span>
+
+        // Refresh when router mounts screen into active scene
+<span class="fc" id="L82">        sceneProperty().addListener((observable, oldScene, newScene) -&gt; {</span>
+<span class="nc bnc" id="L83" title="All 2 branches missed.">            if (newScene != null) {</span>
+<span class="nc" id="L84">                onShown.run();</span>
+            }
+<span class="nc" id="L86">        });</span>
+
+<span class="fc" id="L88">        parentProperty().addListener((observable, oldParent, newParent) -&gt; {</span>
+<span class="nc bnc" id="L89" title="All 2 branches missed.">            if (newParent != null) {</span>
+<span class="nc" id="L90">                onShown.run();</span>
+            }
+<span class="nc" id="L92">        });</span>
+<span class="fc" id="L93">    }</span>
+
+    private VBox buildHeader() {
+<span class="fc" id="L96">        Label title = new Label(&quot;Library&quot;);</span>
+<span class="fc" id="L97">        title.getStyleClass().add(&quot;heading-xl&quot;);</span>
+
+<span class="fc" id="L99">        Label subtitle = new Label(&quot;Saved texts and documents&quot;);</span>
+<span class="fc" id="L100">        subtitle.getStyleClass().addAll(&quot;text-muted&quot;, &quot;archive-subtitle&quot;);</span>
+
+<span class="fc" id="L102">        VBox header = new VBox(10, title, subtitle, filterBar);</span>
+<span class="fc" id="L103">        header.getStyleClass().add(&quot;content-screen-header&quot;);</span>
+<span class="fc" id="L104">        return header;</span>
+    }
+
+    private void updateFilterButtons() {
+<span class="fc" id="L108">        filterBar.getChildren().clear();</span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        for (String filter : new String[]{&quot;All&quot;, &quot;PDF&quot;, &quot;TXT&quot;, &quot;Manual&quot;}) {</span>
+<span class="fc" id="L110">            Button btn = new Button(filter);</span>
+<span class="fc" id="L111">            btn.getStyleClass().add(&quot;button&quot;);</span>
+            
+<span class="fc bfc" id="L113" title="All 2 branches covered.">            if (filter.toUpperCase().equals(activeFilter)) {</span>
+<span class="fc" id="L114">                btn.getStyleClass().add(&quot;primary&quot;);</span>
+            } else {
+<span class="fc" id="L116">                btn.getStyleClass().add(&quot;secondary&quot;);</span>
+            }
+
+<span class="fc" id="L119">            btn.setOnAction(e -&gt; {</span>
+<span class="nc" id="L120">                activeFilter = filter.toUpperCase();</span>
+<span class="nc" id="L121">                updateFilterButtons();</span>
+<span class="nc" id="L122">                showTexts();</span>
+<span class="nc" id="L123">            });</span>
+<span class="fc" id="L124">            filterBar.getChildren().add(btn);</span>
+        }
+<span class="fc" id="L126">    }</span>
+
+    private VBox buildBody() {
+<span class="fc" id="L129">        VBox body = new VBox(contentArea);</span>
+<span class="fc" id="L130">        body.getStyleClass().add(&quot;content-screen-body&quot;);</span>
+<span class="fc" id="L131">        VBox.setVgrow(contentArea, Priority.ALWAYS);</span>
+<span class="fc" id="L132">        return body;</span>
+    }
+
+    private void configureActions() {
+<span class="fc" id="L136">        searchInput.textProperty().addListener((observable, oldText, newText) -&gt; {</span>
+<span class="fc" id="L137">            showTexts();</span>
+<span class="fc" id="L138">        });</span>
+<span class="fc" id="L139">    }</span>
+
+    public void setTexts(List&lt;Text&gt; texts) {
+<span class="fc" id="L142">        this.texts = List.of();</span>
+<span class="pc bpc" id="L143" title="1 of 2 branches missed.">        if (texts != null) {</span>
+<span class="fc" id="L144">            this.texts = List.copyOf(texts);</span>
+        }
+<span class="fc" id="L146">        showTexts();</span>
+<span class="fc" id="L147">    }</span>
+
+    public void setOnOpenInAnalysis(Consumer&lt;Text&gt; handler) {
+<span class="nc bnc" id="L150" title="All 2 branches missed.">        if (handler != null) {</span>
+<span class="nc" id="L151">            onOpenInAnalysis = handler;</span>
+        }
+<span class="nc" id="L153">    }</span>
+
+    public void setOnCompare(BiConsumer&lt;Text, Text&gt; handler) {
+<span class="pc bpc" id="L156" title="1 of 2 branches missed.">        if (handler != null) {</span>
+<span class="fc" id="L157">            onCompare = handler;</span>
+        }
+<span class="fc" id="L159">    }</span>
+
+    public void setOnAddNewComparisonText(Consumer&lt;Text&gt; handler) {
+<span class="nc bnc" id="L162" title="All 2 branches missed.">        if (handler != null) {</span>
+<span class="nc" id="L163">            onAddNewComparisonText = handler;</span>
+        }
+<span class="nc" id="L165">    }</span>
+
+    public void setOnDeleteText(Consumer&lt;Integer&gt; handler) {
+<span class="nc bnc" id="L168" title="All 2 branches missed.">        if (handler != null) {</span>
+<span class="nc" id="L169">            onDeleteText = handler;</span>
+        }
+<span class="nc" id="L171">    }</span>
+
+    public void setOnNewProject(Runnable handler) {
+<span class="pc bpc" id="L174" title="1 of 2 branches missed.">        if (handler != null) {</span>
+<span class="fc" id="L175">            onNewProject = handler;</span>
+        }
+<span class="fc" id="L177">    }</span>
+
+    public void setOnShown(Runnable handler) {
+<span class="nc bnc" id="L180" title="All 2 branches missed.">        if (handler != null) {</span>
+<span class="nc" id="L181">            onShown = handler;</span>
+        }
+<span class="nc" id="L183">    }</span>
+
+    public void showSignInMessage() {
+<span class="fc" id="L186">        EmptyState emptyState = new EmptyState(</span>
+                &quot;Sign in to view your library&quot;,
+                &quot;Create an account to save and organize your texts and datasets here&quot;);
+<span class="fc" id="L189">        libraryLayout.setCenter(emptyState);</span>
+<span class="fc" id="L190">        BorderPane.setAlignment(emptyState, Pos.CENTER);</span>
+<span class="fc" id="L191">    }</span>
+
+    private void showTexts() {
+<span class="fc" id="L194">        libraryLayout.setCenter(libraryBody);</span>
+<span class="fc" id="L195">        cardsPane.getChildren().clear();</span>
+
+<span class="fc bfc" id="L197" title="All 2 branches covered.">        boolean searching = !searchInput.getText().isBlank();</span>
+
+<span class="fc bfc" id="L199" title="All 2 branches covered.">        if (!searching) {</span>
+<span class="fc" id="L200">            cardsPane.getChildren().add(createNewProjectCard());</span>
+        }
+
+<span class="fc bfc" id="L203" title="All 2 branches covered.">        for (Text text : texts) {</span>
+<span class="fc" id="L204">            String fileType = null;</span>
+<span class="pc bpc" id="L205" title="1 of 2 branches missed.">            if (text.getFileType() != null) {</span>
+<span class="fc" id="L206">                fileType = text.getFileType().name();</span>
+            }
+
+<span class="pc bpc" id="L209" title="3 of 4 branches missed.">            if (!&quot;ALL&quot;.equals(activeFilter) &amp;&amp; !activeFilter.equalsIgnoreCase(fileType)) {</span>
+<span class="nc" id="L210">                continue;</span>
+            }
+
+<span class="fc bfc" id="L213" title="All 2 branches covered.">            if (matchesSearch(text.getTitle(), text.getFileName(), fileType)) {</span>
+<span class="fc" id="L214">                cardsPane.getChildren().add(createProjectCard(text));</span>
+            }
+<span class="fc" id="L216">        }</span>
+
+<span class="fc" id="L218">        StackPane libraryContent = new StackPane();</span>
+<span class="fc" id="L219">        libraryContent.getStyleClass().add(&quot;archive-content&quot;);</span>
+
+<span class="fc bfc" id="L221" title="All 2 branches covered.">        if (cardsPane.getChildren().isEmpty()) {</span>
+<span class="fc" id="L222">            EmptyState empty = new EmptyState(emptyMessage(), emptySubtitle());</span>
+<span class="fc" id="L223">            libraryContent.getChildren().add(empty);</span>
+<span class="fc" id="L224">            StackPane.setAlignment(empty, Pos.CENTER);</span>
+<span class="fc" id="L225">        } else {</span>
+<span class="fc" id="L226">            ScrollPane cardsScroll = new ScrollPane(cardsPane);</span>
+<span class="fc" id="L227">            cardsScroll.getStyleClass().add(&quot;shared-scroll&quot;);</span>
+<span class="fc" id="L228">            cardsScroll.setFitToWidth(true);</span>
+<span class="fc" id="L229">            cardsScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);</span>
+<span class="fc" id="L230">            cardsScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);</span>
+<span class="fc" id="L231">            libraryContent.getChildren().add(cardsScroll);</span>
+        }
+
+<span class="fc" id="L234">        VBox searchAndContent = new VBox(18, searchInput, libraryContent);</span>
+<span class="fc" id="L235">        VBox.setVgrow(libraryContent, Priority.ALWAYS);</span>
+
+<span class="fc" id="L237">        contentArea.getChildren().setAll(searchAndContent);</span>
+<span class="fc" id="L238">    }</span>
+
+    private String emptyMessage() {
+<span class="pc bpc" id="L241" title="1 of 2 branches missed.">        if (!searchInput.getText().isBlank()) {</span>
+<span class="fc" id="L242">            return &quot;Nothing found&quot;;</span>
+        }
+<span class="nc" id="L244">        return &quot;No saved texts yet&quot;;</span>
+    }
+
+    private String emptySubtitle() {
+<span class="pc bpc" id="L248" title="1 of 2 branches missed.">        if (!searchInput.getText().isBlank()) {</span>
+<span class="fc" id="L249">            return &quot;Try changing your search query&quot;;</span>
+        }
+<span class="nc" id="L251">        return &quot;Create a new project to add a text to your library&quot;;</span>
+    }
+
+    private Card createProjectCard(Text text) {
+<span class="fc" id="L255">        Card card = new Card(titleText(text));</span>
+
+<span class="pc bpc" id="L257" title="1 of 2 branches missed.">        if (text.getFileType() != null) {</span>
+<span class="fc" id="L258">            card.setTypeText(text.getFileType().name());</span>
+        }
+<span class="fc" id="L260">        card.setSourceText(text.getFileName());</span>
+
+<span class="pc bpc" id="L262" title="1 of 2 branches missed.">        if (text.getCreatedAt() != null) {</span>
+<span class="fc" id="L263">            card.setFooterText(&quot;Added &quot; + DATE_FORMAT.format(text.getCreatedAt()));</span>
+        }
+
+<span class="fc" id="L266">        card.setActionText(&quot;Open with&quot;);</span>
+<span class="fc" id="L267">        card.getActionButton().setOnAction(e -&gt; {</span>
+<span class="fc" id="L268">            showOpenWithModal(text);</span>
+<span class="fc" id="L269">        });</span>
+
+<span class="fc" id="L271">        card.getDeleteButton().setOnAction(e -&gt; {</span>
+<span class="nc bnc" id="L272" title="All 2 branches missed.">            if (ConfirmationAlert.show(</span>
+                    &quot;Delete Text&quot;,
+                    &quot;Delete this text?&quot;,
+                    &quot;This action cannot be undone!&quot;)) {
+<span class="nc" id="L276">                onDeleteText.accept(text.getId());</span>
+            }
+<span class="nc" id="L278">        });</span>
+
+<span class="fc" id="L280">        return card;</span>
+    }
+
+    private VBox createNewProjectCard() {
+<span class="fc" id="L284">        FontIcon addIcon = new FontIcon(&quot;fas-plus-circle&quot;);</span>
+<span class="fc" id="L285">        addIcon.setIconSize(24);</span>
+<span class="fc" id="L286">        addIcon.getStyleClass().add(&quot;text-muted&quot;);</span>
+
+<span class="fc" id="L288">        Label title = new Label(&quot;Start New Analysis&quot;);</span>
+<span class="fc" id="L289">        title.getStyleClass().add(&quot;heading-md&quot;);</span>
+
+<span class="fc" id="L291">        Label subtitle = new Label(&quot;From library documents&quot;);</span>
+<span class="fc" id="L292">        subtitle.getStyleClass().add(&quot;text-muted&quot;);</span>
+
+<span class="fc" id="L294">        VBox card = new VBox(12, addIcon, title, subtitle);</span>
+<span class="fc" id="L295">        card.getStyleClass().addAll(&quot;card&quot;);</span>
+<span class="fc" id="L296">        card.setAlignment(Pos.CENTER);</span>
+<span class="fc" id="L297">        card.setPrefWidth(280);</span>
+<span class="fc" id="L298">        card.setPrefHeight(200);</span>
+<span class="fc" id="L299">        card.setStyle(&quot;-fx-border-style: dashed; -fx-cursor: hand;&quot;);</span>
+<span class="fc" id="L300">        card.setOnMouseClicked(e -&gt; {</span>
+<span class="fc" id="L301">            onNewProject.run();</span>
+<span class="fc" id="L302">        });</span>
+<span class="fc" id="L303">        return card;</span>
+    }
+
+    private void showOpenWithModal(Text text) {
+<span class="fc" id="L307">        Label title = new Label(&quot;Open Project&quot;);</span>
+<span class="fc" id="L308">        title.getStyleClass().add(&quot;heading-lg&quot;);</span>
+
+<span class="fc" id="L310">        Label subtitle = new Label(titleText(text));</span>
+<span class="fc" id="L311">        subtitle.getStyleClass().add(&quot;text-muted&quot;);</span>
+
+<span class="fc" id="L313">        Button analysisBtn = new Button(&quot;Open in Text Analysis&quot;);</span>
+<span class="fc" id="L314">        analysisBtn.getStyleClass().addAll(&quot;button&quot;, &quot;primary&quot;);</span>
+<span class="fc" id="L315">        analysisBtn.setMaxWidth(Double.MAX_VALUE);</span>
+<span class="fc" id="L316">        analysisBtn.setOnAction(e -&gt; {</span>
+<span class="nc" id="L317">            modal.hide();</span>
+<span class="nc" id="L318">            onOpenInAnalysis.accept(text);</span>
+<span class="nc" id="L319">        });</span>
+
+<span class="fc" id="L321">        Button compareBtn = new Button(&quot;Compare with another file...&quot;);</span>
+<span class="fc" id="L322">        compareBtn.getStyleClass().addAll(&quot;button&quot;, &quot;secondary&quot;);</span>
+<span class="fc" id="L323">        compareBtn.setMaxWidth(Double.MAX_VALUE);</span>
+<span class="fc" id="L324">        compareBtn.setOnAction(e -&gt; {</span>
+<span class="fc" id="L325">            showComparisonTextModal(text);</span>
+<span class="fc" id="L326">        });</span>
+
+<span class="fc" id="L328">        VBox content = new VBox(16, new VBox(4, title, subtitle), new VBox(10, analysisBtn, compareBtn));</span>
+<span class="fc" id="L329">        content.getStyleClass().add(&quot;modal-card&quot;);</span>
+<span class="fc" id="L330">        content.setPadding(new Insets(24));</span>
+<span class="fc" id="L331">        content.setPrefWidth(340);</span>
+
+<span class="fc" id="L333">        modal.show(content);</span>
+<span class="fc" id="L334">    }</span>
+
+    public void showComparisonTextModal(Text firstText) {
+<span class="fc" id="L337">        comparisonTextModal.setTexts(firstText, texts);</span>
+<span class="fc" id="L338">        modal.show(comparisonTextModal);</span>
+<span class="fc" id="L339">    }</span>
+
+    private String titleText(Text text) {
+<span class="pc bpc" id="L342" title="2 of 4 branches missed.">        if (text.getTitle() != null &amp;&amp; !text.getTitle().isBlank()) {</span>
+<span class="fc" id="L343">            return text.getTitle();</span>
+        }
+<span class="nc" id="L345">        return text.getFileName();</span>
+    }
+
+    private boolean matchesSearch(String... values) {
+<span class="fc" id="L349">        String searchText = searchInput.getText().trim().toLowerCase();</span>
+
+<span class="fc bfc" id="L351" title="All 2 branches covered.">        if (searchText.isEmpty()) {</span>
+<span class="fc" id="L352">            return true;</span>
+        }
+
+<span class="fc bfc" id="L355" title="All 2 branches covered.">        for (String value : values) {</span>
+<span class="pc bpc" id="L356" title="1 of 4 branches missed.">            if (value != null &amp;&amp; value.toLowerCase().contains(searchText)) {</span>
+<span class="fc" id="L357">                return true;</span>
+            }
+        }
+
+<span class="fc" id="L361">        return false;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

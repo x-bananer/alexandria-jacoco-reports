@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NewProjectModal.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.side_navbar.new_project</a> &gt; <span class="el_source">NewProjectModal.java</span></div><h1>NewProjectModal.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.side_navbar.new_project;
+
+import java.io.File;
+import java.util.function.Consumer;
+
+import com.alexandria.view.components.shared.LoadingIndicator;
+import com.alexandria.view.components.shared.toggle.Toggle;
+
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Label;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+
+public class NewProjectModal extends VBox {
+
+<span class="fc" id="L17">    public enum SourceType {</span>
+<span class="fc" id="L18">        UPLOAD, PASTE</span>
+    }
+
+<span class="fc" id="L21">    public enum Destination {</span>
+<span class="fc" id="L22">        ANALYSE, COMPARE</span>
+    }
+
+<span class="fc" id="L25">    public record CreatedProject(</span>
+            String title,
+            SourceType sourceType,
+            String fileName,
+            String textContent,
+            File file,
+            Destination destination,
+            boolean addingSecondComparisonText) {
+
+        public CreatedProject(
+                String title,
+                SourceType sourceType,
+                String fileName,
+                String textContent,
+                File file,
+                Destination destination) {
+
+<span class="fc" id="L42">            this(title, sourceType, fileName, textContent, file, destination, false);</span>
+<span class="fc" id="L43">        }</span>
+    }
+
+    private final Toggle sourceToggle;
+    private final Toggle uploadDestinationToggle;
+    private final Toggle pasteDestinationToggle;
+    private final VBox uploadDestinationBox;
+    private final VBox pasteDestinationBox;
+    private final Label heading;
+    private final Label subtitle;
+    private final VBox header;
+
+    private final VBox formHost;
+
+    private final UploadPdfForm uploadForm;
+    private final PasteTextForm pasteForm;
+
+    private final LoadingIndicator loadingIndicator;
+    private boolean addingSecondComparisonText;
+
+<span class="nc" id="L63">    private Consumer&lt;CreatedProject&gt; onCreated = project -&gt; {</span>
+<span class="nc" id="L64">    };</span>
+
+<span class="nc" id="L66">    public NewProjectModal() {</span>
+<span class="nc" id="L67">        getStyleClass().add(&quot;modal-card&quot;);</span>
+<span class="nc" id="L68">        setSpacing(20);</span>
+<span class="nc" id="L69">        setPadding(new Insets(24));</span>
+<span class="nc" id="L70">        setPrefWidth(380);</span>
+
+<span class="nc" id="L72">        heading = new Label(&quot;New Project&quot;);</span>
+<span class="nc" id="L73">        heading.getStyleClass().add(&quot;heading-lg&quot;);</span>
+
+<span class="nc" id="L75">        subtitle = new Label();</span>
+<span class="nc" id="L76">        subtitle.getStyleClass().add(&quot;text-muted&quot;);</span>
+<span class="nc" id="L77">        subtitle.setVisible(false);</span>
+<span class="nc" id="L78">        subtitle.setManaged(false);</span>
+<span class="nc" id="L79">        header = new VBox(4, heading, subtitle);</span>
+
+<span class="nc" id="L81">        sourceToggle = new Toggle(&quot;Upload File&quot;, &quot;Paste Text&quot;);</span>
+
+<span class="nc" id="L83">        uploadDestinationToggle = createDestinationToggle();</span>
+<span class="nc" id="L84">        pasteDestinationToggle = createDestinationToggle();</span>
+
+<span class="nc" id="L86">        formHost = new VBox();</span>
+
+<span class="nc" id="L88">        uploadDestinationBox = createDestinationBox(uploadDestinationToggle);</span>
+<span class="nc" id="L89">        pasteDestinationBox = createDestinationBox(pasteDestinationToggle);</span>
+
+<span class="nc" id="L91">        uploadForm = new UploadPdfForm(uploadDestinationBox);</span>
+
+<span class="nc" id="L93">        pasteForm = new PasteTextForm(pasteDestinationBox);</span>
+
+<span class="nc" id="L95">        loadingIndicator = new LoadingIndicator();</span>
+<span class="nc" id="L96">        loadingIndicator.setMaxSize(28, 28);</span>
+
+<span class="nc" id="L98">        configureForms();</span>
+<span class="nc" id="L99">        configureSourceToggle();</span>
+<span class="nc" id="L100">        configureDestinationToggles();</span>
+
+<span class="nc" id="L102">        StackPane formStack = new StackPane(</span>
+                formHost,
+                loadingIndicator);
+
+<span class="nc" id="L106">        StackPane.setAlignment(loadingIndicator, Pos.CENTER);</span>
+
+<span class="nc" id="L108">        formHost.getChildren().add(uploadForm);</span>
+
+<span class="nc" id="L110">        getChildren().addAll(</span>
+                header,
+                sourceToggle,
+                formStack);
+<span class="nc" id="L114">    }</span>
+
+    private Toggle createDestinationToggle() {
+<span class="nc" id="L117">        return new Toggle(&quot;Analyse&quot;, &quot;Compare&quot;);</span>
+    }
+
+    private VBox createDestinationBox(Toggle destinationToggle) {
+<span class="nc" id="L121">        Label destinationLabel = new Label(&quot;Open In&quot;);</span>
+<span class="nc" id="L122">        destinationLabel.getStyleClass().add(&quot;form-label&quot;);</span>
+
+<span class="nc" id="L124">        VBox destinationBox = new VBox(8);</span>
+<span class="nc" id="L125">        destinationBox.getChildren().addAll(</span>
+                destinationLabel,
+                destinationToggle);
+
+<span class="nc" id="L129">        return destinationBox;</span>
+    }
+
+    private void configureForms() {
+<span class="nc" id="L133">        uploadForm.setOnSubmit(data -&gt; submit(</span>
+                SourceType.UPLOAD,
+<span class="nc" id="L135">                data.title(),</span>
+<span class="nc" id="L136">                data.fileName(),</span>
+                null,
+<span class="nc" id="L138">                data.file()));</span>
+
+<span class="nc" id="L140">        pasteForm.setOnSubmit(data -&gt; submit(</span>
+                SourceType.PASTE,
+<span class="nc" id="L142">                data.title(),</span>
+<span class="nc" id="L143">                data.fileName(),</span>
+<span class="nc" id="L144">                data.content(),</span>
+                null));
+<span class="nc" id="L146">    }</span>
+
+    private void configureSourceToggle() {
+<span class="nc" id="L149">        sourceToggle.setOnToggle(index -&gt; {</span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">            if (index == 0) {</span>
+<span class="nc" id="L151">                showUpload();</span>
+            } else {
+<span class="nc" id="L153">                showPaste();</span>
+            }
+<span class="nc" id="L155">        });</span>
+<span class="nc" id="L156">    }</span>
+
+    private void configureDestinationToggles() {
+<span class="nc" id="L159">        uploadDestinationToggle.setOnToggle(index -&gt; pasteDestinationToggle.setSelectedIndex(index));</span>
+
+<span class="nc" id="L161">        pasteDestinationToggle.setOnToggle(index -&gt; uploadDestinationToggle.setSelectedIndex(index));</span>
+<span class="nc" id="L162">    }</span>
+
+    private void showUpload() {
+<span class="nc" id="L165">        uploadForm.reset();</span>
+<span class="nc" id="L166">        formHost.getChildren().setAll(uploadForm);</span>
+<span class="nc" id="L167">    }</span>
+
+    private void showPaste() {
+<span class="nc" id="L170">        pasteForm.reset();</span>
+<span class="nc" id="L171">        formHost.getChildren().setAll(pasteForm);</span>
+<span class="nc" id="L172">    }</span>
+
+    private void submit(
+            SourceType sourceType,
+            String title,
+            String fileName,
+            String textContent,
+            File file) {
+
+<span class="nc bnc" id="L181" title="All 2 branches missed.">        Destination destination = uploadDestinationToggle.getSelectedIndex() == 0</span>
+<span class="nc" id="L182">                ? Destination.ANALYSE</span>
+<span class="nc" id="L183">                : Destination.COMPARE;</span>
+
+<span class="nc" id="L185">        CreatedProject project = new CreatedProject(</span>
+                title,
+                sourceType,
+                fileName,
+                textContent,
+                file,
+                destination,
+                addingSecondComparisonText);
+
+<span class="nc" id="L194">        onCreated.accept(project);</span>
+<span class="nc" id="L195">    }</span>
+
+    public void setOnCreated(Consumer&lt;CreatedProject&gt; handler) {
+<span class="nc" id="L198">        this.onCreated = handler;</span>
+<span class="nc" id="L199">    }</span>
+
+    public void setLoading(boolean loading) {
+<span class="nc" id="L202">        formHost.setDisable(loading);</span>
+<span class="nc" id="L203">        sourceToggle.setDisable(loading);</span>
+<span class="nc" id="L204">        uploadDestinationToggle.setDisable(loading);</span>
+<span class="nc" id="L205">        pasteDestinationToggle.setDisable(loading);</span>
+
+<span class="nc" id="L207">        loadingIndicator.setLoading(loading);</span>
+<span class="nc" id="L208">    }</span>
+
+    public void showError(String message) {
+<span class="nc bnc" id="L211" title="All 2 branches missed.">        if (sourceToggle.getSelectedIndex() == 0) {</span>
+<span class="nc" id="L212">            uploadForm.showError(message);</span>
+        } else {
+<span class="nc" id="L214">            pasteForm.showError(message);</span>
+        }
+<span class="nc" id="L216">    }</span>
+
+    public void reset() {
+<span class="nc" id="L219">        addingSecondComparisonText = false;</span>
+<span class="nc" id="L220">        heading.setText(&quot;New Project&quot;);</span>
+<span class="nc" id="L221">        subtitle.setText(&quot;&quot;);</span>
+<span class="nc" id="L222">        subtitle.setVisible(false);</span>
+<span class="nc" id="L223">        subtitle.setManaged(false);</span>
+<span class="nc" id="L224">        uploadDestinationBox.setVisible(true);</span>
+<span class="nc" id="L225">        uploadDestinationBox.setManaged(true);</span>
+<span class="nc" id="L226">        pasteDestinationBox.setVisible(true);</span>
+<span class="nc" id="L227">        pasteDestinationBox.setManaged(true);</span>
+<span class="nc" id="L228">        uploadForm.getForm().getSubmitButton().setText(&quot;Create Project&quot;);</span>
+<span class="nc" id="L229">        pasteForm.getForm().getSubmitButton().setText(&quot;Create Project&quot;);</span>
+<span class="nc" id="L230">        uploadForm.reset();</span>
+<span class="nc" id="L231">        pasteForm.reset();</span>
+
+<span class="nc" id="L233">        sourceToggle.setSelectedIndex(0);</span>
+<span class="nc" id="L234">        uploadDestinationToggle.setSelectedIndex(0);</span>
+<span class="nc" id="L235">        pasteDestinationToggle.setSelectedIndex(0);</span>
+
+<span class="nc" id="L237">        showUpload();</span>
+<span class="nc" id="L238">        setLoading(false);</span>
+<span class="nc" id="L239">    }</span>
+
+    public void showSecondComparisonTextForm(String firstTextTitle) {
+<span class="nc" id="L242">        addingSecondComparisonText = true;</span>
+<span class="nc" id="L243">        heading.setText(&quot;Compare \&quot;&quot; + firstTextTitle + &quot;\&quot; with:&quot;);</span>
+<span class="nc" id="L244">        subtitle.setText(&quot;Add a second text to compare&quot;);</span>
+<span class="nc" id="L245">        subtitle.setVisible(true);</span>
+<span class="nc" id="L246">        subtitle.setManaged(true);</span>
+<span class="nc" id="L247">        uploadDestinationBox.setVisible(false);</span>
+<span class="nc" id="L248">        uploadDestinationBox.setManaged(false);</span>
+<span class="nc" id="L249">        pasteDestinationBox.setVisible(false);</span>
+<span class="nc" id="L250">        pasteDestinationBox.setManaged(false);</span>
+<span class="nc" id="L251">        uploadForm.getForm().getSubmitButton().setText(&quot;Add to comparison&quot;);</span>
+<span class="nc" id="L252">        pasteForm.getForm().getSubmitButton().setText(&quot;Add to comparison&quot;);</span>
+<span class="nc" id="L253">        uploadForm.reset();</span>
+<span class="nc" id="L254">        pasteForm.reset();</span>
+<span class="nc" id="L255">        sourceToggle.setSelectedIndex(0);</span>
+<span class="nc" id="L256">        showUpload();</span>
+<span class="nc" id="L257">        setLoading(false);</span>
+<span class="nc" id="L258">    }</span>
+
+    public UploadPdfForm getUploadForm() {
+<span class="nc" id="L261">        return uploadForm;</span>
+    }
+
+    public PasteTextForm getPasteForm() {
+<span class="nc" id="L265">        return pasteForm;</span>
+    }
+
+    public Toggle getSourceToggle() {
+<span class="nc" id="L269">        return sourceToggle;</span>
+    }
+
+    public Toggle getDestinationToggle(SourceType source) {
+<span class="nc bnc" id="L273" title="All 2 branches missed.">        return switch (source) {</span>
+<span class="nc" id="L274">            case UPLOAD -&gt; uploadDestinationToggle;</span>
+<span class="nc" id="L275">            case PASTE -&gt; pasteDestinationToggle;</span>
+        };
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MainController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.controller</a> &gt; <span class="el_source">MainController.java</span></div><h1>MainController.java</h1><pre class="source lang-java linenums">package com.alexandria.controller;
+
+import java.io.File;
+import java.util.Arrays;
+import java.util.List;
+
+import com.alexandria.dao.TextDAO;
+import com.alexandria.dao.UserDAO;
+import com.alexandria.model.FileType;
+import com.alexandria.model.Text;
+import com.alexandria.service.FileStorageService;
+import com.alexandria.service.PdfService;
+import com.alexandria.service.SearchService;
+import com.alexandria.service.TermAnalysisService;
+import com.alexandria.service.TextAnalysisService;
+import com.alexandria.utils.UserGuideSettings;
+import com.alexandria.view.MainView;
+import com.alexandria.view.components.shared.document.highlight.TextPaginator;
+import com.alexandria.view.components.shared.modal.ErrorAlert;
+import com.alexandria.view.components.side_navbar.new_project.NewProjectModal;
+import com.alexandria.view.components.user_guide.UserGuideTour;
+import com.alexandria.view.components.user_guide.UserGuideTourData;
+import com.alexandria.view.router.Route;
+import com.alexandria.view.screens.AnalyseScreen;
+import com.alexandria.view.screens.ArchiveScreen;
+import com.alexandria.view.screens.CompareScreen;
+import com.alexandria.view.screens.LibraryScreen;
+import com.alexandria.view.screens.ProfileScreen;
+
+import javafx.application.Platform;
+import javafx.concurrent.Task;
+
+public class MainController {
+
+    private final MainView mainView;
+    private final UserDAO userDAO;
+<span class="fc" id="L37">    private final UserSessionController session = UserSessionController.getInstance();</span>
+    private final AnalyseController analyseController;
+    private final CompareController compareController;
+    private final ArchiveController archiveController;
+    private final LibraryController libraryController;
+    private CompareScreen compareScreen;
+    private Text firstComparisonText;
+    private File firstComparisonSourceFile;
+<span class="fc" id="L45">    private final PdfService pdfService = new PdfService();</span>
+
+<span class="fc" id="L47">    public MainController() {</span>
+<span class="fc" id="L48">        userDAO = new UserDAO();</span>
+<span class="fc" id="L49">        restoreSession();</span>
+
+<span class="fc" id="L51">        mainView = new MainView();</span>
+
+<span class="fc" id="L53">        analyseController = new AnalyseController(</span>
+                new SearchService(),
+                new TermAnalysisService(),
+                new TextAnalysisService());
+
+<span class="fc" id="L58">        configureProfile();</span>
+<span class="fc" id="L59">        archiveController = configureArchive();</span>
+<span class="fc" id="L60">        compareController = configureComparison();</span>
+<span class="fc" id="L61">        libraryController = configureLibrary();</span>
+<span class="fc" id="L62">        configureProject();</span>
+<span class="fc" id="L63">        configureUserGuideTour();</span>
+
+<span class="fc" id="L65">        openInitialRoute();</span>
+<span class="fc" id="L66">    }</span>
+
+    public void startUserGuideIfNeeded() {
+<span class="nc bnc" id="L69" title="All 2 branches missed.">        if (UserGuideSettings.isShownOnStartup()) {</span>
+<span class="nc" id="L70">            Platform.runLater(() -&gt; {</span>
+<span class="nc" id="L71">                mainView.startUserGuide();</span>
+<span class="nc" id="L72">            });</span>
+        }
+<span class="nc" id="L74">    }</span>
+
+    private void restoreSession() {
+        try {
+<span class="fc" id="L78">            session.restore(userDAO);</span>
+<span class="fc" id="L79">        } catch (Exception e) {</span>
+<span class="fc" id="L80">            System.err.println(&quot;Could not restore session: &quot; + e.getMessage());</span>
+<span class="fc" id="L81">        }</span>
+<span class="fc" id="L82">    }</span>
+
+    private void openInitialRoute() {
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">        mainView.navigateTo(session.isLoggedIn() ? Route.LIBRARY : Route.PROFILE);</span>
+<span class="fc" id="L86">    }</span>
+
+    private void configureProfile() {
+<span class="fc" id="L89">        ProfileScreen profileScreen = (ProfileScreen) Route.PROFILE.createScreen();</span>
+<span class="fc" id="L90">        new ProfileController(userDAO, profileScreen);</span>
+<span class="fc" id="L91">    }</span>
+
+    private ArchiveController configureArchive() {
+<span class="fc" id="L94">        ArchiveScreen archiveScreen = (ArchiveScreen) Route.ARCHIVE.createScreen();</span>
+<span class="fc" id="L95">        return new ArchiveController(archiveScreen);</span>
+    }
+
+    private CompareController configureComparison() {
+<span class="fc" id="L99">        compareScreen = (CompareScreen) Route.COMPARE.createScreen();</span>
+<span class="fc" id="L100">        CompareController controller = new CompareController();</span>
+<span class="fc" id="L101">        compareScreen.setOnSaveFindings(() -&gt; {</span>
+<span class="nc" id="L102">            CompareController.SaveOutcome outcome = controller.saveFindings(compareScreen.getTrackedSearchTerms());</span>
+<span class="nc bnc" id="L103" title="All 2 branches missed.">            if (outcome.success()) {</span>
+<span class="nc" id="L104">                compareScreen.showSaved(outcome.savedCount());</span>
+<span class="nc" id="L105">                archiveController.loadAnalyses();</span>
+            } else {
+<span class="nc" id="L107">                ErrorAlert.show(outcome.message());</span>
+            }
+<span class="nc" id="L109">        });</span>
+<span class="pc" id="L110">        compareScreen.setOnSearch(term -&gt; showComparisonSearch(controller, term));</span>
+<span class="fc" id="L111">        compareScreen.setOnPreviousMatch(compareScreen::showPreviousSearchMatch);</span>
+<span class="fc" id="L112">        compareScreen.setOnNextMatch(compareScreen::showNextSearchMatch);</span>
+<span class="fc" id="L113">        return controller;</span>
+    }
+
+    private void showComparisonSearch(CompareController controller, String term) {
+<span class="nc" id="L117">        CompareController.MultiSearchOutcome outcome = controller.search(</span>
+<span class="nc" id="L118">                term, compareScreen.getSearchSettings());</span>
+<span class="nc bnc" id="L119" title="All 2 branches missed.">        if (!outcome.success()) {</span>
+<span class="nc" id="L120">            ErrorAlert.show(outcome.message());</span>
+<span class="nc" id="L121">            return;</span>
+        }
+<span class="nc" id="L123">        List&lt;Text&gt; texts = controller.getCurrentTexts();</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">        if (texts.size() &lt; 2) {</span>
+<span class="nc" id="L125">            return;</span>
+        }
+<span class="nc" id="L127">        compareScreen.showSearchResults(</span>
+<span class="nc" id="L128">                outcome.matches(), comparisonTextId(texts.get(0), 0), comparisonTextId(texts.get(1), 1));</span>
+<span class="nc" id="L129">    }</span>
+
+    private LibraryController configureLibrary() {
+<span class="fc" id="L132">        LibraryScreen libraryScreen = (LibraryScreen) Route.LIBRARY.createScreen();</span>
+<span class="fc" id="L133">        return new LibraryController(</span>
+                new TextDAO(),
+                libraryScreen,
+                new FileStorageService(),
+                this::openLibraryText,
+                this::openLibraryComparison,
+                this::addNewComparisonText,
+<span class="fc" id="L140">                mainView::showNewProjectModal);</span>
+    }
+
+    // Now taking PDF page breaks into account, instead of just processing it as a
+    // long string
+    private void openLibraryText(Text text, File sourceFile) {
+<span class="nc" id="L146">        List&lt;Integer&gt; pageOffsets = TextPaginator.paginate(text.getContent(), TextPaginator.CHARS_PER_PAGE);</span>
+<span class="nc bnc" id="L147" title="All 4 branches missed.">        if (text.getFileType() == FileType.PDF &amp;&amp; sourceFile != null) {</span>
+            try {
+<span class="nc" id="L149">                pageOffsets = pdfService.extractTextWithPageBoundaries(sourceFile).pageOffsets();</span>
+<span class="nc" id="L150">            } catch (Exception e) {</span>
+<span class="nc" id="L151">                System.out.println(&quot;Failed to extract PDF page breaks. ERROR: &quot; + e);</span>
+<span class="nc" id="L152">            }</span>
+        }
+<span class="nc" id="L154">        openAnalysis(text, pageOffsets, sourceFile);</span>
+<span class="nc" id="L155">    }</span>
+
+    private void configureUserGuideTour() {
+<span class="fc" id="L158">        mainView.addEventHandler(UserGuideTour.OPEN_ANALYSIS_EVENT, event -&gt; {</span>
+<span class="nc" id="L159">            Text tourText = new Text(</span>
+                    null,
+                    UserGuideTourData.PROJECT_TITLE,
+                    UserGuideTourData.FILE_NAME,
+                    UserGuideTourData.FILE_TYPE,
+                    UserGuideTourData.TEXT);
+
+<span class="nc" id="L166">            mainView.closeProjectModal();</span>
+
+<span class="nc" id="L168">            openAnalysis(tourText, List.of(), null);</span>
+<span class="nc" id="L169">        });</span>
+
+<span class="fc" id="L171">        mainView.addEventHandler(UserGuideTour.CLOSE_ANALYSIS_EVENT,</span>
+<span class="nc" id="L172">                event -&gt; ((AnalyseScreen) Route.ANALYZE.createScreen()).clearAnalysis());</span>
+<span class="pc" id="L173">        mainView.addEventHandler(UserGuideTour.OPEN_COMPARISON_EVENT, event -&gt; openTourComparison());</span>
+<span class="fc" id="L174">        mainView.addEventHandler(UserGuideTour.CLOSE_COMPARISON_EVENT, event -&gt; {</span>
+<span class="nc" id="L175">            compareController.clearComparison();</span>
+<span class="nc" id="L176">            compareScreen.clearComparison();</span>
+<span class="nc" id="L177">        });</span>
+<span class="fc" id="L178">        mainView.addEventHandler(UserGuideTour.CLOSE_ARCHIVE_EVENT,</span>
+<span class="nc" id="L179">                event -&gt; archiveController.loadAnalyses());</span>
+<span class="fc" id="L180">    }</span>
+
+    private void openTourComparison() {
+<span class="nc" id="L183">        Text firstText = new Text(</span>
+                null,
+                UserGuideTourData.COMPARISON_FIRST_TITLE,
+                UserGuideTourData.COMPARISON_FIRST_FILE_NAME,
+                UserGuideTourData.FILE_TYPE,
+                UserGuideTourData.COMPARISON_FIRST_TEXT);
+<span class="nc" id="L189">        Text secondText = new Text(</span>
+                null,
+                UserGuideTourData.COMPARISON_SECOND_TITLE,
+                UserGuideTourData.COMPARISON_SECOND_FILE_NAME,
+                UserGuideTourData.FILE_TYPE,
+                UserGuideTourData.COMPARISON_SECOND_TEXT);
+
+<span class="nc" id="L196">        openLibraryComparison(List.of(firstText, secondText), Arrays.asList(null, null));</span>
+<span class="nc" id="L197">    }</span>
+
+    private void configureProject() {
+<span class="fc" id="L200">        ProjectController projectController = new ProjectController(new TextDAO(), pdfService);</span>
+
+<span class="fc" id="L202">        mainView.setOnProjectCreated(created -&gt; {</span>
+<span class="nc" id="L203">            boolean addingSecondComparisonText = created.addingSecondComparisonText();</span>
+<span class="nc" id="L204">            mainView.setNewProjectLoading(true);</span>
+
+<span class="nc" id="L206">            Task&lt;ProjectController.Result&gt; task = new Task&lt;&gt;() {</span>
+                @Override
+                protected ProjectController.Result call() {
+<span class="nc" id="L209">                    return projectController.createProject(created);</span>
+                }
+            };
+
+<span class="nc" id="L213">            task.setOnSucceeded(e -&gt; {</span>
+<span class="nc" id="L214">                mainView.setNewProjectLoading(false);</span>
+
+<span class="nc" id="L216">                ProjectController.Result result = task.getValue();</span>
+
+<span class="nc bnc" id="L218" title="All 2 branches missed.">                if (!result.success()) {</span>
+<span class="nc" id="L219">                    mainView.showProjectError(result.message());</span>
+<span class="nc" id="L220">                    return;</span>
+                }
+
+<span class="nc" id="L223">                mainView.closeProjectModal();</span>
+<span class="nc" id="L224">                libraryController.loadTexts();</span>
+
+<span class="nc bnc" id="L226" title="All 2 branches missed.">                if (addingSecondComparisonText) {</span>
+<span class="nc" id="L227">                    openComparisonWithNewSecondText(result.text(), result.sourceFile());</span>
+                } else {
+<span class="nc" id="L229">                    routeToDestination(</span>
+<span class="nc" id="L230">                            result.text(),</span>
+<span class="nc" id="L231">                            result.pageOffsets(),</span>
+<span class="nc" id="L232">                            result.sourceFile(),</span>
+<span class="nc" id="L233">                            created.destination());</span>
+                }
+<span class="nc" id="L235">            });</span>
+
+<span class="nc" id="L237">            task.setOnFailed(e -&gt; {</span>
+<span class="nc" id="L238">                mainView.setNewProjectLoading(false);</span>
+
+<span class="nc" id="L240">                Throwable error = task.getException();</span>
+<span class="nc" id="L241">                mainView.showProjectError(</span>
+                        &quot;Unexpected error: &quot;
+<span class="nc bnc" id="L243" title="All 2 branches missed.">                                + (error != null ? error.getMessage() : &quot;unknown&quot;));</span>
+<span class="nc" id="L244">            });</span>
+
+<span class="nc" id="L246">            Thread worker = new Thread(task, &quot;new-project-worker&quot;);</span>
+<span class="nc" id="L247">            worker.setDaemon(true);</span>
+<span class="nc" id="L248">            worker.start();</span>
+<span class="nc" id="L249">        });</span>
+<span class="fc" id="L250">    }</span>
+
+    private void routeToDestination(
+            Text text,
+            List&lt;Integer&gt; pageOffsets,
+            File sourceFile,
+            NewProjectModal.Destination destination) {
+<span class="nc bnc" id="L257" title="All 3 branches missed.">        switch (destination) {</span>
+<span class="nc" id="L258">            case ANALYSE -&gt; openAnalysis(text, pageOffsets, sourceFile);</span>
+<span class="nc" id="L259">            case COMPARE -&gt; openNewProjectComparison(text, sourceFile);</span>
+        }
+<span class="nc" id="L261">    }</span>
+
+    private void openNewProjectComparison(Text firstText, File firstSourceFile) {
+<span class="nc" id="L264">        firstComparisonText = firstText;</span>
+<span class="nc" id="L265">        firstComparisonSourceFile = firstSourceFile;</span>
+
+<span class="nc bnc" id="L267" title="All 2 branches missed.">        if (session.isLoggedIn()) {</span>
+<span class="nc" id="L268">            mainView.navigateTo(Route.LIBRARY);</span>
+<span class="nc" id="L269">            libraryController.startComparison(firstText);</span>
+        } else {
+<span class="nc" id="L271">            mainView.showSecondComparisonTextModal(comparisonTextTitle(firstText));</span>
+        }
+<span class="nc" id="L273">    }</span>
+
+    private void addNewComparisonText(Text firstText, File firstSourceFile) {
+<span class="nc" id="L276">        firstComparisonText = firstText;</span>
+<span class="nc" id="L277">        firstComparisonSourceFile = firstSourceFile;</span>
+<span class="nc" id="L278">        mainView.showSecondComparisonTextModal(comparisonTextTitle(firstText));</span>
+<span class="nc" id="L279">    }</span>
+
+    private void openComparisonWithNewSecondText(Text secondText, File secondSourceFile) {
+<span class="nc bnc" id="L282" title="All 2 branches missed.">        if (firstComparisonText == null) {</span>
+<span class="nc" id="L283">            ErrorAlert.show(&quot;Choose the first text for comparison.&quot;);</span>
+<span class="nc" id="L284">            return;</span>
+        }
+
+<span class="nc" id="L287">        openLibraryComparison(</span>
+<span class="nc" id="L288">                List.of(firstComparisonText, secondText),</span>
+<span class="nc" id="L289">                Arrays.asList(firstComparisonSourceFile, secondSourceFile));</span>
+<span class="nc" id="L290">    }</span>
+
+    private String comparisonTextTitle(Text text) {
+<span class="nc bnc" id="L293" title="All 4 branches missed.">        if (text.getTitle() != null &amp;&amp; !text.getTitle().isBlank()) {</span>
+<span class="nc" id="L294">            return text.getTitle();</span>
+        }
+<span class="nc" id="L296">        return text.getFileName();</span>
+    }
+
+    private void openLibraryComparison(List&lt;Text&gt; texts, List&lt;File&gt; sourceFiles) {
+<span class="nc" id="L300">        CompareController.ComparisonTextsOutcome outcome = compareController.openTexts(texts, sourceFiles);</span>
+
+<span class="nc bnc" id="L302" title="All 2 branches missed.">        if (!outcome.success()) {</span>
+<span class="nc" id="L303">            ErrorAlert.show(outcome.message());</span>
+<span class="nc" id="L304">            return;</span>
+        }
+
+<span class="nc" id="L307">        firstComparisonText = null;</span>
+<span class="nc" id="L308">        firstComparisonSourceFile = null;</span>
+
+<span class="nc" id="L310">        List&lt;Text&gt; openedTexts = outcome.texts();</span>
+<span class="nc" id="L311">        List&lt;File&gt; openedFiles = compareController.getCurrentFiles();</span>
+
+<span class="nc" id="L313">        compareScreen.loadTexts(</span>
+<span class="nc" id="L314">                openedTexts.get(0),</span>
+<span class="nc bnc" id="L315" title="All 2 branches missed.">                openedFiles.size() &gt; 0 ? openedFiles.get(0) : null,</span>
+<span class="nc" id="L316">                openedTexts.get(1),</span>
+<span class="nc bnc" id="L317" title="All 2 branches missed.">                openedFiles.size() &gt; 1 ? openedFiles.get(1) : null);</span>
+
+<span class="nc" id="L319">        CompareController.TextComparisonOutcome comparison = compareController</span>
+<span class="nc" id="L320">                .compareTexts(CompareController.COMMON_WORDS_LIMIT);</span>
+<span class="nc bnc" id="L321" title="All 2 branches missed.">        if (comparison.success()) {</span>
+<span class="nc" id="L322">            compareScreen.setTextComparison(comparison.result());</span>
+        } else {
+<span class="nc" id="L324">            ErrorAlert.show(comparison.message());</span>
+        }
+
+<span class="nc" id="L327">        mainView.navigateTo(Route.COMPARE);</span>
+<span class="nc" id="L328">    }</span>
+
+    private int comparisonTextId(Text text, int index) {
+<span class="nc bnc" id="L331" title="All 2 branches missed.">        return text.getId() == null ? -index - 1 : text.getId();</span>
+    }
+
+    private void openAnalysis(
+            Text text,
+            List&lt;Integer&gt; pageOffsets,
+            File sourceFile) {
+
+<span class="nc" id="L339">        AnalyseScreen analyseScreen = (AnalyseScreen) Route.ANALYZE.createScreen();</span>
+
+<span class="nc" id="L341">        analyseController.configureScreen(</span>
+                analyseScreen,
+                text,
+                pageOffsets,
+                sourceFile);
+
+<span class="nc" id="L347">        analyseScreen.setOnSaveAnalysis(() -&gt; {</span>
+<span class="nc" id="L348">            AnalyseController.SaveOutcome outcome = analyseController.saveAnalysis();</span>
+
+<span class="nc bnc" id="L350" title="All 2 branches missed.">            if (outcome.success()) {</span>
+<span class="nc" id="L351">                analyseScreen.showSaved(outcome.savedCount());</span>
+            } else {
+<span class="nc" id="L353">                System.err.println(outcome.message());</span>
+            }
+<span class="nc" id="L355">        });</span>
+
+<span class="nc" id="L357">        mainView.navigateTo(Route.ANALYZE);</span>
+<span class="nc" id="L358">    }</span>
+
+    public MainView getView() {
+<span class="fc" id="L361">        return mainView;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

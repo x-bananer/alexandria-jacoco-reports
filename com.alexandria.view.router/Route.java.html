@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Route.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.router</a> &gt; <span class="el_source">Route.java</span></div><h1>Route.java</h1><pre class="source lang-java linenums">package com.alexandria.view.router;
+
+import com.alexandria.view.screens.*;
+import javafx.scene.Node;
+
+import java.util.function.Supplier;
+
+<span class="fc" id="L8">public enum Route {</span>
+<span class="fc" id="L9">    LIBRARY(&quot;library&quot;, LibraryScreen::new),</span>
+<span class="fc" id="L10">    ANALYZE(&quot;analyze&quot;, AnalyseScreen::new),</span>
+<span class="fc" id="L11">    COMPARE(&quot;compare&quot;, CompareScreen::new),</span>
+<span class="fc" id="L12">    ARCHIVE(&quot;archive&quot;, ArchiveScreen::new),</span>
+<span class="fc" id="L13">    SETTINGS(&quot;settings&quot;, SettingsScreen::new),</span>
+<span class="fc" id="L14">    USERGUIDE(&quot;userguide&quot;, UserGuideScreen::new),</span>
+<span class="fc" id="L15">    PROFILE(&quot;profile&quot;, ProfileScreen::new);</span>
+
+    private final String id;
+    private final Supplier&lt;Node&gt; screenFactory;
+    private Node cachedScreen;
+
+<span class="fc" id="L21">    Route(String id, Supplier&lt;Node&gt; screenFactory) {</span>
+<span class="fc" id="L22">        this.id = id;</span>
+<span class="fc" id="L23">        this.screenFactory = screenFactory;</span>
+<span class="fc" id="L24">    }</span>
+
+    public String id() {
+<span class="nc" id="L27">        return id;</span>
+    }
+
+    public Node createScreen() {
+<span class="fc bfc" id="L31" title="All 2 branches covered.">        if (cachedScreen == null) {</span>
+<span class="fc" id="L32">            cachedScreen = screenFactory.get();</span>
+        }
+<span class="fc" id="L34">        return cachedScreen;</span>
+    }
+
+    public static Route fromId(String id) {
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        for (Route route : values()) {</span>
+<span class="fc bfc" id="L39" title="All 2 branches covered.">            if (route.id.equals(id))</span>
+<span class="fc" id="L40">                return route;</span>
+        }
+<span class="fc" id="L42">        throw new IllegalArgumentException(&quot;Unknown route id: &quot; + id);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

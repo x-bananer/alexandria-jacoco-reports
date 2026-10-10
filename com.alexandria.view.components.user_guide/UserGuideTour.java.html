@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserGuideTour.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.user_guide</a> &gt; <span class="el_source">UserGuideTour.java</span></div><h1>UserGuideTour.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.user_guide;
+
+import java.util.List;
+
+import com.alexandria.view.components.shared.modal.Modal;
+import com.alexandria.view.components.shared.document.highlight.TxtHighlight;
+import com.alexandria.view.components.shared.document.highlight.TxtTextLayout;
+import com.alexandria.view.components.shared.tour.Tour;
+import com.alexandria.view.components.side_navbar.SideNavbar;
+import com.alexandria.view.components.side_navbar.new_project.NewProjectModal;
+import com.alexandria.view.components.side_navbar.new_project.NewProjectModal.SourceType;
+import com.alexandria.view.router.Route;
+import com.alexandria.view.router.ViewRouter;
+import com.alexandria.view.screens.AnalyseScreen;
+import com.alexandria.view.screens.ArchiveScreen;
+import com.alexandria.view.screens.CompareScreen;
+import com.alexandria.utils.UserGuideSettings;
+
+import javafx.application.Platform;
+import javafx.event.Event;
+import javafx.event.EventType;
+import javafx.geometry.Point2D;
+import javafx.scene.Node;
+import javafx.scene.shape.Path;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
+
+public class UserGuideTour {
+
+<span class="fc" id="L30">    public static final EventType&lt;Event&gt; OPEN_ANALYSIS_EVENT = new EventType&lt;&gt;(Event.ANY, &quot;OPEN_ANALYSIS&quot;);</span>
+<span class="fc" id="L31">    public static final EventType&lt;Event&gt; CLOSE_ANALYSIS_EVENT = new EventType&lt;&gt;(Event.ANY, &quot;CLOSE_ANALYSIS&quot;);</span>
+<span class="fc" id="L32">    public static final EventType&lt;Event&gt; OPEN_COMPARISON_EVENT = new EventType&lt;&gt;(Event.ANY, &quot;OPEN_COMPARISON&quot;);</span>
+<span class="fc" id="L33">    public static final EventType&lt;Event&gt; CLOSE_COMPARISON_EVENT = new EventType&lt;&gt;(Event.ANY, &quot;CLOSE_COMPARISON&quot;);</span>
+<span class="fc" id="L34">    public static final EventType&lt;Event&gt; CLOSE_ARCHIVE_EVENT = new EventType&lt;&gt;(Event.ANY, &quot;CLOSE_ARCHIVE&quot;);</span>
+
+    private final Tour tour;
+    private final SideNavbar sideNavbar;
+    private final ViewRouter viewRouter;
+    private final Modal modal;
+    private final NewProjectModal newProjectModal;
+
+    private boolean analysisOpen;
+    private boolean comparisonOpen;
+    private Path quotationPreview;
+
+    public UserGuideTour(
+            Tour tour,
+            SideNavbar sideNavbar,
+            ViewRouter viewRouter,
+            Modal modal,
+<span class="nc" id="L51">            NewProjectModal newProjectModal) {</span>
+<span class="nc" id="L52">        this.tour = tour;</span>
+<span class="nc" id="L53">        this.sideNavbar = sideNavbar;</span>
+<span class="nc" id="L54">        this.viewRouter = viewRouter;</span>
+<span class="nc" id="L55">        this.modal = modal;</span>
+<span class="nc" id="L56">        this.newProjectModal = newProjectModal;</span>
+<span class="nc" id="L57">    }</span>
+
+    public void start() {
+<span class="nc" id="L60">        tour.start(steps(), this::endTour);</span>
+<span class="nc" id="L61">    }</span>
+
+    private List&lt;Tour.Step&gt; steps() {
+<span class="nc" id="L64">        return List.of(</span>
+                new Tour.Step(
+                        &quot;Welcome to Alexandria!&quot;,
+                        &quot;Alexandria is a statistical text analysis tool for language researchers. &quot;
+                                + &quot;It can help you explore texts through word frequencies, term searches, &quot;
+                                + &quot;key paragraphs, quotations, and comparisons.\n\n&quot;
+                                + &quot;Take a quick tour through the application to get familiar with its main &quot;
+                                + &quot;features. You can return to this tutorial at any time from the User Guide page.&quot;,
+<span class="nc" id="L72">                        sideNavbar::getBrandSection,</span>
+<span class="nc" id="L73">                        () -&gt; navigateTo(Route.LIBRARY),</span>
+                        false,
+                        new Tour.StepOptions(null, Tour.TooltipPosition.BELOW)),
+                new Tour.Step(
+                        &quot;Your Library&quot;,
+                        &quot;This is the first page of the application. If you already have saved projects, you can find them here. Open any project to continue working with it.&quot;,
+<span class="nc" id="L79">                        () -&gt; viewRouter,</span>
+<span class="nc" id="L80">                        () -&gt; navigateTo(Route.LIBRARY),</span>
+                        true,
+                        new Tour.StepOptions(
+<span class="nc" id="L83">                                () -&gt; sideNavbar.getNavigation().getButton(&quot;library&quot;))),</span>
+                new Tour.Step(
+                        &quot;Create a project&quot;,
+                        &quot;If you do not have a project yet, or want to create a new one, click + New Project in the sidebar.&quot;,
+<span class="nc" id="L87">                        sideNavbar::getNewProjectButton,</span>
+<span class="nc" id="L88">                        modal::hide,</span>
+                        true),
+                new Tour.Step(
+                        &quot;Choose how to add your text&quot;,
+                        &quot;Upload a PDF or TXT file, or choose Paste Text to enter the text manually.&quot;,
+<span class="nc" id="L93">                        newProjectModal::getSourceToggle,</span>
+                        this::showProjectForm,
+                        true),
+                new Tour.Step(
+                        &quot;Name your project&quot;,
+                        &quot;Add a clear project name so you can recognise it later in Library.&quot;,
+<span class="nc" id="L99">                        () -&gt; newProjectModal.getPasteForm().getForm().getFieldNode(&quot;title&quot;),</span>
+                        null,
+                        true),
+                new Tour.Step(
+                        &quot;Choose a file name&quot;,
+                        &quot;This name is optional. Leave it blank to use the original file name.&quot;,
+<span class="nc" id="L105">                        () -&gt; newProjectModal.getPasteForm().getForm().getFieldNode(&quot;fileName&quot;),</span>
+                        null,
+                        true),
+                new Tour.Step(
+                        &quot;Add your text&quot;,
+                        &quot;Paste or write the text you want to analyse in this field.&quot;,
+<span class="nc" id="L111">                        () -&gt; newProjectModal.getPasteForm().getForm().getFieldNode(&quot;content&quot;),</span>
+                        null,
+                        true),
+                new Tour.Step(
+                        &quot;Choose how to work with your text&quot;,
+                        &quot;Choose Analyse to work with one text, or Compare to work with several texts.&quot;,
+<span class="nc" id="L117">                        () -&gt; newProjectModal.getDestinationToggle(SourceType.PASTE),</span>
+                        null,
+                        true),
+                new Tour.Step(
+                        &quot;Create your project&quot;,
+                        &quot;When you are ready, click Create Project to add your text and open it in the selected workspace.&quot;,
+<span class="nc" id="L123">                        () -&gt; newProjectModal.getPasteForm().getForm().getSubmitButton(),</span>
+                        null,
+                        true),
+                new Tour.Step(
+                        &quot;Read your text&quot;,
+                        &quot;Your text opens in the reader. Use the controls below to zoom in or out and move between pages while you analyse it.&quot;,
+<span class="nc" id="L129">                        () -&gt; analyseScreen().getDocumentView(),</span>
+                        this::openAnalysis,
+                        false),
+                new Tour.Step(
+                        &quot;Create a quotation&quot;,
+                        &quot;Select a passage you want to keep to make it a quotation. This helps you collect important excerpts while you read. You need to be signed in to save quotations to your account.&quot;,
+<span class="nc" id="L135">                        () -&gt; analyseScreen().getDocumentView(),</span>
+                        () -&gt; {
+<span class="nc" id="L137">                            openAnalysis();</span>
+<span class="nc" id="L138">                            showQuotationPreview();</span>
+<span class="nc" id="L139">                        },</span>
+                        true,
+                        new Tour.StepOptions(0.5)),
+                new Tour.Step(
+                        &quot;View your quotations&quot;,
+                        &quot;Click Quotations to review the passages you have saved as quotations.&quot;,
+<span class="nc" id="L145">                        () -&gt; analyseScreen().getHeader().getQuotationsButton(),</span>
+                        null,
+                        true,
+                        new Tour.StepOptions(
+                                null, Tour.TooltipPosition.BELOW)),
+                new Tour.Step(
+                        &quot;Analyze your text&quot;,
+                        &quot;The panel on the right brings together the analysis results for your text. Alexandria counts words and their uses to create these results. Here you can review frequent words, analyse a word or phrase, and find key paragraphs.&quot;,
+<span class="nc" id="L153">                        () -&gt; analyseScreen().getStatisticsSidebar(),</span>
+                        this::clearQuotationPreview,
+                        true),
+                new Tour.Step(
+                        &quot;Review frequent words&quot;,
+                        &quot;This list shows the five words used most often in the text. Common words such as “the” and “and” are ignored. Click on a word to see its occurrences, frequency, nearby words, and every place where it appears.&quot;,
+<span class="nc" id="L159">                        () -&gt; analyseScreen().getTextTermFrequencyPanel(),</span>
+                        null,
+                        true),
+                new Tour.Step(
+                        &quot;Search and track terms&quot;,
+                        &quot;Search for a word or phrase in the current text. Use Fuzzy to find approximate matches, Case sensitive to match capitalisation, Whole word to exclude partial matches, or Stop words to exclude common words. Your searches appear in Tracked Words, where you can reopen a term, move through its matches, or remove it from the list.&quot;,
+<span class="nc" id="L165">                        () -&gt; analyseScreen().getSearchView(),</span>
+                        null,
+                        true),
+                new Tour.Step(
+                        &quot;Review key paragraphs&quot;,
+                        &quot;Key Paragraphs identifies sentences that contain words used frequently across the text. This can help you notice repeated topics. Use Go to button to open the relevant page in the reader.&quot;,
+<span class="nc" id="L171">                        () -&gt; analyseScreen().getTextContextPanel(),</span>
+                        null,
+                        true),
+                new Tour.Step(
+                        &quot;Save your analysis&quot;,
+                        &quot;Use Save Findings button to keep the current results of a text analysis, term search, or comparison in Archive. You need to be signed in to save findings.&quot;,
+<span class="nc" id="L177">                        () -&gt; analyseScreen().getHeader().getSaveButton(),</span>
+                        this::openAnalysis,
+                        true),
+                new Tour.Step(
+                        &quot;Compare texts&quot;,
+                        &quot;Choose at least two texts to compare. Each text can be a PDF, TXT file, or pasted text, and you can combine different formats in one comparison. The selected texts are shown side by side.&quot;,
+<span class="nc" id="L183">                        () -&gt; compareScreen().getDocumentView(),</span>
+                        this::openComparison,
+                        true,
+                        new Tour.StepOptions(
+<span class="nc" id="L187">                                () -&gt; sideNavbar.getNavigation().getButton(&quot;compare&quot;))),</span>
+                new Tour.Step(
+                        &quot;Review the comparison&quot;,
+                        &quot;The similarity score in the header summarises how alike the word-frequency profiles of the two texts are.&quot;,
+<span class="nc" id="L191">                        () -&gt; compareScreen().getHeader(),</span>
+                        null,
+                        true,
+                        new Tour.StepOptions(null, Tour.TooltipPosition.BELOW)),
+                new Tour.Step(
+                        &quot;Review shared words&quot;,
+                        &quot;Most frequent shared words lists vocabulary found in both texts and shows each word's count in Doc A and Doc B. Select a word to search for it in both documents.&quot;,
+<span class="nc" id="L198">                        () -&gt; compareScreen().getComparisonSidePanel().getCommonWordsPanel(),</span>
+                        null,
+                        true),
+                new Tour.Step(
+                        &quot;Search both texts&quot;,
+                        &quot;Search for a word or phrase across both documents. Fuzzy finds approximate matches, Case sensitive matches capitalisation, Whole word excludes partial matches, and Stop words excludes common words. Tracked Words keeps separate result rows for Doc A and Doc B.&quot;,
+<span class="nc" id="L204">                        () -&gt; compareScreen().getComparisonSidePanel().getSearchView(),</span>
+                        null,
+                        true),
+                new Tour.Step(
+                        &quot;Review similar paragraphs&quot;,
+                        &quot;Key Paragraphs shows the strongest matching passages from the two documents. Select a passage preview to open its location in the corresponding reader.&quot;,
+<span class="nc" id="L210">                        () -&gt; compareScreen().getComparisonSidePanel().getSimilarParagraphsPanel(),</span>
+                        null,
+                        true),
+                new Tour.Step(
+                        &quot;Save comparison findings&quot;,
+                        &quot;Use Save Findings to store the comparison and any tracked search terms in Archive. You need to be signed in, and both texts must be saved in your Library.&quot;,
+<span class="nc" id="L216">                        () -&gt; compareScreen().getHeader().getSaveButton(),</span>
+                        null,
+                        true),
+                new Tour.Step(
+                        &quot;Archive&quot;,
+                        &quot;Open Archive to view the the results of a text analysis, term search, or comparison you saved while working with your texts.&quot;,
+<span class="nc" id="L222">                        () -&gt; viewRouter,</span>
+                        this::showArchivePreview,
+                        true,
+                        new Tour.StepOptions(
+<span class="nc" id="L226">                                () -&gt; sideNavbar.getNavigation().getButton(&quot;archive&quot;))),</span>
+                new Tour.Step(
+                        &quot;Settings&quot;,
+                        &quot;Open Settings to manage application preferences.&quot;,
+<span class="nc" id="L230">                        () -&gt; viewRouter,</span>
+<span class="nc" id="L231">                        () -&gt; navigateTo(Route.SETTINGS),</span>
+                        true,
+                        new Tour.StepOptions(
+<span class="nc" id="L234">                                () -&gt; sideNavbar.getNavigation().getButton(&quot;settings&quot;))),</span>
+                new Tour.Step(
+                        &quot;Profile&quot;,
+                        &quot;Use Profile page to create an account, sign in, or edit your profile if you are already signed in.&quot;,
+<span class="nc" id="L238">                        () -&gt; viewRouter,</span>
+<span class="nc" id="L239">                        () -&gt; navigateTo(Route.PROFILE),</span>
+                        true,
+                        new Tour.StepOptions(
+<span class="nc" id="L242">                                () -&gt; sideNavbar.getNavigation().getButton(&quot;profile&quot;))));</span>
+    }
+
+    private void openAnalysis() {
+<span class="nc" id="L246">        modal.hide();</span>
+<span class="nc" id="L247">        analysisOpen = true;</span>
+<span class="nc" id="L248">        tour.fireEvent(new Event(OPEN_ANALYSIS_EVENT));</span>
+<span class="nc" id="L249">    }</span>
+
+    private void openComparison() {
+<span class="nc" id="L252">        modal.hide();</span>
+<span class="nc" id="L253">        comparisonOpen = true;</span>
+<span class="nc" id="L254">        tour.fireEvent(new Event(OPEN_COMPARISON_EVENT));</span>
+<span class="nc" id="L255">    }</span>
+
+    private void showProjectForm() {
+<span class="nc" id="L258">        newProjectModal.reset();</span>
+<span class="nc" id="L259">        modal.show(newProjectModal);</span>
+<span class="nc" id="L260">        newProjectModal.getSourceToggle().getButton(1).fire();</span>
+
+<span class="nc" id="L262">        var form = newProjectModal.getPasteForm().getForm();</span>
+<span class="nc" id="L263">        form.setValue(&quot;title&quot;, UserGuideTourData.PROJECT_TITLE);</span>
+<span class="nc" id="L264">        form.setValue(&quot;fileName&quot;, UserGuideTourData.FILE_NAME);</span>
+<span class="nc" id="L265">        form.setValue(&quot;content&quot;, UserGuideTourData.TEXT);</span>
+<span class="nc" id="L266">    }</span>
+
+    private void showArchivePreview() {
+<span class="nc" id="L269">        navigateTo(Route.ARCHIVE);</span>
+<span class="nc" id="L270">        ArchiveScreen archiveScreen = (ArchiveScreen) Route.ARCHIVE.createScreen();</span>
+<span class="nc" id="L271">        Platform.runLater(() -&gt; {</span>
+<span class="nc" id="L272">            archiveScreen.setTextAnalyses(UserGuideTourData.archiveExamples());</span>
+<span class="nc" id="L273">            archiveScreen.setTermAnalyses(List.of());</span>
+<span class="nc" id="L274">        });</span>
+<span class="nc" id="L275">    }</span>
+
+    private void showQuotationPreview() {
+<span class="nc" id="L278">        clearQuotationPreview();</span>
+
+<span class="nc" id="L280">        Platform.runLater(() -&gt; {</span>
+<span class="nc" id="L281">            Node node = analyseScreen().getDocumentView().lookup(&quot;.document-page-text&quot;);</span>
+<span class="nc bnc" id="L282" title="All 4 branches missed.">            if (!(node instanceof TextFlow flow) || flow.getChildren().isEmpty()) {</span>
+<span class="nc" id="L283">                return;</span>
+            }
+
+<span class="nc" id="L286">            Text text = (Text) flow.getChildren().get(0);</span>
+<span class="nc" id="L287">            int start = text.getText().indexOf(UserGuideTourData.QUOTATION);</span>
+<span class="nc bnc" id="L288" title="All 2 branches missed.">            if (start &lt; 0) {</span>
+<span class="nc" id="L289">                return;</span>
+            }
+
+<span class="nc" id="L292">            quotationPreview = TxtTextLayout.shapeFor(</span>
+                    flow,
+                    start,
+<span class="nc" id="L295">                    start + UserGuideTourData.QUOTATION.length(),</span>
+                    TxtHighlight.QUOTATION_STYLE_CLASS);
+
+<span class="nc" id="L298">            Point2D point = analyseScreen().sceneToLocal(flow.localToScene(0, 0));</span>
+<span class="nc" id="L299">            quotationPreview.setTranslateX(point.getX());</span>
+<span class="nc" id="L300">            quotationPreview.setTranslateY(point.getY());</span>
+<span class="nc" id="L301">            analyseScreen().getChildren().add(quotationPreview);</span>
+<span class="nc" id="L302">        });</span>
+<span class="nc" id="L303">    }</span>
+
+    private void clearQuotationPreview() {
+<span class="nc bnc" id="L306" title="All 2 branches missed.">        if (quotationPreview != null) {</span>
+<span class="nc" id="L307">            analyseScreen().getChildren().remove(quotationPreview);</span>
+<span class="nc" id="L308">            quotationPreview = null;</span>
+        }
+<span class="nc" id="L310">    }</span>
+
+    private void endTour() {
+<span class="nc" id="L313">        UserGuideSettings.setShownOnStartup(false);</span>
+		
+<span class="nc" id="L315">        clearQuotationPreview();</span>
+<span class="nc" id="L316">        tour.fireEvent(new Event(CLOSE_ARCHIVE_EVENT));</span>
+<span class="nc bnc" id="L317" title="All 2 branches missed.">        if (analysisOpen) {</span>
+<span class="nc" id="L318">            tour.fireEvent(new Event(CLOSE_ANALYSIS_EVENT));</span>
+<span class="nc" id="L319">            analysisOpen = false;</span>
+        }
+<span class="nc bnc" id="L321" title="All 2 branches missed.">        if (comparisonOpen) {</span>
+<span class="nc" id="L322">            tour.fireEvent(new Event(CLOSE_COMPARISON_EVENT));</span>
+<span class="nc" id="L323">            comparisonOpen = false;</span>
+        }
+<span class="nc" id="L325">        newProjectModal.reset();</span>
+<span class="nc" id="L326">        modal.hide();</span>
+<span class="nc" id="L327">        navigateTo(Route.LIBRARY);</span>
+<span class="nc" id="L328">    }</span>
+
+    private AnalyseScreen analyseScreen() {
+<span class="nc" id="L331">        return (AnalyseScreen) Route.ANALYZE.createScreen();</span>
+    }
+
+    private CompareScreen compareScreen() {
+<span class="nc" id="L335">        return (CompareScreen) Route.COMPARE.createScreen();</span>
+    }
+
+    private void navigateTo(Route route) {
+<span class="nc" id="L339">        viewRouter.navigateTo(route);</span>
+<span class="nc" id="L340">        sideNavbar.selectItem(route.id());</span>
+<span class="nc" id="L341">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

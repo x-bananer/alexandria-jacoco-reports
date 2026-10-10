@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Modal.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.shared.modal</a> &gt; <span class="el_source">Modal.java</span></div><h1>Modal.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.shared.modal;
+
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.control.Button;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
+import org.kordamp.ikonli.javafx.FontIcon;
+
+public class Modal extends StackPane {
+
+<span class="fc" id="L14">    private final StackPane contentHost = new StackPane();</span>
+<span class="fc" id="L15">    private final Button closeButton = new Button();</span>
+<span class="fc" id="L16">    private boolean dismissible = true;</span>
+
+<span class="fc" id="L18">    public Modal() {</span>
+<span class="fc" id="L19">        getStyleClass().add(&quot;modal-overlay&quot;);</span>
+<span class="fc" id="L20">        setAlignment(Pos.CENTER);</span>
+<span class="fc" id="L21">        setPickOnBounds(true);</span>
+
+<span class="fc" id="L23">        setVisible(false);</span>
+<span class="fc" id="L24">        setManaged(false);</span>
+
+<span class="fc" id="L26">        contentHost.setAlignment(Pos.CENTER);</span>
+<span class="fc" id="L27">        contentHost.setPickOnBounds(false);</span>
+<span class="fc" id="L28">        contentHost.setMaxWidth(Region.USE_PREF_SIZE);</span>
+<span class="fc" id="L29">        contentHost.setMaxHeight(Region.USE_PREF_SIZE);</span>
+
+<span class="fc" id="L31">        getChildren().add(contentHost);</span>
+
+<span class="fc" id="L33">        FontIcon closeIcon = new FontIcon(FontAwesomeSolid.TIMES);</span>
+<span class="fc" id="L34">        closeIcon.getStyleClass().add(&quot;modal-close-icon&quot;);</span>
+
+<span class="fc" id="L36">        closeButton.setGraphic(closeIcon);</span>
+<span class="fc" id="L37">        closeButton.getStyleClass().add(&quot;modal-close-button&quot;);</span>
+<span class="pc" id="L38">        closeButton.setOnAction(event -&gt; hide());</span>
+
+<span class="fc" id="L40">        StackPane.setAlignment(closeButton, Pos.TOP_RIGHT);</span>
+<span class="fc" id="L41">        StackPane.setMargin(closeButton, new Insets(8));</span>
+
+<span class="fc" id="L43">        setOnMouseClicked(event -&gt; {</span>
+<span class="nc bnc" id="L44" title="All 6 branches missed.">            if ((event.getTarget() == this || event.getTarget() == contentHost)</span>
+                    &amp;&amp; dismissible) {
+<span class="nc" id="L46">                hide();</span>
+            }
+<span class="nc" id="L48">        });</span>
+<span class="fc" id="L49">    }</span>
+
+    public void setContent(Node content) {
+<span class="fc" id="L52">        contentHost.getChildren().setAll(content);</span>
+
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">        if (dismissible) {</span>
+<span class="fc" id="L55">            contentHost.getChildren().add(closeButton);</span>
+        }
+<span class="fc" id="L57">    }</span>
+
+    public void show(Node content) {
+<span class="fc" id="L60">        show(content, true);</span>
+<span class="fc" id="L61">    }</span>
+
+    public void show(Node content, boolean dismissible) {
+<span class="fc" id="L64">        this.dismissible = dismissible;</span>
+<span class="fc" id="L65">        setContent(content);</span>
+<span class="fc" id="L66">        show();</span>
+<span class="fc" id="L67">    }</span>
+
+    public void show() {
+<span class="fc" id="L70">        setVisible(true);</span>
+<span class="fc" id="L71">        setManaged(true);</span>
+<span class="fc" id="L72">        toFront();</span>
+<span class="fc" id="L73">    }</span>
+
+    public void hide() {
+<span class="fc" id="L76">        setVisible(false);</span>
+<span class="fc" id="L77">        setManaged(false);</span>
+<span class="fc" id="L78">    }</span>
+
+    public boolean isShowing() {
+<span class="fc" id="L81">        return isVisible();</span>
+    }
+
+    public Node getContent() {
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">        return contentHost.getChildren().isEmpty()</span>
+<span class="nc" id="L86">                ? null</span>
+<span class="fc" id="L87">                : contentHost.getChildren().get(0);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

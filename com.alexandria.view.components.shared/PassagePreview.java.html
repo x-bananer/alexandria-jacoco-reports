@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PassagePreview.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.shared</a> &gt; <span class="el_source">PassagePreview.java</span></div><h1>PassagePreview.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.shared;
+
+import javafx.geometry.Pos;
+import javafx.scene.control.Hyperlink;
+import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
+
+/** Shared location, action and passage-preview block for analysis sidebars. */
+public class PassagePreview extends VBox {
+<span class="nc" id="L13">    public PassagePreview(String location, String snippet, Runnable onGoTo) {</span>
+<span class="nc" id="L14">        setSpacing(3);</span>
+
+<span class="nc bnc" id="L16" title="All 2 branches missed.">        Label locationLabel = new Label(location == null ? &quot;&quot; : location);</span>
+<span class="nc" id="L17">        locationLabel.getStyleClass().add(&quot;context-match-page&quot;);</span>
+
+<span class="nc" id="L19">        Region spacer = new Region();</span>
+<span class="nc" id="L20">        HBox.setHgrow(spacer, Priority.ALWAYS);</span>
+
+<span class="nc" id="L22">        Hyperlink goTo = new Hyperlink(&quot;Go to →&quot;);</span>
+<span class="nc" id="L23">        goTo.getStyleClass().add(&quot;hyperlink&quot;);</span>
+<span class="nc" id="L24">        goTo.setOnAction(event -&gt; {</span>
+<span class="nc bnc" id="L25" title="All 2 branches missed.">            if (onGoTo != null) {</span>
+<span class="nc" id="L26">                onGoTo.run();</span>
+            }
+<span class="nc" id="L28">        });</span>
+
+<span class="nc" id="L30">        HBox header = new HBox(locationLabel, spacer, goTo);</span>
+<span class="nc" id="L31">        header.setAlignment(Pos.CENTER_LEFT);</span>
+
+<span class="nc bnc" id="L33" title="All 2 branches missed.">        Label passage = new Label(snippet == null ? &quot;&quot; : snippet);</span>
+<span class="nc" id="L34">        passage.setWrapText(true);</span>
+<span class="nc" id="L35">        passage.getStyleClass().add(&quot;context-match-snippet&quot;);</span>
+
+<span class="nc" id="L37">        getChildren().addAll(header, passage);</span>
+<span class="nc" id="L38">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

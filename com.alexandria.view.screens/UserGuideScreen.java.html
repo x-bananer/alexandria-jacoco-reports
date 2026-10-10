@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserGuideScreen.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.screens</a> &gt; <span class="el_source">UserGuideScreen.java</span></div><h1>UserGuideScreen.java</h1><pre class="source lang-java linenums">package com.alexandria.view.screens;
+
+import com.alexandria.view.components.shared.toggle.Toggle;
+
+import com.alexandria.view.components.user_guide.UserGuideData;
+import com.alexandria.view.components.user_guide.UserGuideSection;
+import com.alexandria.view.components.user_guide.UserGuideSectionContent;
+import com.alexandria.view.components.user_guide.UserGuideStep;
+import com.alexandria.view.components.user_guide.UserGuideTourButton;
+
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
+
+public class UserGuideScreen extends VBox {
+
+<span class="nc" id="L24">    private final Toggle sectionToggle = new Toggle(</span>
+            &quot;New Project&quot;, &quot;Library&quot;, &quot;Analyze&quot;, &quot;Compare&quot;, &quot;Archive&quot;, &quot;Profile&quot;, &quot;Settings&quot;);
+<span class="nc" id="L26">    private final VBox sectionContent = new VBox(24);</span>
+
+<span class="nc" id="L28">    public UserGuideScreen() {</span>
+<span class="nc" id="L29">        getStyleClass().add(&quot;user-guide-screen&quot;);</span>
+<span class="nc" id="L30">        setSpacing(20);</span>
+<span class="nc" id="L31">        setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);</span>
+
+<span class="nc" id="L33">        VBox description = buildDescription();</span>
+
+<span class="nc" id="L35">        sectionToggle.getStyleClass().add(&quot;user-guide-tabs&quot;);</span>
+<span class="nc" id="L36">        sectionToggle.setMaxWidth(Double.MAX_VALUE);</span>
+<span class="nc" id="L37">        sectionToggle.setOnToggle(this::showSection);</span>
+
+<span class="nc" id="L39">        sectionContent.getStyleClass().add(&quot;user-guide-content&quot;);</span>
+<span class="nc" id="L40">        ScrollPane scrollPane = new ScrollPane(sectionContent);</span>
+<span class="nc" id="L41">        scrollPane.setFitToWidth(true);</span>
+<span class="nc" id="L42">        scrollPane.getStyleClass().add(&quot;shared-scroll&quot;);</span>
+<span class="nc" id="L43">        VBox.setVgrow(scrollPane, Priority.ALWAYS);</span>
+
+<span class="nc" id="L45">        getChildren().addAll(buildHeader(), description, sectionToggle, scrollPane);</span>
+<span class="nc" id="L46">        showSection(0);</span>
+<span class="nc" id="L47">    }</span>
+
+    private HBox buildHeader() {
+<span class="nc" id="L50">        Label title = new Label(&quot;User Guide&quot;);</span>
+<span class="nc" id="L51">        title.getStyleClass().add(&quot;heading-xl&quot;);</span>
+
+<span class="nc" id="L53">        Label subtitle = new Label(&quot;Guidelines for using the application&quot;);</span>
+<span class="nc" id="L54">        subtitle.getStyleClass().addAll(&quot;text-muted&quot;, &quot;user-guide-subtitle&quot;);</span>
+
+<span class="nc" id="L56">        VBox titleBox = new VBox(6, title, subtitle);</span>
+<span class="nc" id="L57">        Region spacer = new Region();</span>
+<span class="nc" id="L58">        HBox.setHgrow(spacer, Priority.ALWAYS);</span>
+
+<span class="nc" id="L60">        HBox header = new HBox(titleBox, spacer, new UserGuideTourButton());</span>
+<span class="nc" id="L61">        header.setAlignment(Pos.CENTER_LEFT);</span>
+<span class="nc" id="L62">        header.getStyleClass().add(&quot;user-guide-header&quot;);</span>
+<span class="nc" id="L63">        return header;</span>
+    }
+
+    private VBox buildDescription() {
+<span class="nc" id="L67">        VBox description = new VBox(8);</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        for (String text : UserGuideData.ABOUT_PARAGRAPHS) {</span>
+<span class="nc" id="L69">            Text paragraph = new Text(text);</span>
+<span class="nc" id="L70">            paragraph.getStyleClass().add(&quot;user-guide-description-text&quot;);</span>
+
+<span class="nc" id="L72">            TextFlow paragraphFlow = new TextFlow(paragraph);</span>
+<span class="nc" id="L73">            paragraphFlow.setMinWidth(0);</span>
+<span class="nc" id="L74">            paragraphFlow.setMaxWidth(Double.MAX_VALUE);</span>
+<span class="nc" id="L75">            paragraphFlow.setLineSpacing(3);</span>
+<span class="nc" id="L76">            paragraphFlow.prefWidthProperty().bind(widthProperty().subtract(60));</span>
+<span class="nc" id="L77">            description.getChildren().add(paragraphFlow);</span>
+<span class="nc" id="L78">        }</span>
+<span class="nc" id="L79">        description.setMaxWidth(Double.MAX_VALUE);</span>
+<span class="nc" id="L80">        return description;</span>
+    }
+
+    private void showSection(int index) {
+<span class="nc bnc" id="L84" title="All 8 branches missed.">        Node section = switch (index) {</span>
+<span class="nc" id="L85">            case 0 -&gt; new UserGuideSection(</span>
+                    new UserGuideSectionContent(UserGuideData.NEW_PROJECT_STEPS, null),
+                    &quot;/images/user-guide/new-project.png&quot;);
+<span class="nc" id="L88">            case 1 -&gt; new UserGuideSection(</span>
+                    new UserGuideSectionContent(UserGuideData.LIBRARY_STEPS, null),
+                    &quot;/images/user-guide/library.png&quot;);
+<span class="nc" id="L91">            case 2 -&gt; buildAnalyzeGuide();</span>
+<span class="nc" id="L92">            case 3 -&gt; buildCompareGuide();</span>
+<span class="nc" id="L93">            case 4 -&gt; new UserGuideSection(</span>
+                    new UserGuideSectionContent(UserGuideData.ARCHIVE_STEPS, null),
+                    &quot;/images/user-guide/archive.png&quot;);
+<span class="nc" id="L96">            case 5 -&gt; new UserGuideSection(</span>
+                    new UserGuideSectionContent(UserGuideData.PROFILE_STEPS, null),
+                    &quot;/images/user-guide/profile.png&quot;);
+<span class="nc" id="L99">            case 6 -&gt; new UserGuideSection(</span>
+                    new UserGuideSectionContent(UserGuideData.SETTINGS_STEPS, UserGuideData.SETTINGS_NOTE),
+                    &quot;/images/user-guide/settings.png&quot;);
+<span class="nc" id="L102">            default -&gt; new VBox();</span>
+        };
+<span class="nc" id="L104">        sectionContent.getChildren().setAll(section);</span>
+<span class="nc" id="L105">    }</span>
+
+    private Node buildAnalyzeGuide() {
+<span class="nc" id="L108">        Label startTitle = guideHeading(&quot;Open a text for analysis&quot;);</span>
+<span class="nc" id="L109">        Label startDescription = new Label(UserGuideData.ANALYZE_INTRODUCTION);</span>
+<span class="nc" id="L110">        startDescription.getStyleClass().add(&quot;user-guide-row-text&quot;);</span>
+<span class="nc" id="L111">        startDescription.setWrapText(true);</span>
+<span class="nc" id="L112">        startDescription.setMinWidth(0);</span>
+<span class="nc" id="L113">        startDescription.setMaxWidth(Double.MAX_VALUE);</span>
+
+<span class="nc" id="L115">        Label functionsTitle = guideHeading(&quot;How analysis results are calculated&quot;);</span>
+
+<span class="nc" id="L117">        VBox functionList = new VBox(10);</span>
+<span class="nc bnc" id="L118" title="All 2 branches missed.">        for (int i = 0; i &lt; UserGuideData.ANALYZE_METHODS.size(); i++) {</span>
+<span class="nc" id="L119">            functionList.getChildren().add(new UserGuideStep(i + 1, UserGuideData.ANALYZE_METHODS.get(i)));</span>
+        }
+
+<span class="nc" id="L122">        VBox content = new VBox(12, startTitle, startDescription, functionsTitle, functionList);</span>
+<span class="nc" id="L123">        content.setMinWidth(0);</span>
+<span class="nc" id="L124">        return new UserGuideSection(content, &quot;/images/user-guide/analyze.png&quot;);</span>
+    }
+
+    private Node buildCompareGuide() {
+<span class="nc" id="L128">        Label startTitle = guideHeading(&quot;Open texts for comparison&quot;);</span>
+<span class="nc" id="L129">        Label startDescription = new Label(UserGuideData.COMPARE_INTRODUCTION);</span>
+<span class="nc" id="L130">        startDescription.getStyleClass().add(&quot;user-guide-row-text&quot;);</span>
+<span class="nc" id="L131">        startDescription.setWrapText(true);</span>
+<span class="nc" id="L132">        startDescription.setMinWidth(0);</span>
+<span class="nc" id="L133">        startDescription.setMaxWidth(Double.MAX_VALUE);</span>
+
+<span class="nc" id="L135">        Label functionsTitle = guideHeading(&quot;How comparison results are calculated&quot;);</span>
+
+<span class="nc" id="L137">        VBox functionList = new VBox(10);</span>
+<span class="nc bnc" id="L138" title="All 2 branches missed.">        for (int i = 0; i &lt; UserGuideData.COMPARE_METHODS.size(); i++) {</span>
+<span class="nc" id="L139">            functionList.getChildren().add(new UserGuideStep(i + 1, UserGuideData.COMPARE_METHODS.get(i)));</span>
+        }
+
+<span class="nc" id="L142">        VBox content = new VBox(12, startTitle, startDescription, functionsTitle, functionList);</span>
+<span class="nc" id="L143">        content.setMinWidth(0);</span>
+<span class="nc" id="L144">        return new UserGuideSection(content, null);</span>
+    }
+
+    private Label guideHeading(String text) {
+<span class="nc" id="L148">        Label heading = new Label(text);</span>
+<span class="nc" id="L149">        heading.getStyleClass().addAll(&quot;heading-md&quot;, &quot;user-guide-section-heading&quot;);</span>
+<span class="nc" id="L150">        return heading;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

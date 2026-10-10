@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ArchiveController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.controller</a> &gt; <span class="el_source">ArchiveController.java</span></div><h1>ArchiveController.java</h1><pre class="source lang-java linenums">package com.alexandria.controller;
+
+import com.alexandria.dao.TermComparisonDAO;
+import com.alexandria.dao.TermComparisonTextDAO;
+import com.alexandria.dao.TextComparisonDAO;
+import com.alexandria.dao.TextComparisonTextDAO;
+import com.alexandria.dao.TextDAO;
+import com.alexandria.model.TermComparison;
+import com.alexandria.model.TermComparisonText;
+import com.alexandria.model.Text;
+import com.alexandria.model.TextComparison;
+import com.alexandria.model.TextComparisonText;
+import com.alexandria.model.User;
+import com.alexandria.service.ArchiveTermAnalysisService;
+import com.alexandria.service.ArchiveTextAnalysisService;
+import com.alexandria.service.analysis.TermComparisonResult;
+import com.alexandria.service.analysis.TextComparisonResult;
+import com.alexandria.utils.JsonMapper;
+import com.alexandria.model.ArchiveComparison;
+import com.alexandria.view.components.shared.modal.ErrorAlert;
+import com.alexandria.view.screens.ArchiveScreen;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+public class ArchiveController {
+
+    private final ArchiveTextAnalysisService archiveTextAnalysisService;
+    private final ArchiveTermAnalysisService archiveTermAnalysisService;
+
+    private final TextComparisonDAO textComparisonDAO;
+    private final TextComparisonTextDAO textComparisonTextDAO;
+    private final TermComparisonDAO termComparisonDAO;
+    private final TermComparisonTextDAO termComparisonTextDAO;
+    private final TextDAO textDAO;
+
+    private final ArchiveScreen archiveScreen;
+<span class="fc" id="L40">    private final UserSessionController session = UserSessionController.getInstance();</span>
+
+    /**
+     * Normal constructor used by the application.
+     */
+    public ArchiveController(ArchiveScreen archiveScreen) {
+<span class="nc" id="L46">        this(</span>
+                new ArchiveTextAnalysisService(),
+                new ArchiveTermAnalysisService(),
+                new TextComparisonDAO(),
+                new TextComparisonTextDAO(),
+                new TermComparisonDAO(),
+                new TermComparisonTextDAO(),
+                new TextDAO(),
+                archiveScreen);
+<span class="nc" id="L55">    }</span>
+
+    /**
+     * Constructor used for testing.
+     *
+     * Allows DAOs and services to be replaced with Mockito mocks.
+     */
+    ArchiveController(
+            ArchiveTextAnalysisService archiveTextAnalysisService,
+            ArchiveTermAnalysisService archiveTermAnalysisService,
+            TextComparisonDAO textComparisonDAO,
+            TextComparisonTextDAO textComparisonTextDAO,
+            TermComparisonDAO termComparisonDAO,
+            TermComparisonTextDAO termComparisonTextDAO,
+            TextDAO textDAO,
+<span class="fc" id="L70">            ArchiveScreen archiveScreen) {</span>
+
+<span class="fc" id="L72">        this.archiveTextAnalysisService = archiveTextAnalysisService;</span>
+<span class="fc" id="L73">        this.archiveTermAnalysisService = archiveTermAnalysisService;</span>
+
+<span class="fc" id="L75">        this.textComparisonDAO = textComparisonDAO;</span>
+<span class="fc" id="L76">        this.textComparisonTextDAO = textComparisonTextDAO;</span>
+<span class="fc" id="L77">        this.termComparisonDAO = termComparisonDAO;</span>
+<span class="fc" id="L78">        this.termComparisonTextDAO = termComparisonTextDAO;</span>
+<span class="fc" id="L79">        this.textDAO = textDAO;</span>
+
+<span class="fc" id="L81">        this.archiveScreen = archiveScreen;</span>
+
+<span class="fc" id="L83">        archiveScreen.setOnShown(this::loadAnalyses);</span>
+
+<span class="fc" id="L85">        archiveScreen.setOnDeleteTextAnalysis(this::deleteTextAnalysis);</span>
+<span class="fc" id="L86">        archiveScreen.setOnDeleteTermAnalysis(this::deleteTermAnalysis);</span>
+<span class="fc" id="L87">        archiveScreen.setOnDeleteTextComparison(this::deleteTextComparison);</span>
+<span class="fc" id="L88">        archiveScreen.setOnDeleteTermComparison(this::deleteTermComparison);</span>
+
+<span class="fc" id="L90">        session.addListener(user -&gt; loadAnalyses());</span>
+<span class="fc" id="L91">    }</span>
+
+    void loadAnalyses() {
+<span class="fc" id="L94">        User user = session.getCurrentUser();</span>
+
+<span class="fc bfc" id="L96" title="All 2 branches covered.">        if (user == null) {</span>
+<span class="fc" id="L97">            archiveScreen.showSignInMessage();</span>
+<span class="fc" id="L98">            return;</span>
+        }
+
+        try {
+<span class="fc" id="L102">            archiveScreen.setTextAnalyses(</span>
+<span class="fc" id="L103">                    archiveTextAnalysisService.findAllByUserId(user.getId()));</span>
+
+<span class="fc" id="L105">            archiveScreen.setTermAnalyses(</span>
+<span class="fc" id="L106">                    archiveTermAnalysisService.findAllByUserId(user.getId()));</span>
+
+<span class="fc" id="L108">            archiveScreen.setTextComparisons(</span>
+<span class="fc" id="L109">                    loadTextComparisons(user.getId()));</span>
+
+<span class="fc" id="L111">            archiveScreen.setTermComparisons(</span>
+<span class="fc" id="L112">                    loadTermComparisons(user.getId()));</span>
+
+<span class="nc" id="L114">        } catch (SQLException | RuntimeException e) {</span>
+<span class="nc" id="L115">            System.err.println(&quot;Could not load archive: &quot; + e.getMessage());</span>
+<span class="nc" id="L116">            ErrorAlert.show(&quot;Could not load saved analyses.&quot;);</span>
+
+<span class="nc" id="L118">            archiveScreen.setTextAnalyses(List.of());</span>
+<span class="nc" id="L119">            archiveScreen.setTermAnalyses(List.of());</span>
+<span class="nc" id="L120">            archiveScreen.setTextComparisons(List.of());</span>
+<span class="nc" id="L121">            archiveScreen.setTermComparisons(List.of());</span>
+<span class="fc" id="L122">        }</span>
+<span class="fc" id="L123">    }</span>
+
+    private List&lt;ArchiveComparison&gt; loadTextComparisons(int userId)
+            throws SQLException {
+
+<span class="fc" id="L128">        List&lt;ArchiveComparison&gt; comparisons = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L130" title="All 2 branches covered.">        for (TextComparison comparison : textComparisonDAO.findAllByUserId(userId)) {</span>
+
+            TextComparisonResult result;
+
+            try {
+<span class="pc" id="L135">                result = JsonMapper.fromJson(</span>
+<span class="fc" id="L136">                        comparison.getComparisonData(),</span>
+                        TextComparisonResult.class);
+<span class="fc" id="L138">            } catch (RuntimeException e) {</span>
+<span class="fc" id="L139">                logSkipped(&quot;text comparison&quot;, comparison.getId(), e);</span>
+<span class="fc" id="L140">                continue;</span>
+<span class="nc" id="L141">            }</span>
+
+<span class="nc" id="L143">            List&lt;Integer&gt; textIds = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L145" title="All 2 branches missed.">            for (TextComparisonText link : textComparisonTextDAO.findAllByComparisonId(</span>
+<span class="nc" id="L146">                    comparison.getId())) {</span>
+
+<span class="nc" id="L148">                textIds.add(link.getTextId());</span>
+<span class="nc" id="L149">            }</span>
+
+<span class="nc" id="L151">            List&lt;Text&gt; texts = findTexts(textIds);</span>
+
+<span class="nc" id="L153">            comparisons.add(new ArchiveComparison(</span>
+<span class="nc" id="L154">                    comparison.getId(),</span>
+<span class="nc" id="L155">                    joinTitles(texts),</span>
+<span class="nc" id="L156">                    joinFileNames(texts),</span>
+                    null,
+<span class="nc" id="L158">                    comparison.getCreatedAt(),</span>
+                    result,
+                    null));
+<span class="nc" id="L161">        }</span>
+
+<span class="fc" id="L163">        return comparisons;</span>
+    }
+
+    private List&lt;ArchiveComparison&gt; loadTermComparisons(int userId)
+            throws SQLException {
+
+<span class="fc" id="L169">        List&lt;ArchiveComparison&gt; comparisons = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L171" title="All 2 branches covered.">        for (TermComparison comparison : termComparisonDAO.findAllByUserId(userId)) {</span>
+
+            TermComparisonResult result;
+
+            try {
+<span class="pc" id="L176">                result = JsonMapper.fromJson(</span>
+<span class="fc" id="L177">                        comparison.getComparisonData(),</span>
+                        TermComparisonResult.class);
+<span class="fc" id="L179">            } catch (RuntimeException e) {</span>
+<span class="fc" id="L180">                logSkipped(&quot;term comparison&quot;, comparison.getId(), e);</span>
+<span class="fc" id="L181">                continue;</span>
+<span class="nc" id="L182">            }</span>
+
+<span class="nc" id="L184">            List&lt;Integer&gt; textIds = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L186" title="All 2 branches missed.">            for (TermComparisonText link : termComparisonTextDAO.findAllByComparisonId(</span>
+<span class="nc" id="L187">                    comparison.getId())) {</span>
+
+<span class="nc" id="L189">                textIds.add(link.getTextId());</span>
+<span class="nc" id="L190">            }</span>
+
+<span class="nc" id="L192">            List&lt;Text&gt; texts = findTexts(textIds);</span>
+
+<span class="nc" id="L194">            comparisons.add(new ArchiveComparison(</span>
+<span class="nc" id="L195">                    comparison.getId(),</span>
+<span class="nc" id="L196">                    joinTitles(texts),</span>
+<span class="nc" id="L197">                    joinFileNames(texts),</span>
+<span class="nc" id="L198">                    comparison.getTerm(),</span>
+<span class="nc" id="L199">                    comparison.getCreatedAt(),</span>
+                    null,
+                    result));
+<span class="nc" id="L202">        }</span>
+
+<span class="fc" id="L204">        return comparisons;</span>
+    }
+
+    /**
+     * One unreadable saved row must not blank the whole archive.
+     * Log the real cause and carry on with the remaining rows.
+     */
+    private void logSkipped(String kind, Integer id, RuntimeException e) {
+<span class="pc bpc" id="L212" title="1 of 2 branches missed.">        Throwable cause = e.getCause() != null ? e.getCause() : e;</span>
+
+<span class="fc" id="L214">        System.err.println(</span>
+<span class="fc" id="L215">                &quot;Skipping unreadable saved &quot; + kind + &quot; &quot; + id + &quot;: &quot; + cause.getMessage());</span>
+<span class="fc" id="L216">    }</span>
+
+    private List&lt;Text&gt; findTexts(List&lt;Integer&gt; textIds)
+            throws SQLException {
+
+<span class="nc" id="L221">        List&lt;Text&gt; texts = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L223" title="All 2 branches missed.">        for (Integer textId : textIds) {</span>
+<span class="nc" id="L224">            Text text = textDAO.findById(textId);</span>
+
+<span class="nc bnc" id="L226" title="All 2 branches missed.">            if (text != null) {</span>
+<span class="nc" id="L227">                texts.add(text);</span>
+            }
+<span class="nc" id="L229">        }</span>
+
+<span class="nc" id="L231">        return texts;</span>
+    }
+
+    private String joinTitles(List&lt;Text&gt; texts) {
+<span class="nc" id="L235">        List&lt;String&gt; titles = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L237" title="All 2 branches missed.">        for (Text text : texts) {</span>
+<span class="nc bnc" id="L238" title="All 2 branches missed.">            boolean hasTitle = text.getTitle() != null &amp;&amp;</span>
+<span class="nc bnc" id="L239" title="All 2 branches missed.">                    !text.getTitle().isBlank();</span>
+
+<span class="nc" id="L241">            titles.add(</span>
+<span class="nc bnc" id="L242" title="All 2 branches missed.">                    hasTitle</span>
+<span class="nc" id="L243">                            ? text.getTitle()</span>
+<span class="nc" id="L244">                            : text.getFileName());</span>
+<span class="nc" id="L245">        }</span>
+
+<span class="nc" id="L247">        return String.join(&quot; vs &quot;, titles);</span>
+    }
+
+    private String joinFileNames(List&lt;Text&gt; texts) {
+<span class="nc" id="L251">        List&lt;String&gt; names = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L253" title="All 2 branches missed.">        for (Text text : texts) {</span>
+<span class="nc" id="L254">            names.add(text.getFileName());</span>
+<span class="nc" id="L255">        }</span>
+
+<span class="nc" id="L257">        return String.join(&quot; · &quot;, names);</span>
+    }
+
+    void deleteTextAnalysis(Integer id) {
+<span class="fc" id="L261">        User user = session.getCurrentUser();</span>
+
+<span class="fc bfc" id="L263" title="All 2 branches covered.">        if (user == null) {</span>
+<span class="fc" id="L264">            return;</span>
+        }
+
+        try {
+<span class="fc" id="L268">            archiveTextAnalysisService.deleteById(id, user.getId());</span>
+<span class="fc" id="L269">            loadAnalyses();</span>
+
+<span class="nc" id="L271">        } catch (SQLException | IllegalArgumentException e) {</span>
+<span class="nc" id="L272">            System.err.println(</span>
+<span class="nc" id="L273">                    &quot;Could not delete text analysis: &quot; + e.getMessage());</span>
+
+<span class="nc" id="L275">            ErrorAlert.show(&quot;Could not delete text analysis.&quot;);</span>
+<span class="fc" id="L276">        }</span>
+<span class="fc" id="L277">    }</span>
+
+    void deleteTermAnalysis(Integer id) {
+<span class="fc" id="L280">        User user = session.getCurrentUser();</span>
+
+<span class="fc bfc" id="L282" title="All 2 branches covered.">        if (user == null) {</span>
+<span class="fc" id="L283">            return;</span>
+        }
+
+        try {
+<span class="fc" id="L287">            archiveTermAnalysisService.deleteById(id, user.getId());</span>
+<span class="fc" id="L288">            loadAnalyses();</span>
+
+<span class="nc" id="L290">        } catch (SQLException | IllegalArgumentException e) {</span>
+<span class="nc" id="L291">            System.err.println(</span>
+<span class="nc" id="L292">                    &quot;Could not delete term analysis: &quot; + e.getMessage());</span>
+
+<span class="nc" id="L294">            ErrorAlert.show(&quot;Could not delete term analysis.&quot;);</span>
+<span class="fc" id="L295">        }</span>
+<span class="fc" id="L296">    }</span>
+
+    void deleteTextComparison(Integer id) {
+<span class="fc" id="L299">        User user = session.getCurrentUser();</span>
+
+<span class="fc bfc" id="L301" title="All 2 branches covered.">        if (user == null) {</span>
+<span class="fc" id="L302">            return;</span>
+        }
+
+        try {
+<span class="fc" id="L306">            TextComparison comparison = textComparisonDAO.findById(id);</span>
+
+<span class="pc bpc" id="L308" title="1 of 2 branches missed.">            if (comparison == null ||</span>
+<span class="fc bfc" id="L309" title="All 2 branches covered.">                    !Objects.equals(user.getId(), comparison.getUserId())) {</span>
+
+<span class="fc" id="L311">                throw new IllegalArgumentException(</span>
+                        &quot;Text comparison does not belong to the provided user.&quot;);
+            }
+
+<span class="fc bfc" id="L315" title="All 2 branches covered.">            for (TextComparisonText link : textComparisonTextDAO.findAllByComparisonId(id)) {</span>
+
+<span class="fc" id="L317">                textComparisonTextDAO.delete(</span>
+<span class="fc" id="L318">                        id,</span>
+<span class="fc" id="L319">                        link.getTextId());</span>
+<span class="fc" id="L320">            }</span>
+
+<span class="fc" id="L322">            textComparisonDAO.delete(id);</span>
+<span class="fc" id="L323">            loadAnalyses();</span>
+
+<span class="fc" id="L325">        } catch (SQLException | IllegalArgumentException e) {</span>
+<span class="fc" id="L326">            System.err.println(</span>
+<span class="fc" id="L327">                    &quot;Could not delete text comparison: &quot; + e.getMessage());</span>
+
+<span class="fc" id="L329">            ErrorAlert.show(&quot;Could not delete text comparison.&quot;);</span>
+<span class="fc" id="L330">        }</span>
+<span class="fc" id="L331">    }</span>
+
+    void deleteTermComparison(Integer id) {
+<span class="fc" id="L334">        User user = session.getCurrentUser();</span>
+
+<span class="fc bfc" id="L336" title="All 2 branches covered.">        if (user == null) {</span>
+<span class="fc" id="L337">            return;</span>
+        }
+
+        try {
+<span class="fc" id="L341">            TermComparison comparison = termComparisonDAO.findById(id);</span>
+
+<span class="pc bpc" id="L343" title="1 of 2 branches missed.">            if (comparison == null ||</span>
+<span class="fc bfc" id="L344" title="All 2 branches covered.">                    !Objects.equals(user.getId(), comparison.getUserId())) {</span>
+
+<span class="fc" id="L346">                throw new IllegalArgumentException(</span>
+                        &quot;Term comparison does not belong to the provided user.&quot;);
+            }
+
+<span class="fc bfc" id="L350" title="All 2 branches covered.">            for (TermComparisonText link : termComparisonTextDAO.findAllByComparisonId(id)) {</span>
+
+<span class="fc" id="L352">                termComparisonTextDAO.delete(</span>
+<span class="fc" id="L353">                        id,</span>
+<span class="fc" id="L354">                        link.getTextId());</span>
+<span class="fc" id="L355">            }</span>
+
+<span class="fc" id="L357">            termComparisonDAO.delete(id);</span>
+<span class="fc" id="L358">            loadAnalyses();</span>
+
+<span class="fc" id="L360">        } catch (SQLException | IllegalArgumentException e) {</span>
+<span class="fc" id="L361">            System.err.println(</span>
+<span class="fc" id="L362">                    &quot;Could not delete term comparison: &quot; + e.getMessage());</span>
+
+<span class="fc" id="L364">            ErrorAlert.show(&quot;Could not delete term comparison.&quot;);</span>
+<span class="fc" id="L365">        }</span>
+<span class="fc" id="L366">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProjectController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.controller</a> &gt; <span class="el_source">ProjectController.java</span></div><h1>ProjectController.java</h1><pre class="source lang-java linenums">package com.alexandria.controller;
+
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+
+import com.alexandria.dao.TextDAO;
+import com.alexandria.model.FileType;
+import com.alexandria.model.Text;
+import com.alexandria.model.User;
+import com.alexandria.service.FileStorageService;
+import com.alexandria.service.PdfService;
+import com.alexandria.view.components.shared.document.highlight.TextPaginator;
+import com.alexandria.view.components.side_navbar.new_project.NewProjectModal;
+
+public class ProjectController {
+
+    private final TextDAO textDAO;
+    private final PdfService pdfService;
+    private final FileStorageService fileStorageService;
+<span class="fc" id="L22">    private final UserSessionController session = UserSessionController.getInstance();</span>
+
+    public ProjectController(TextDAO textDAO, PdfService pdfService) {
+<span class="fc" id="L25">        this(textDAO, pdfService, new FileStorageService());</span>
+<span class="fc" id="L26">    }</span>
+
+<span class="fc" id="L28">    ProjectController(TextDAO textDAO, PdfService pdfService, FileStorageService fileStorageService) {</span>
+<span class="fc" id="L29">        this.textDAO = textDAO;</span>
+<span class="fc" id="L30">        this.pdfService = pdfService;</span>
+<span class="fc" id="L31">        this.fileStorageService = fileStorageService;</span>
+<span class="fc" id="L32">    }</span>
+
+    public Result createProject(NewProjectModal.CreatedProject created) {
+        try {
+            String content;
+<span class="fc" id="L37">            List&lt;Integer&gt; pageOffsets = List.of();</span>
+<span class="fc" id="L38">            File sourceFile = null;</span>
+<span class="fc" id="L39">            Path storedFile = null;</span>
+
+<span class="fc bfc" id="L41" title="All 2 branches covered.">            if (created.sourceType() == NewProjectModal.SourceType.PASTE) {</span>
+<span class="fc" id="L42">                content = created.textContent();</span>
+            } else {
+<span class="fc" id="L44">                File file = created.file();</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">                if (file == null)</span>
+<span class="fc" id="L46">                    throw new IllegalArgumentException(&quot;No file was selected.&quot;);</span>
+
+<span class="fc" id="L48">                sourceFile = file;</span>
+<span class="fc" id="L49">                String name = file.getName().toLowerCase();</span>
+
+<span class="fc bfc" id="L51" title="All 2 branches covered.">                if (name.endsWith(&quot;.pdf&quot;)) {</span>
+<span class="fc" id="L52">                    PdfService.PagedText pagedText = pdfService.extractTextWithPageBoundaries(file);</span>
+<span class="fc" id="L53">                    content = pagedText.content();</span>
+<span class="fc" id="L54">                    pageOffsets = pagedText.pageOffsets();</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">                } else if (name.endsWith(&quot;.txt&quot;)) {</span>
+<span class="fc" id="L56">                    content = Files.readString(file.toPath());</span>
+                } else {
+<span class="fc" id="L58">                    throw new IllegalArgumentException(&quot;Unsupported file type. Please upload a PDF or TXT file.&quot;);</span>
+                }
+            }
+
+<span class="fc" id="L62">            FileType fileType = resolveFileType(created);</span>
+
+<span class="fc bfc" id="L64" title="All 2 branches covered.">            if (fileType != FileType.PDF) {</span>
+<span class="fc" id="L65">                pageOffsets = TextPaginator.paginate(content, TextPaginator.CHARS_PER_PAGE);</span>
+            }
+
+<span class="fc" id="L68">            String fileName = resolveFileName(created);</span>
+<span class="fc" id="L69">            User user = session.getCurrentUser();</span>
+
+            // Guest: keep project in memory.
+<span class="fc bfc" id="L72" title="All 2 branches covered.">            if (user == null) {</span>
+<span class="fc" id="L73">                Text text = new Text(null, created.title(), fileName, fileType, content);</span>
+<span class="fc" id="L74">                return Result.ok(text, pageOffsets, sourceFile);</span>
+            }
+
+            // Logged-in user: persist project.
+<span class="fc bfc" id="L78" title="All 2 branches covered.">            if (created.sourceType() == NewProjectModal.SourceType.UPLOAD) {</span>
+<span class="fc" id="L79">                storedFile = fileStorageService.saveFile(created.file(), user.getId());</span>
+            }
+
+<span class="fc" id="L82">            Text text = new Text(</span>
+<span class="fc" id="L83">                    user.getId(),</span>
+<span class="fc" id="L84">                    created.title(),</span>
+                    fileName,
+<span class="fc bfc" id="L86" title="All 2 branches covered.">                    storedFile == null ? null : storedFile.toString(),</span>
+                    fileType,
+                    content);
+<span class="fc" id="L89">            Text persisted = textDAO.create(text);</span>
+
+<span class="fc bfc" id="L91" title="All 2 branches covered.">            return Result.ok(persisted, pageOffsets, storedFile == null ? sourceFile : storedFile.toFile());</span>
+
+<span class="fc" id="L93">        } catch (Exception e) {</span>
+<span class="fc" id="L94">            return Result.error(&quot;Could not create project: &quot; + e.getMessage());</span>
+        }
+    }
+
+    private FileType resolveFileType(NewProjectModal.CreatedProject created) {
+<span class="fc bfc" id="L99" title="All 2 branches covered.">        if (created.sourceType() == NewProjectModal.SourceType.PASTE)</span>
+<span class="fc" id="L100">            return FileType.MANUAL;</span>
+
+<span class="fc" id="L102">        File file = created.file();</span>
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">        if (file == null)</span>
+<span class="nc" id="L104">            throw new IllegalArgumentException(&quot;No file was selected.&quot;);</span>
+
+<span class="fc" id="L106">        String name = file.getName().toLowerCase();</span>
+<span class="fc bfc" id="L107" title="All 2 branches covered.">        if (name.endsWith(&quot;.pdf&quot;))</span>
+<span class="fc" id="L108">            return FileType.PDF;</span>
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">        if (name.endsWith(&quot;.txt&quot;))</span>
+<span class="fc" id="L110">            return FileType.TXT;</span>
+
+<span class="nc" id="L112">        throw new IllegalArgumentException(&quot;Unsupported file type.&quot;);</span>
+    }
+
+    private String resolveFileName(NewProjectModal.CreatedProject created) {
+<span class="fc bfc" id="L116" title="All 2 branches covered.">        if (created.sourceType() == NewProjectModal.SourceType.PASTE)</span>
+<span class="fc" id="L117">            return created.fileName();</span>
+
+<span class="fc" id="L119">        String provided = created.fileName();</span>
+<span class="pc bpc" id="L120" title="1 of 4 branches missed.">        return provided != null &amp;&amp; !provided.isBlank() ? provided : created.file().getName();</span>
+    }
+
+<span class="fc" id="L123">    public record Result(boolean success, String message, Text text, List&lt;Integer&gt; pageOffsets, File sourceFile) {</span>
+
+        public static Result ok(Text text, List&lt;Integer&gt; pageOffsets, File sourceFile) {
+<span class="fc" id="L126">            return new Result(true, null, text, pageOffsets, sourceFile);</span>
+        }
+
+        public static Result error(String message) {
+<span class="fc" id="L130">            return new Result(false, message, null, List.of(), null);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

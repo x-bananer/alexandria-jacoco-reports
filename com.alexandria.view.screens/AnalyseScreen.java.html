@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AnalyseScreen.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.screens</a> &gt; <span class="el_source">AnalyseScreen.java</span></div><h1>AnalyseScreen.java</h1><pre class="source lang-java linenums">package com.alexandria.view.screens;
+
+import com.alexandria.model.FileType;
+import com.alexandria.model.Quotation;
+import com.alexandria.view.components.shared.quotation.QuotationLocation;
+import com.alexandria.service.analysis.SearchMatch;
+import com.alexandria.service.analysis.SearchSettings;
+import com.alexandria.service.analysis.TermAnalysisResult;
+import com.alexandria.service.analysis.TextFragment;
+import com.alexandria.service.analysis.WordFrequency;
+import com.alexandria.view.components.analyse_screen.AnalyseHeader;
+import com.alexandria.view.components.shared.document.DocumentView;
+import com.alexandria.view.components.shared.quotation.QuotationsView;
+import com.alexandria.view.components.shared.search.SearchView;
+import com.alexandria.view.components.analyse_screen.TermDetailModal;
+import com.alexandria.view.components.analyse_screen.text_term_analyze.TextContextPanel;
+import com.alexandria.view.components.analyse_screen.text_term_analyze.TextTermFrequencyPanel;
+import com.alexandria.view.components.shared.modal.Modal;
+import com.alexandria.view.components.shared.SuccessToast;
+
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+
+import java.nio.file.Path;
+import java.util.List;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+
+public class AnalyseScreen extends StackPane {
+
+<span class="fc" id="L38">    private final AnalyseHeader header = new AnalyseHeader();</span>
+<span class="fc" id="L39">    private final DocumentView documentView = new DocumentView();</span>
+<span class="fc" id="L40">    private final SearchView searchView = new SearchView();</span>
+<span class="fc" id="L41">    private final TextTermFrequencyPanel textTermFrequencyPanel = new TextTermFrequencyPanel();</span>
+<span class="fc" id="L42">    private final TextContextPanel textContextPanel = new TextContextPanel();</span>
+<span class="fc" id="L43">    private final QuotationsView quotationsView = new QuotationsView();</span>
+<span class="fc" id="L44">    private final TermDetailModal termDetailModal = new TermDetailModal();</span>
+<span class="fc" id="L45">    private final Modal modal = new Modal();</span>
+<span class="fc" id="L46">    private final VBox emptyState = buildEmptyState();</span>
+<span class="fc" id="L47">    private final BorderPane loadedState = new BorderPane();</span>
+<span class="fc" id="L48">    private final StackPane centerSwitcher = new StackPane();</span>
+<span class="fc" id="L49">    private final ScrollPane sidebarScroll = new ScrollPane();</span>
+<span class="fc" id="L50">    private final SuccessToast successToast = new SuccessToast();</span>
+
+    private String activeSearchTerm;
+<span class="fc" id="L53">    private List&lt;SearchMatch&gt; currentSearchMatches = List.of();</span>
+<span class="fc" id="L54">    private int currentSearchMatchIndex = -1;</span>
+<span class="fc" id="L55">    private Runnable onSaveAnalysis = () -&gt; {</span>
+<span class="nc" id="L56">    };</span>
+<span class="fc" id="L57">    private Consumer&lt;String&gt; onTermDetailRequested = term -&gt; {</span>
+<span class="nc" id="L58">    };</span>
+<span class="pc" id="L59">    private BiFunction&lt;String, String, Integer&gt; onQuotationRequested = (text, location) -&gt; null;</span>
+<span class="fc" id="L60">    private Consumer&lt;Quotation&gt; onQuotationDeleteRequested = quotation -&gt; {</span>
+<span class="nc" id="L61">    };</span>
+<span class="fc" id="L62">    private Consumer&lt;Quotation&gt; onQuotationEditRequested = quotation -&gt; {</span>
+<span class="nc" id="L63">    };</span>
+<span class="fc" id="L64">    private Consumer&lt;String&gt; onSearch = term -&gt; {</span>
+<span class="nc" id="L65">    };</span>
+<span class="fc" id="L66">    private Runnable onPreviousMatch = () -&gt; {</span>
+<span class="nc" id="L67">    };</span>
+<span class="fc" id="L68">    private Runnable onNextMatch = () -&gt; {</span>
+<span class="nc" id="L69">    };</span>
+<span class="fc" id="L70">    private Consumer&lt;String&gt; onTrackedTermRemoved = term -&gt; {</span>
+<span class="nc" id="L71">    };</span>
+
+<span class="fc" id="L73">    public AnalyseScreen() {</span>
+<span class="fc" id="L74">        getStyleClass().add(&quot;analyse-screen&quot;);</span>
+<span class="fc" id="L75">        emptyState.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);</span>
+<span class="fc" id="L76">        loadedState.setTop(header);</span>
+<span class="fc" id="L77">        loadedState.setCenter(buildBody());</span>
+<span class="fc" id="L78">        loadedState.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);</span>
+<span class="fc" id="L79">        getChildren().addAll(emptyState, loadedState, modal, successToast);</span>
+<span class="fc" id="L80">        StackPane.setAlignment(emptyState, Pos.CENTER);</span>
+<span class="fc" id="L81">        StackPane.setAlignment(loadedState, Pos.CENTER);</span>
+<span class="fc" id="L82">        StackPane.setAlignment(modal, Pos.CENTER);</span>
+<span class="fc" id="L83">        StackPane.setAlignment(successToast, Pos.TOP_CENTER);</span>
+<span class="fc" id="L84">        StackPane.setMargin(successToast, new Insets(16, 0, 0, 0));</span>
+<span class="fc" id="L85">        loadedState.setVisible(false);</span>
+<span class="fc" id="L86">        loadedState.setManaged(false);</span>
+<span class="fc" id="L87">        wireCallbacks();</span>
+<span class="fc" id="L88">    }</span>
+
+    private HBox buildBody() {
+<span class="fc" id="L91">        centerSwitcher.getChildren().setAll(documentView);</span>
+<span class="fc" id="L92">        centerSwitcher.setMinSize(0, 0);</span>
+<span class="fc" id="L93">        centerSwitcher.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);</span>
+<span class="fc" id="L94">        HBox.setHgrow(centerSwitcher, Priority.ALWAYS);</span>
+
+<span class="fc" id="L96">        VBox frequencyAndSearch = new VBox(18, textTermFrequencyPanel, searchView);</span>
+<span class="fc" id="L97">        frequencyAndSearch.getStyleClass().add(&quot;card&quot;);</span>
+
+<span class="fc" id="L99">        VBox rightColumn = new VBox(16, frequencyAndSearch, textContextPanel);</span>
+<span class="fc" id="L100">        rightColumn.getStyleClass().add(&quot;analyse-sidebar&quot;);</span>
+<span class="fc" id="L101">        rightColumn.setMinWidth(340);</span>
+<span class="fc" id="L102">        rightColumn.setPrefWidth(380);</span>
+<span class="fc" id="L103">        rightColumn.setMaxWidth(440);</span>
+<span class="fc" id="L104">        VBox.setVgrow(textContextPanel, Priority.ALWAYS);</span>
+
+<span class="fc" id="L106">        sidebarScroll.setContent(rightColumn);</span>
+<span class="fc" id="L107">        sidebarScroll.getStyleClass().add(&quot;analyse-sidebar-scroll&quot;);</span>
+<span class="fc" id="L108">        sidebarScroll.setFitToWidth(true);</span>
+<span class="fc" id="L109">        sidebarScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);</span>
+<span class="fc" id="L110">        sidebarScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);</span>
+<span class="fc" id="L111">        sidebarScroll.setMinWidth(340);</span>
+<span class="fc" id="L112">        sidebarScroll.setPrefWidth(380);</span>
+<span class="fc" id="L113">        sidebarScroll.setMaxWidth(440);</span>
+
+<span class="fc" id="L115">        HBox body = new HBox(0, centerSwitcher, sidebarScroll);</span>
+<span class="fc" id="L116">        body.getStyleClass().add(&quot;analyse-body&quot;);</span>
+<span class="fc" id="L117">        body.setFillHeight(true);</span>
+<span class="fc" id="L118">        body.setMinSize(0, 0);</span>
+<span class="fc" id="L119">        body.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);</span>
+<span class="fc" id="L120">        return body;</span>
+    }
+
+    private void wireCallbacks() {
+<span class="pc" id="L124">        header.setOnSave(() -&gt; onSaveAnalysis.run());</span>
+<span class="fc" id="L125">        header.setOnViewChange(this::showView);</span>
+<span class="pc" id="L126">        textTermFrequencyPanel.setOnRowClick(word -&gt; onTermDetailRequested.accept(word));</span>
+<span class="pc" id="L127">        documentView.setOnQuotationRequested((text, location) -&gt; onQuotationRequested.apply(text, location));</span>
+
+<span class="fc" id="L129">        quotationsView.setOnGoTo(this::goToQuotation);</span>
+<span class="pc" id="L130">        quotationsView.setOnDelete(quotation -&gt; onQuotationDeleteRequested.accept(quotation));</span>
+<span class="pc" id="L131">        quotationsView.setOnEdit(quotation -&gt; onQuotationEditRequested.accept(quotation));</span>
+
+<span class="fc" id="L133">        textContextPanel.setOnJump(fragment -&gt; {</span>
+<span class="nc bnc" id="L134" title="All 4 branches missed.">            if (fragment == null || fragment.page() == null)</span>
+<span class="nc" id="L135">                return;</span>
+<span class="nc" id="L136">            showDocument();</span>
+<span class="nc" id="L137">            documentView.jumpToPassage(fragment.page(), fragment.text());</span>
+<span class="nc" id="L138">        });</span>
+
+<span class="pc" id="L140">        searchView.setOnSearch(term -&gt; onSearch.accept(term));</span>
+<span class="pc" id="L141">        searchView.setOnPreviousMatch(() -&gt; onPreviousMatch.run());</span>
+<span class="pc" id="L142">        searchView.setOnNextMatch(() -&gt; onNextMatch.run());</span>
+
+<span class="pc" id="L144">        searchView.getTrackedWordsList().setOnInfo(word -&gt; onTermDetailRequested.accept(word));</span>
+<span class="fc" id="L145">        searchView.getTrackedWordsList().setOnRemove(word -&gt; {</span>
+<span class="nc" id="L146">            searchView.getTrackedWordsList().remove(word);</span>
+<span class="nc" id="L147">            onTrackedTermRemoved.accept(word);</span>
+<span class="nc bnc" id="L148" title="All 2 branches missed.">            if (word.equals(activeSearchTerm)) {</span>
+<span class="nc" id="L149">                resetSearchState();</span>
+<span class="nc" id="L150">                documentView.clearSearchHighlights();</span>
+            }
+<span class="nc" id="L152">        });</span>
+<span class="fc" id="L153">        searchView.getTrackedWordsList().setOnGoTo(word -&gt; {</span>
+<span class="nc" id="L154">            searchView.getSearchInput().textProperty().set(word);</span>
+<span class="nc" id="L155">            onSearch.accept(word);</span>
+<span class="nc" id="L156">        });</span>
+<span class="fc" id="L157">    }</span>
+
+    private void resetSearchState() {
+<span class="fc" id="L160">        activeSearchTerm = null;</span>
+<span class="fc" id="L161">        currentSearchMatches = List.of();</span>
+<span class="fc" id="L162">        currentSearchMatchIndex = -1;</span>
+<span class="fc" id="L163">    }</span>
+
+    private void showView(int index) {
+<span class="nc bnc" id="L166" title="All 2 branches missed.">        centerSwitcher.getChildren().setAll(index == 1 ? quotationsView : documentView);</span>
+<span class="nc" id="L167">    }</span>
+
+    private void showDocument() {
+<span class="nc" id="L170">        header.resetToReader();</span>
+<span class="nc" id="L171">        centerSwitcher.getChildren().setAll(documentView);</span>
+<span class="nc" id="L172">    }</span>
+
+    private VBox buildEmptyState() {
+<span class="fc" id="L175">        Label title = new Label(&quot;No document open&quot;);</span>
+<span class="fc" id="L176">        title.getStyleClass().add(&quot;heading-lg&quot;);</span>
+<span class="fc" id="L177">        Label subtitle = new Label(&quot;Start a new project or open one from your Library to begin analysing.&quot;);</span>
+<span class="fc" id="L178">        subtitle.getStyleClass().add(&quot;text-muted&quot;);</span>
+<span class="fc" id="L179">        VBox box = new VBox(8, title, subtitle);</span>
+<span class="fc" id="L180">        box.getStyleClass().add(&quot;analyse-empty-state&quot;);</span>
+<span class="fc" id="L181">        box.setAlignment(Pos.CENTER);</span>
+<span class="fc" id="L182">        return box;</span>
+    }
+
+    public void loadDocument(String projectTitle, String fileName, String content,
+            FileType fileType, Path sourcePath, List&lt;Integer&gt; pageOffsets) {
+
+<span class="nc bnc" id="L188" title="All 4 branches missed.">        boolean hasPages = pageOffsets != null &amp;&amp; !pageOffsets.isEmpty();</span>
+<span class="nc bnc" id="L189" title="All 2 branches missed.">        header.setTitle(projectTitle, fileName + (hasPages ? &quot; · &quot; + pageOffsets.size() + &quot; Pages&quot; : &quot;&quot;));</span>
+<span class="nc" id="L190">        header.resetToReader();</span>
+<span class="nc" id="L191">        documentView.loadDocument(content, fileType, sourcePath);</span>
+<span class="nc" id="L192">        resetSearchState();</span>
+<span class="nc" id="L193">        searchView.reset();</span>
+<span class="nc" id="L194">        textTermFrequencyPanel.setResults(List.of());</span>
+<span class="nc" id="L195">        textContextPanel.setResults(List.of());</span>
+<span class="nc" id="L196">        emptyState.setVisible(false);</span>
+<span class="nc" id="L197">        emptyState.setManaged(false);</span>
+<span class="nc" id="L198">        loadedState.setVisible(true);</span>
+<span class="nc" id="L199">        loadedState.setManaged(true);</span>
+<span class="nc" id="L200">        showView(0);</span>
+<span class="nc" id="L201">    }</span>
+
+    public void setTextAnalysis(List&lt;WordFrequency&gt; frequentWords, List&lt;TextFragment&gt; fragments) {
+<span class="fc" id="L204">        textTermFrequencyPanel.setResults(frequentWords);</span>
+<span class="fc" id="L205">        textContextPanel.setResults(fragments);</span>
+<span class="fc" id="L206">    }</span>
+
+    public void clearAnalysis() {
+<span class="fc" id="L209">        modal.hide();</span>
+<span class="fc" id="L210">        documentView.dispose();</span>
+<span class="fc" id="L211">        loadedState.setVisible(false);</span>
+<span class="fc" id="L212">        loadedState.setManaged(false);</span>
+<span class="fc" id="L213">        emptyState.setVisible(true);</span>
+<span class="fc" id="L214">        emptyState.setManaged(true);</span>
+<span class="fc" id="L215">        resetSearchState();</span>
+<span class="fc" id="L216">    }</span>
+
+    public void showSaved(int savedCount) {
+<span class="nc bnc" id="L219" title="All 2 branches missed.">        successToast.show(savedCount &gt; 0 ? &quot;Analysis saved&quot; : &quot;Analysis already saved&quot;);</span>
+<span class="nc" id="L220">    }</span>
+
+    private static &lt;T&gt; Consumer&lt;T&gt; orNoop(Consumer&lt;T&gt; handler) {
+<span class="fc bfc" id="L223" title="All 2 branches covered.">        return handler == null ? value -&gt; {</span>
+<span class="pc" id="L224">        } : handler;</span>
+    }
+
+    public void setOnTermDetailRequested(Consumer&lt;String&gt; handler) {
+<span class="fc" id="L228">        onTermDetailRequested = orNoop(handler);</span>
+<span class="fc" id="L229">    }</span>
+
+    public void setOnTrackedTermRemoved(Consumer&lt;String&gt; handler) {
+<span class="nc" id="L232">        onTrackedTermRemoved = orNoop(handler);</span>
+<span class="nc" id="L233">    }</span>
+
+    public void setOnQuotationEditRequested(Consumer&lt;Quotation&gt; handler) {
+<span class="fc" id="L236">        onQuotationEditRequested = orNoop(handler);</span>
+<span class="fc" id="L237">    }</span>
+
+    public void setOnQuotationDeleteRequested(Consumer&lt;Quotation&gt; handler) {
+<span class="fc" id="L240">        onQuotationDeleteRequested = orNoop(handler);</span>
+<span class="fc" id="L241">    }</span>
+
+    public void setOnSearch(Consumer&lt;String&gt; handler) {
+<span class="fc" id="L244">        onSearch = orNoop(handler);</span>
+<span class="fc" id="L245">    }</span>
+
+    public SearchSettings getSearchSettings() {
+<span class="nc" id="L248">        return searchView.getSearchSettings();</span>
+    }
+
+    public void setOnSaveAnalysis(Runnable handler) {
+<span class="pc bpc" id="L252" title="1 of 2 branches missed.">        onSaveAnalysis = handler == null ? () -&gt; {</span>
+<span class="pc" id="L253">        } : handler;</span>
+<span class="fc" id="L254">    }</span>
+
+    public void setOnPreviousMatch(Runnable handler) {
+<span class="pc bpc" id="L257" title="1 of 2 branches missed.">        onPreviousMatch = handler == null ? () -&gt; {</span>
+<span class="pc" id="L258">        } : handler;</span>
+<span class="fc" id="L259">    }</span>
+
+    public void setOnNextMatch(Runnable handler) {
+<span class="pc bpc" id="L262" title="1 of 2 branches missed.">        onNextMatch = handler == null ? () -&gt; {</span>
+<span class="pc" id="L263">        } : handler;</span>
+<span class="fc" id="L264">    }</span>
+
+    public void setOnQuotationRequested(BiFunction&lt;String, String, Integer&gt; handler) {
+<span class="pc bpc" id="L267" title="1 of 2 branches missed.">        onQuotationRequested = handler == null ? (text, location) -&gt; null : handler;</span>
+<span class="fc" id="L268">    }</span>
+
+    public void setQuotations(List&lt;Quotation&gt; quotations) {
+<span class="fc" id="L271">        quotationsView.setQuotations(quotations);</span>
+<span class="fc" id="L272">    }</span>
+
+    public void removeQuotationHighlight(int quotationId) {
+<span class="fc" id="L275">        documentView.removeQuotationHighlight(quotationId);</span>
+<span class="fc" id="L276">    }</span>
+
+    public void showTermDetail(String term, TermAnalysisResult analysis, List&lt;SearchMatch&gt; matches) {
+<span class="nc" id="L279">        termDetailModal.setData(term, analysis, matches, index -&gt; {</span>
+<span class="nc bnc" id="L280" title="All 6 branches missed.">            if (matches == null || index &lt; 0 || index &gt;= matches.size())</span>
+<span class="nc" id="L281">                return;</span>
+<span class="nc" id="L282">            SearchMatch match = matches.get(index);</span>
+<span class="nc" id="L283">            modal.hide();</span>
+<span class="nc" id="L284">            showDocument();</span>
+<span class="nc" id="L285">            documentView.goToPage(match.page(), match.paragraph());</span>
+<span class="nc" id="L286">            documentView.showSearchMatches(matches, index);</span>
+<span class="nc" id="L287">        });</span>
+<span class="nc" id="L288">        modal.show(termDetailModal);</span>
+<span class="nc" id="L289">    }</span>
+
+    public DocumentView getDocumentView() {
+<span class="fc" id="L292">        return documentView;</span>
+    }
+
+    public TextTermFrequencyPanel getTextTermFrequencyPanel() {
+<span class="fc" id="L296">        return textTermFrequencyPanel;</span>
+    }
+
+    public SearchView getSearchView() {
+<span class="nc" id="L300">        return searchView;</span>
+    }
+
+    public TextContextPanel getTextContextPanel() {
+<span class="fc" id="L304">        return textContextPanel;</span>
+    }
+
+    public ScrollPane getStatisticsSidebar() {
+<span class="fc" id="L308">        return sidebarScroll;</span>
+    }
+
+    public AnalyseHeader getHeader() {
+<span class="fc" id="L312">        return header;</span>
+    }
+
+    public void showSearchResults(String term, List&lt;SearchMatch&gt; matches, TermAnalysisResult termAnalysis) {
+<span class="pc bpc" id="L316" title="1 of 4 branches missed.">        if (matches == null || matches.isEmpty()) {</span>
+<span class="fc" id="L317">            resetSearchState();</span>
+<span class="fc" id="L318">            documentView.clearSearchHighlights();</span>
+<span class="fc" id="L319">            return;</span>
+        }
+<span class="nc" id="L321">        activeSearchTerm = term;</span>
+<span class="nc" id="L322">        currentSearchMatches = List.copyOf(matches);</span>
+<span class="nc" id="L323">        currentSearchMatchIndex = 0;</span>
+<span class="nc" id="L324">        searchView.getTrackedWordsList().addOrUpdate(term, matches.size());</span>
+<span class="nc" id="L325">        searchView.getTrackedWordsList().setActiveTerm(term);</span>
+<span class="nc" id="L326">        showSearchMatch(currentSearchMatches, currentSearchMatchIndex);</span>
+<span class="nc" id="L327">    }</span>
+
+    public void showSearchMatch(List&lt;SearchMatch&gt; matches, int activeIndex) {
+<span class="pc bpc" id="L330" title="1 of 4 branches missed.">        if (matches == null || matches.isEmpty())</span>
+<span class="fc" id="L331">            return;</span>
+<span class="fc" id="L332">        int safeIndex = Math.max(0, Math.min(activeIndex, matches.size() - 1));</span>
+<span class="fc" id="L333">        SearchMatch activeMatch = matches.get(safeIndex);</span>
+<span class="fc" id="L334">        currentSearchMatches = List.copyOf(matches);</span>
+<span class="fc" id="L335">        currentSearchMatchIndex = safeIndex;</span>
+<span class="pc bpc" id="L336" title="1 of 2 branches missed.">        if (activeMatch.page() != null)</span>
+<span class="fc" id="L337">            documentView.goToPage(activeMatch.page(), activeMatch.paragraph());</span>
+<span class="fc" id="L338">        documentView.showSearchMatches(matches, safeIndex);</span>
+<span class="fc" id="L339">    }</span>
+
+    public void showSearchMatch(SearchMatch match) {
+<span class="pc bpc" id="L342" title="1 of 2 branches missed.">        if (match == null)</span>
+<span class="fc" id="L343">            return;</span>
+<span class="nc" id="L344">        int index = currentSearchMatches.indexOf(match);</span>
+<span class="nc bnc" id="L345" title="All 2 branches missed.">        if (index &lt; 0) {</span>
+<span class="nc bnc" id="L346" title="All 2 branches missed.">            if (match.page() != null)</span>
+<span class="nc" id="L347">                documentView.goToPage(match.page(), match.paragraph());</span>
+<span class="nc" id="L348">            return;</span>
+        }
+<span class="nc" id="L350">        currentSearchMatchIndex = index;</span>
+<span class="nc" id="L351">        showSearchMatch(currentSearchMatches, index);</span>
+<span class="nc" id="L352">    }</span>
+
+    private void goToQuotation(Quotation quotation) {
+<span class="nc bnc" id="L355" title="All 2 branches missed.">        if (quotation == null)</span>
+<span class="nc" id="L356">            return;</span>
+<span class="nc" id="L357">        showDocument();</span>
+<span class="nc" id="L358">        documentView.goToPage(</span>
+<span class="nc" id="L359">                QuotationLocation.parsePage(quotation.getLocation()),</span>
+<span class="nc" id="L360">                QuotationLocation.parseStartOffset(quotation.getLocation()));</span>
+<span class="nc" id="L361">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

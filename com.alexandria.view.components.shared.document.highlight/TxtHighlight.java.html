@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TxtHighlight.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.shared.document.highlight</a> &gt; <span class="el_source">TxtHighlight.java</span></div><h1>TxtHighlight.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.shared.document.highlight;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+public final class TxtHighlight {
+    public static final String ACTIVE_SEARCH_STYLE_CLASS = &quot;text-search-highlight-active&quot;;
+    public static final String SEARCH_STYLE_CLASS = &quot;txt-search-highlight&quot;;
+    public static final String QUOTATION_STYLE_CLASS = &quot;txt-quotation-highlight&quot;;
+
+<span class="fc" id="L12">    public record Range(int start, int end) {</span>
+    }
+
+    private TxtHighlight() {
+    }
+
+    public static List&lt;Range&gt; findRanges(String pageText, String term) {
+<span class="fc" id="L19">        List&lt;Range&gt; ranges = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L21" title="All 6 branches covered.">        if (pageText == null || term == null || term.isBlank()) {</span>
+<span class="fc" id="L22">            return ranges;</span>
+        }
+
+<span class="fc" id="L25">        String haystack = pageText.toLowerCase(Locale.ROOT);</span>
+<span class="fc" id="L26">        String needle = term.strip().toLowerCase(Locale.ROOT);</span>
+
+<span class="fc" id="L28">        int index = haystack.indexOf(needle);</span>
+
+<span class="fc bfc" id="L30" title="All 2 branches covered.">        while (index &gt;= 0) {</span>
+<span class="fc" id="L31">            ranges.add(new Range(index, index + needle.length()));</span>
+<span class="fc" id="L32">            index = haystack.indexOf(needle, index + 1);</span>
+        }
+
+<span class="fc" id="L35">        return ranges;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

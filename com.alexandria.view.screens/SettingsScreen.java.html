@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SettingsScreen.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.screens</a> &gt; <span class="el_source">SettingsScreen.java</span></div><h1>SettingsScreen.java</h1><pre class="source lang-java linenums">package com.alexandria.view.screens;
+
+import com.alexandria.utils.ThemeSettings;
+import com.alexandria.utils.UserGuideSettings;
+import com.alexandria.view.components.shared.ToggleSwitch;
+
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Label;
+import javafx.scene.control.Separator;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+
+public class SettingsScreen extends VBox {
+
+<span class="nc" id="L17">    public SettingsScreen() {</span>
+<span class="nc" id="L18">        setPadding(new Insets(30));</span>
+<span class="nc" id="L19">        setSpacing(16);</span>
+<span class="nc" id="L20">        setMaxWidth(Double.MAX_VALUE);</span>
+
+<span class="nc" id="L22">        Label title = new Label(&quot;Settings&quot;);</span>
+<span class="nc" id="L23">        title.getStyleClass().add(&quot;heading-xl&quot;);</span>
+
+<span class="nc" id="L25">        Label subtitle = new Label(&quot;Manage your application preferences&quot;);</span>
+<span class="nc" id="L26">        subtitle.getStyleClass().add(&quot;text-muted&quot;);</span>
+
+<span class="nc" id="L28">        Label appearanceTitle = new Label(&quot;Appearance&quot;);</span>
+<span class="nc" id="L29">        appearanceTitle.getStyleClass().add(&quot;heading-lg&quot;);</span>
+
+<span class="nc" id="L31">        Label darkThemeLabel = new Label(&quot;Dark theme&quot;);</span>
+<span class="nc" id="L32">        darkThemeLabel.getStyleClass().add(&quot;heading-md&quot;);</span>
+<span class="nc" id="L33">        HBox.setHgrow(darkThemeLabel, Priority.ALWAYS);</span>
+
+<span class="nc" id="L35">        ToggleSwitch darkThemeToggle = new ToggleSwitch();</span>
+
+<span class="nc" id="L37">        darkThemeToggle.setSelected(ThemeSettings.isDarkTheme());</span>
+<span class="nc" id="L38">        darkThemeToggle.setOnAction(event -&gt; ThemeSettings.setDarkTheme(</span>
+<span class="nc bnc" id="L39" title="All 2 branches missed.">                getScene() == null ? null : getScene().getRoot(),</span>
+<span class="nc" id="L40">                darkThemeToggle.isSelected()));</span>
+
+<span class="nc" id="L42">        HBox darkThemeRow = new HBox(20, darkThemeLabel, darkThemeToggle);</span>
+<span class="nc" id="L43">        darkThemeRow.setAlignment(Pos.CENTER_LEFT);</span>
+<span class="nc" id="L44">        darkThemeRow.setMaxWidth(Double.MAX_VALUE);</span>
+<span class="nc" id="L45">        darkThemeRow.getStyleClass().add(&quot;settings-row&quot;);</span>
+
+<span class="nc" id="L47">        Separator divider = new Separator();</span>
+<span class="nc" id="L48">        divider.setMaxWidth(Double.MAX_VALUE);</span>
+
+<span class="nc" id="L50">        Label languageTitle = new Label(&quot;Language&quot;);</span>
+<span class="nc" id="L51">        languageTitle.getStyleClass().add(&quot;heading-lg&quot;);</span>
+
+<span class="nc" id="L53">        Label languageStatus = new Label(&quot;Language settings are under development and will be available later.&quot;);</span>
+<span class="nc" id="L54">        languageStatus.getStyleClass().add(&quot;text-muted&quot;);</span>
+
+<span class="nc" id="L56">        Label userGuideTitle = new Label(&quot;Additional Ыettings&quot;);</span>
+<span class="nc" id="L57">        userGuideTitle.getStyleClass().add(&quot;heading-lg&quot;);</span>
+
+<span class="nc" id="L59">        Label userGuideLabel = new Label(&quot;Show user tour on next launch&quot;);</span>
+<span class="nc" id="L60">        userGuideLabel.getStyleClass().add(&quot;heading-md&quot;);</span>
+<span class="nc" id="L61">        HBox.setHgrow(userGuideLabel, Priority.ALWAYS);</span>
+
+<span class="nc" id="L63">        ToggleSwitch userGuideToggle = new ToggleSwitch();</span>
+<span class="nc" id="L64">        userGuideToggle.setSelected(UserGuideSettings.isShownOnStartup());</span>
+<span class="nc" id="L65">        userGuideToggle.setOnAction(event -&gt; UserGuideSettings.setShownOnStartup(userGuideToggle.isSelected()));</span>
+
+<span class="nc" id="L67">        HBox userGuideRow = new HBox(20, userGuideLabel, userGuideToggle);</span>
+<span class="nc" id="L68">        userGuideRow.setAlignment(Pos.CENTER_LEFT);</span>
+<span class="nc" id="L69">        userGuideRow.setMaxWidth(Double.MAX_VALUE);</span>
+<span class="nc" id="L70">        userGuideRow.getStyleClass().add(&quot;settings-row&quot;);</span>
+
+<span class="nc" id="L72">        Separator languageDivider = new Separator();</span>
+<span class="nc" id="L73">        languageDivider.setMaxWidth(Double.MAX_VALUE);</span>
+
+<span class="nc" id="L75">        getChildren().addAll(</span>
+            title,
+            subtitle,
+            appearanceTitle,
+            darkThemeRow,
+            divider,
+            languageTitle,
+            languageStatus,
+            languageDivider,
+            userGuideTitle,
+            userGuideRow);
+<span class="nc" id="L86">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

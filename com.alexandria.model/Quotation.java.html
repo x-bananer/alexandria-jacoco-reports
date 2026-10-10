@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Quotation.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.model</a> &gt; <span class="el_source">Quotation.java</span></div><h1>Quotation.java</h1><pre class="source lang-java linenums">package com.alexandria.model;
+
+import java.time.LocalDateTime;
+
+/**
+ * Represents a quotation saved from a text.
+ */
+public class Quotation {
+	private Integer id;
+	private Integer userId;
+	private Integer textId;
+	private String quotationText;
+	private String location;
+	private LocalDateTime createdAt;
+
+<span class="nc" id="L16">	public Quotation() {</span>
+<span class="nc" id="L17">	}</span>
+
+<span class="fc" id="L19">	public Quotation(Integer userId, Integer textId, String quotationText, String location) {</span>
+<span class="fc" id="L20">		this.userId = userId;</span>
+<span class="fc" id="L21">		this.textId = textId;</span>
+<span class="fc" id="L22">		this.quotationText = quotationText;</span>
+<span class="fc" id="L23">		this.location = location;</span>
+<span class="fc" id="L24">	}</span>
+
+	public Quotation(Integer id, Integer userId, Integer textId, String quotationText,
+<span class="fc" id="L27">			String location, LocalDateTime createdAt) {</span>
+<span class="fc" id="L28">		this.id = id;</span>
+<span class="fc" id="L29">		this.userId = userId;</span>
+<span class="fc" id="L30">		this.textId = textId;</span>
+<span class="fc" id="L31">		this.quotationText = quotationText;</span>
+<span class="fc" id="L32">		this.location = location;</span>
+<span class="fc" id="L33">		this.createdAt = createdAt;</span>
+<span class="fc" id="L34">	}</span>
+
+	public Integer getId() {
+<span class="fc" id="L37">		return id;</span>
+	}
+
+	public void setId(Integer id) {
+<span class="fc" id="L41">		this.id = id;</span>
+<span class="fc" id="L42">	}</span>
+
+	public Integer getUserId() {
+<span class="fc" id="L45">		return userId;</span>
+	}
+
+	public void setUserId(Integer userId) {
+<span class="nc" id="L49">		this.userId = userId;</span>
+<span class="nc" id="L50">	}</span>
+
+	public Integer getTextId() {
+<span class="fc" id="L53">		return textId;</span>
+	}
+
+	public void setTextId(Integer textId) {
+<span class="nc" id="L57">		this.textId = textId;</span>
+<span class="nc" id="L58">	}</span>
+
+	public String getQuotationText() {
+<span class="fc" id="L61">		return quotationText;</span>
+	}
+
+	public void setQuotationText(String quotationText) {
+<span class="fc" id="L65">		this.quotationText = quotationText;</span>
+<span class="fc" id="L66">	}</span>
+
+	public String getLocation() {
+<span class="fc" id="L69">		return location;</span>
+	}
+
+	public void setLocation(String location) {
+<span class="fc" id="L73">		this.location = location;</span>
+<span class="fc" id="L74">	}</span>
+
+	public LocalDateTime getCreatedAt() {
+<span class="nc" id="L77">		return createdAt;</span>
+	}
+
+	public void setCreatedAt(LocalDateTime createdAt) {
+<span class="nc" id="L81">		this.createdAt = createdAt;</span>
+<span class="nc" id="L82">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

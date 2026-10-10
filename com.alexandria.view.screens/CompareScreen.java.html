@@ -1,0 +1,446 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CompareScreen.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.screens</a> &gt; <span class="el_source">CompareScreen.java</span></div><h1>CompareScreen.java</h1><pre class="source lang-java linenums">package com.alexandria.view.screens;
+
+import com.alexandria.model.FileType;
+import com.alexandria.model.Text;
+import com.alexandria.view.components.compare_screen.CompareHeader;
+import com.alexandria.view.components.compare_screen.ComparisonDocumentView;
+import com.alexandria.view.components.compare_screen.ComparisonSidePanel;
+import com.alexandria.view.components.shared.SuccessToast;
+import com.alexandria.service.analysis.SearchMatch;
+import com.alexandria.service.analysis.SearchSettings;
+import com.alexandria.service.analysis.TextComparisonResult;
+
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+
+import java.io.File;
+import java.nio.file.Path;
+import java.util.function.Consumer;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.List;
+
+public class CompareScreen extends StackPane {
+
+<span class="fc" id="L33">    private final CompareHeader header = new CompareHeader();</span>
+<span class="fc" id="L34">    private final ComparisonDocumentView documentView = new ComparisonDocumentView();</span>
+<span class="fc" id="L35">    private final ComparisonSidePanel comparisonSidePanel = new ComparisonSidePanel();</span>
+<span class="fc" id="L36">    private final ScrollPane sidebarScroll = new ScrollPane(comparisonSidePanel);</span>
+<span class="fc" id="L37">    private final SuccessToast successToast = new SuccessToast();</span>
+
+<span class="fc" id="L39">    private final VBox emptyState = buildEmptyState();</span>
+<span class="fc" id="L40">    private final BorderPane loadedState = new BorderPane();</span>
+<span class="fc" id="L41">    private final StackPane centerSwitcher = new StackPane();</span>
+
+<span class="fc" id="L43">    private Runnable onSaveFindings = () -&gt; {</span>
+<span class="nc" id="L44">    };</span>
+<span class="fc" id="L45">    private Consumer&lt;String&gt; onSearch = term -&gt; {</span>
+<span class="nc" id="L46">    };</span>
+<span class="fc" id="L47">    private Runnable onPreviousMatch = () -&gt; {</span>
+<span class="nc" id="L48">    };</span>
+<span class="fc" id="L49">    private Runnable onNextMatch = () -&gt; {</span>
+<span class="nc" id="L50">    };</span>
+
+    /**
+     * One entry per tracked row: every searched term produces a &quot;Doc A&quot; row and a
+     * &quot;Doc B&quot; row.
+     */
+<span class="fc" id="L56">    private final Map&lt;String, TrackedSearch&gt; trackedSearches = new LinkedHashMap&lt;&gt;();</span>
+    private String activeTrackedKey;
+    private String activeSearchTerm;
+
+<span class="fc" id="L60">    public CompareScreen() {</span>
+<span class="fc" id="L61">        getStyleClass().add(&quot;compare-screen&quot;);</span>
+
+<span class="fc" id="L63">        emptyState.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);</span>
+
+<span class="fc" id="L65">        loadedState.setTop(header);</span>
+<span class="fc" id="L66">        loadedState.setCenter(buildBody());</span>
+<span class="fc" id="L67">        loadedState.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);</span>
+
+<span class="fc" id="L69">        getChildren().addAll(emptyState, loadedState, successToast);</span>
+
+<span class="fc" id="L71">        StackPane.setAlignment(emptyState, Pos.CENTER);</span>
+<span class="fc" id="L72">        StackPane.setAlignment(loadedState, Pos.CENTER);</span>
+<span class="fc" id="L73">        StackPane.setAlignment(successToast, Pos.TOP_CENTER);</span>
+<span class="fc" id="L74">        StackPane.setMargin(successToast, new Insets(24, 0, 0, 0));</span>
+
+<span class="fc" id="L76">        loadedState.setVisible(false);</span>
+<span class="fc" id="L77">        loadedState.setManaged(false);</span>
+
+<span class="fc" id="L79">        wireCallbacks();</span>
+<span class="fc" id="L80">    }</span>
+
+    private static final double SIDE_PANEL_WIDTH_RATIO = 0.360;
+
+    private HBox buildBody() {
+<span class="fc" id="L85">        centerSwitcher.getChildren().setAll(documentView);</span>
+<span class="fc" id="L86">        centerSwitcher.setMinSize(0, 0);</span>
+<span class="fc" id="L87">        centerSwitcher.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);</span>
+<span class="fc" id="L88">        HBox.setHgrow(centerSwitcher, Priority.ALWAYS);</span>
+
+<span class="fc" id="L90">        sidebarScroll.getStyleClass().addAll(&quot;shared-scroll&quot;, &quot;comparison-sidebar-scroll&quot;);</span>
+<span class="fc" id="L91">        sidebarScroll.setFitToWidth(true);</span>
+<span class="fc" id="L92">        sidebarScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);</span>
+<span class="fc" id="L93">        sidebarScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);</span>
+<span class="fc" id="L94">        sidebarScroll.setMinWidth(320);</span>
+<span class="fc" id="L95">        sidebarScroll.setMaxWidth(640);</span>
+
+<span class="fc" id="L97">        HBox body = new HBox(0, centerSwitcher, sidebarScroll);</span>
+<span class="fc" id="L98">        body.getStyleClass().add(&quot;compare-body&quot;);</span>
+<span class="fc" id="L99">        body.setFillHeight(true);</span>
+<span class="fc" id="L100">        body.setMinSize(0, 0);</span>
+<span class="fc" id="L101">        body.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);</span>
+
+<span class="fc" id="L103">        sidebarScroll.prefWidthProperty().bind(</span>
+<span class="fc" id="L104">                body.widthProperty().multiply(SIDE_PANEL_WIDTH_RATIO));</span>
+
+<span class="fc" id="L106">        return body;</span>
+    }
+
+    private void wireCallbacks() {
+<span class="pc" id="L110">        header.setOnSave(() -&gt; onSaveFindings.run());</span>
+
+<span class="fc" id="L112">        comparisonSidePanel.setOnCommonWordSelected(this::searchFor);</span>
+<span class="fc" id="L113">        comparisonSidePanel.getSearchView().setOnSearch(this::searchFor);</span>
+<span class="pc" id="L114">        comparisonSidePanel.getSearchView().setOnPreviousMatch(() -&gt; onPreviousMatch.run());</span>
+<span class="pc" id="L115">        comparisonSidePanel.getSearchView().setOnNextMatch(() -&gt; onNextMatch.run());</span>
+<span class="fc" id="L116">        comparisonSidePanel.getSearchView().getTrackedWordsList().setOnRemove(</span>
+                this::removeTrackedSearchTerm);
+<span class="fc" id="L118">        comparisonSidePanel.getSearchView().getTrackedWordsList().setOnGoTo(this::goToTrackedSearch);</span>
+<span class="fc" id="L119">        comparisonSidePanel.setOnDocumentAParagraphSelected(snippet -&gt; {</span>
+<span class="nc" id="L120">            documentView.getDocumentA().jumpToPassage(snippet.page(), snippet.text());</span>
+<span class="nc" id="L121">        });</span>
+<span class="fc" id="L122">        comparisonSidePanel.setOnDocumentBParagraphSelected(snippet -&gt; {</span>
+<span class="nc" id="L123">            documentView.getDocumentB().jumpToPassage(snippet.page(), snippet.text());</span>
+<span class="nc" id="L124">        });</span>
+<span class="fc" id="L125">    }</span>
+
+    private VBox buildEmptyState() {
+<span class="fc" id="L128">        Label title = new Label(&quot;No documents selected&quot;);</span>
+<span class="fc" id="L129">        title.getStyleClass().add(&quot;heading-lg&quot;);</span>
+
+<span class="fc" id="L131">        Label subtitle = new Label(&quot;Select two documents to compare them.&quot;);</span>
+<span class="fc" id="L132">        subtitle.getStyleClass().add(&quot;text-muted&quot;);</span>
+
+<span class="fc" id="L134">        VBox box = new VBox(8, title, subtitle);</span>
+<span class="fc" id="L135">        box.getStyleClass().add(&quot;empty-state&quot;);</span>
+<span class="fc" id="L136">        box.setAlignment(Pos.CENTER);</span>
+<span class="fc" id="L137">        return box;</span>
+    }
+
+    public void loadDocuments(
+            String documentATitle, String contentA, FileType fileTypeA, Path sourcePathA,
+            String documentBTitle, String contentB, FileType fileTypeB, Path sourcePathB) {
+
+<span class="nc" id="L144">        emptyState.setVisible(false);</span>
+<span class="nc" id="L145">        emptyState.setManaged(false);</span>
+
+<span class="nc" id="L147">        loadedState.setVisible(true);</span>
+<span class="nc" id="L148">        loadedState.setManaged(true);</span>
+
+<span class="nc" id="L150">        header.setSimilarity(null);</span>
+
+        // Tracked rows hold matches of the previously opened texts, so they must not
+        // survive a new comparison.
+<span class="nc" id="L154">        resetTrackedSearches();</span>
+<span class="nc" id="L155">        comparisonSidePanel.getSearchView().reset();</span>
+
+<span class="nc" id="L157">        documentView.loadDocuments(</span>
+                contentA, fileTypeA, sourcePathA,
+                contentB, fileTypeB, sourcePathB);
+
+<span class="nc" id="L161">        applyCss();</span>
+<span class="nc" id="L162">        layout();</span>
+<span class="nc" id="L163">    }</span>
+
+    public void loadTexts(Text textA, File fileA, Text textB, File fileB) {
+<span class="nc" id="L166">        loadDocuments(</span>
+<span class="nc" id="L167">                displayTitle(textA), textA.getContent(), textA.getFileType(), toPath(fileA),</span>
+<span class="nc" id="L168">                displayTitle(textB), textB.getContent(), textB.getFileType(), toPath(fileB));</span>
+
+<span class="nc" id="L170">        documentView.setDocumentNames(textA.getFileName(), textB.getFileName());</span>
+<span class="nc" id="L171">    }</span>
+
+    private String displayTitle(Text text) {
+<span class="nc bnc" id="L174" title="All 4 branches missed.">        if (text.getTitle() != null &amp;&amp; !text.getTitle().isBlank()) {</span>
+<span class="nc" id="L175">            return text.getTitle();</span>
+        }
+<span class="nc" id="L177">        return text.getFileName();</span>
+    }
+
+    private Path toPath(File file) {
+<span class="nc bnc" id="L181" title="All 2 branches missed.">        return file == null ? null : file.toPath();</span>
+    }
+
+    public void setSimilarity(Double percent) {
+<span class="nc" id="L185">        header.setSimilarity(percent);</span>
+<span class="nc" id="L186">    }</span>
+
+    public void setTextComparison(TextComparisonResult result) {
+<span class="nc bnc" id="L189" title="All 2 branches missed.">        if (result == null) {</span>
+<span class="nc" id="L190">            return;</span>
+        }
+<span class="nc" id="L192">        header.setSimilarity(result.similarityScore(), result.similarityAmount());</span>
+<span class="nc" id="L193">        comparisonSidePanel.setTextComparison(result);</span>
+<span class="nc" id="L194">    }</span>
+
+    /**
+     * Terms currently in the tracked list (each term once, even though it has a Doc
+     * A and a Doc B row).
+     */
+    public List&lt;String&gt; getTrackedSearchTerms() {
+<span class="nc" id="L201">        LinkedHashSet&lt;String&gt; terms = new LinkedHashSet&lt;&gt;();</span>
+<span class="nc bnc" id="L202" title="All 2 branches missed.">        for (TrackedSearch tracked : trackedSearches.values()) {</span>
+<span class="nc" id="L203">            terms.add(tracked.term());</span>
+<span class="nc" id="L204">        }</span>
+<span class="nc" id="L205">        return List.copyOf(terms);</span>
+    }
+
+    /**
+     * Success toast after findings were stored; savedCount = text comparison +
+     * saved terms.
+     */
+    public void showSaved(int savedCount) {
+<span class="nc" id="L213">        int terms = Math.max(0, savedCount - 1);</span>
+<span class="nc bnc" id="L214" title="All 2 branches missed.">        successToast.show(terms == 0</span>
+<span class="nc" id="L215">                ? &quot;Comparison saved&quot;</span>
+<span class="nc bnc" id="L216" title="All 2 branches missed.">                : &quot;Comparison and &quot; + terms + (terms == 1 ? &quot; term&quot; : &quot; terms&quot;) + &quot; saved&quot;);</span>
+<span class="nc" id="L217">    }</span>
+
+    private void searchFor(String term) {
+<span class="nc" id="L220">        comparisonSidePanel.getSearchView().getSearchInput().textProperty().set(term);</span>
+<span class="nc" id="L221">        beginSearch(term);</span>
+<span class="nc" id="L222">        onSearch.accept(term);</span>
+<span class="nc" id="L223">    }</span>
+
+    public void showSearchResults(Map&lt;Integer, List&lt;SearchMatch&gt;&gt; matchesByText, int firstTextId, int secondTextId) {
+<span class="nc bnc" id="L226" title="All 2 branches missed.">        Map&lt;Integer, List&lt;SearchMatch&gt;&gt; safeMatches = matchesByText == null ? Map.of() : matchesByText;</span>
+<span class="nc" id="L227">        String term = comparisonSidePanel.getSearchView().getSearchText();</span>
+<span class="nc bnc" id="L228" title="All 4 branches missed.">        if (term == null || term.isBlank()) {</span>
+<span class="nc" id="L229">            return;</span>
+        }
+
+<span class="nc" id="L232">        activeSearchTerm = term;</span>
+<span class="nc" id="L233">        String keyA = trackSearch(term, true, safeMatches.getOrDefault(firstTextId, List.of()));</span>
+<span class="nc" id="L234">        String keyB = trackSearch(term, false, safeMatches.getOrDefault(secondTextId, List.of()));</span>
+
+        // Start on the first document that actually has matches.
+<span class="nc bnc" id="L237" title="All 2 branches missed.">        if (!trackedSearches.get(keyA).matches().isEmpty()) {</span>
+<span class="nc" id="L238">            activateTrackedSearch(keyA);</span>
+<span class="nc bnc" id="L239" title="All 2 branches missed.">        } else if (!trackedSearches.get(keyB).matches().isEmpty()) {</span>
+<span class="nc" id="L240">            activateTrackedSearch(keyB);</span>
+        } else {
+<span class="nc" id="L242">            clearActiveSearch();</span>
+        }
+<span class="nc" id="L244">    }</span>
+
+    private String trackSearch(String term, boolean first, List&lt;SearchMatch&gt; matches) {
+<span class="nc" id="L247">        String key = trackedKey(term, first);</span>
+<span class="nc" id="L248">        trackedSearches.put(key, new TrackedSearch(term, first, List.copyOf(matches)));</span>
+<span class="nc" id="L249">        comparisonSidePanel.getSearchView().getTrackedWordsList().addOrUpdate(key, matches.size());</span>
+<span class="nc" id="L250">        return key;</span>
+    }
+
+    private static String trackedKey(String term, boolean first) {
+<span class="nc bnc" id="L254" title="All 2 branches missed.">        return (first ? &quot;Doc A · &quot; : &quot;Doc B · &quot;) + term;</span>
+    }
+
+    private void beginSearch(String term) {
+<span class="nc bnc" id="L258" title="All 4 branches missed.">        activeSearchTerm = term == null || term.isBlank() ? null : term;</span>
+<span class="nc" id="L259">    }</span>
+
+    private void goToTrackedSearch(String key) {
+<span class="nc" id="L262">        TrackedSearch tracked = trackedSearches.get(key);</span>
+<span class="nc bnc" id="L263" title="All 2 branches missed.">        if (tracked == null) {</span>
+<span class="nc" id="L264">            return;</span>
+        }
+        // Clicking the row that is already active steps to the next match in that
+        // document.
+<span class="nc bnc" id="L268" title="All 4 branches missed.">        if (key.equals(activeTrackedKey) &amp;&amp; !tracked.matches().isEmpty()) {</span>
+<span class="nc" id="L269">            tracked.step(1);</span>
+        }
+<span class="nc" id="L271">        activateTrackedSearch(key);</span>
+<span class="nc" id="L272">    }</span>
+
+    private void activateTrackedSearch(String key) {
+<span class="nc" id="L275">        TrackedSearch tracked = trackedSearches.get(key);</span>
+<span class="nc bnc" id="L276" title="All 2 branches missed.">        if (tracked == null) {</span>
+<span class="nc" id="L277">            return;</span>
+        }
+<span class="nc" id="L279">        activeTrackedKey = key;</span>
+<span class="nc" id="L280">        comparisonSidePanel.getSearchView().getTrackedWordsList().setActiveTerm(key);</span>
+<span class="nc" id="L281">        showActiveSearchTarget(tracked);</span>
+<span class="nc" id="L282">    }</span>
+
+    private void showActiveSearchTarget(TrackedSearch tracked) {
+<span class="nc bnc" id="L285" title="All 2 branches missed.">        if (tracked.matches().isEmpty()) {</span>
+<span class="nc" id="L286">            documentView.clearSearchHighlightsA();</span>
+<span class="nc" id="L287">            documentView.clearSearchHighlightsB();</span>
+<span class="nc" id="L288">            return;</span>
+        }
+<span class="nc" id="L290">        SearchMatch match = tracked.matches().get(tracked.activeIndex());</span>
+<span class="nc bnc" id="L291" title="All 2 branches missed.">        if (tracked.first()) {</span>
+<span class="nc" id="L292">            documentView.clearSearchHighlightsB();</span>
+<span class="nc" id="L293">            documentView.goToPageA(match.page(), match.paragraph());</span>
+<span class="nc" id="L294">            documentView.showSearchMatchesA(tracked.matches(), tracked.activeIndex());</span>
+        } else {
+<span class="nc" id="L296">            documentView.clearSearchHighlightsA();</span>
+<span class="nc" id="L297">            documentView.goToPageB(match.page(), match.paragraph());</span>
+<span class="nc" id="L298">            documentView.showSearchMatchesB(tracked.matches(), tracked.activeIndex());</span>
+        }
+<span class="nc" id="L300">    }</span>
+
+    public void showPreviousSearchMatch() {
+<span class="nc" id="L303">        moveSearchTarget(-1);</span>
+<span class="nc" id="L304">    }</span>
+
+    public void showNextSearchMatch() {
+<span class="nc" id="L307">        moveSearchTarget(1);</span>
+<span class="nc" id="L308">    }</span>
+
+    /**
+     * Previous/next arrows move through the matches of the active row's document
+     * only.
+     */
+    private void moveSearchTarget(int delta) {
+<span class="nc bnc" id="L315" title="All 2 branches missed.">        TrackedSearch tracked = activeTrackedKey == null ? null : trackedSearches.get(activeTrackedKey);</span>
+<span class="nc bnc" id="L316" title="All 4 branches missed.">        if (tracked == null || tracked.matches().isEmpty()) {</span>
+<span class="nc" id="L317">            return;</span>
+        }
+<span class="nc" id="L319">        tracked.step(delta);</span>
+<span class="nc" id="L320">        showActiveSearchTarget(tracked);</span>
+<span class="nc" id="L321">    }</span>
+
+    private void removeTrackedSearchTerm(String key) {
+<span class="nc" id="L324">        comparisonSidePanel.getSearchView().getTrackedWordsList().remove(key);</span>
+<span class="nc" id="L325">        TrackedSearch removed = trackedSearches.remove(key);</span>
+<span class="nc bnc" id="L326" title="All 4 branches missed.">        if (removed != null &amp;&amp; removed.term().equals(activeSearchTerm)</span>
+<span class="nc bnc" id="L327" title="All 2 branches missed.">                &amp;&amp; trackedSearches.values().stream().noneMatch(t -&gt; t.term().equals(activeSearchTerm))) {</span>
+<span class="nc" id="L328">            activeSearchTerm = null;</span>
+        }
+<span class="nc bnc" id="L330" title="All 2 branches missed.">        if (key.equals(activeTrackedKey)) {</span>
+<span class="nc" id="L331">            clearActiveSearch();</span>
+        }
+<span class="nc" id="L333">    }</span>
+
+    private void clearActiveSearch() {
+<span class="nc" id="L336">        activeTrackedKey = null;</span>
+<span class="nc" id="L337">        documentView.clearSearchHighlightsA();</span>
+<span class="nc" id="L338">        documentView.clearSearchHighlightsB();</span>
+<span class="nc" id="L339">    }</span>
+
+    private void resetTrackedSearches() {
+<span class="nc" id="L342">        trackedSearches.clear();</span>
+<span class="nc" id="L343">        activeTrackedKey = null;</span>
+<span class="nc" id="L344">        activeSearchTerm = null;</span>
+<span class="nc" id="L345">    }</span>
+
+    public void clearComparison() {
+<span class="nc" id="L348">        documentView.clear();</span>
+<span class="nc" id="L349">        comparisonSidePanel.clear();</span>
+<span class="nc" id="L350">        resetTrackedSearches();</span>
+
+<span class="nc" id="L352">        loadedState.setVisible(false);</span>
+<span class="nc" id="L353">        loadedState.setManaged(false);</span>
+
+<span class="nc" id="L355">        emptyState.setVisible(true);</span>
+<span class="nc" id="L356">        emptyState.setManaged(true);</span>
+<span class="nc" id="L357">    }</span>
+
+    public void dispose() {
+<span class="nc" id="L360">        documentView.dispose();</span>
+<span class="nc" id="L361">        comparisonSidePanel.clear();</span>
+<span class="nc" id="L362">    }</span>
+
+    public ComparisonDocumentView getDocumentView() {
+<span class="nc" id="L365">        return documentView;</span>
+    }
+
+    public ComparisonSidePanel getComparisonSidePanel() {
+<span class="nc" id="L369">        return comparisonSidePanel;</span>
+    }
+
+    public CompareHeader getHeader() {
+<span class="nc" id="L373">        return header;</span>
+    }
+
+    public void setOnSaveFindings(Runnable handler) {
+<span class="pc bpc" id="L377" title="1 of 2 branches missed.">        onSaveFindings = handler == null ? () -&gt; {</span>
+<span class="pc" id="L378">        } : handler;</span>
+<span class="fc" id="L379">    }</span>
+
+    public void setOnSearch(Consumer&lt;String&gt; handler) {
+<span class="pc bpc" id="L382" title="1 of 2 branches missed.">        onSearch = handler == null ? term -&gt; {</span>
+<span class="pc" id="L383">        } : handler;</span>
+<span class="fc" id="L384">    }</span>
+
+    public void setOnPreviousMatch(Runnable handler) {
+<span class="pc bpc" id="L387" title="1 of 2 branches missed.">        onPreviousMatch = handler == null ? () -&gt; {</span>
+<span class="pc" id="L388">        } : handler;</span>
+<span class="fc" id="L389">    }</span>
+
+    public void setOnNextMatch(Runnable handler) {
+<span class="pc bpc" id="L392" title="1 of 2 branches missed.">        onNextMatch = handler == null ? () -&gt; {</span>
+<span class="pc" id="L393">        } : handler;</span>
+<span class="fc" id="L394">    }</span>
+
+    public void goToDocumentAPage(Integer page, Integer paragraph) {
+<span class="nc" id="L397">        documentView.goToPageA(page, paragraph);</span>
+<span class="nc" id="L398">    }</span>
+
+    public void goToDocumentBPage(Integer page, Integer paragraph) {
+<span class="nc" id="L401">        documentView.goToPageB(page, paragraph);</span>
+<span class="nc" id="L402">    }</span>
+
+    public SearchSettings getSearchSettings() {
+<span class="nc" id="L405">        return comparisonSidePanel.getSearchView().getSearchSettings();</span>
+    }
+
+    /**
+     * Matches of one term in one document, plus which of them is currently shown.
+     */
+    private static final class TrackedSearch {
+        private final String term;
+        private final boolean first;
+        private final List&lt;SearchMatch&gt; matches;
+        private int activeIndex;
+
+<span class="nc" id="L417">        private TrackedSearch(String term, boolean first, List&lt;SearchMatch&gt; matches) {</span>
+<span class="nc" id="L418">            this.term = term;</span>
+<span class="nc" id="L419">            this.first = first;</span>
+<span class="nc" id="L420">            this.matches = matches;</span>
+<span class="nc" id="L421">        }</span>
+
+        private String term() {
+<span class="nc" id="L424">            return term;</span>
+        }
+
+        private boolean first() {
+<span class="nc" id="L428">            return first;</span>
+        }
+
+        private List&lt;SearchMatch&gt; matches() {
+<span class="nc" id="L432">            return matches;</span>
+        }
+
+        private int activeIndex() {
+<span class="nc" id="L436">            return activeIndex;</span>
+        }
+
+        private void step(int delta) {
+<span class="nc bnc" id="L440" title="All 2 branches missed.">            if (!matches.isEmpty()) {</span>
+<span class="nc" id="L441">                activeIndex = Math.floorMod(activeIndex + delta, matches.size());</span>
+            }
+<span class="nc" id="L443">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

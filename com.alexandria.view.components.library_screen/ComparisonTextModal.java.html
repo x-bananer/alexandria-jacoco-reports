@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ComparisonTextModal.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.library_screen</a> &gt; <span class="el_source">ComparisonTextModal.java</span></div><h1>ComparisonTextModal.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.library_screen;
+
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+
+import com.alexandria.model.Text;
+import com.alexandria.view.components.shared.Card;
+import com.alexandria.view.components.shared.EmptyState;
+
+import javafx.geometry.Insets;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+
+public class ComparisonTextModal extends VBox {
+
+<span class="fc" id="L23">    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern(&quot;d.MM.uuuu&quot;);</span>
+
+<span class="fc" id="L25">    private final Label title = new Label();</span>
+<span class="fc" id="L26">    private final VBox selection = new VBox(16);</span>
+    private Text firstText;
+<span class="pc" id="L28">    private BiConsumer&lt;Text, Text&gt; onCompare = (firstText, secondText) -&gt; {};</span>
+<span class="pc" id="L29">    private Consumer&lt;Text&gt; onAddNewText = text -&gt; {};</span>
+<span class="pc" id="L30">    private Runnable onCancel = () -&gt; {};</span>
+
+<span class="fc" id="L32">    public ComparisonTextModal() {</span>
+<span class="fc" id="L33">        getStyleClass().add(&quot;modal-card&quot;);</span>
+<span class="fc" id="L34">        setSpacing(16);</span>
+<span class="fc" id="L35">        setPadding(new Insets(24));</span>
+<span class="fc" id="L36">        setPrefWidth(640);</span>
+<span class="fc" id="L37">        setPrefHeight(600);</span>
+
+<span class="fc" id="L39">        title.getStyleClass().add(&quot;heading-lg&quot;);</span>
+<span class="fc" id="L40">        Label subtitle = new Label(&quot;Choose a second text from your library&quot;);</span>
+<span class="fc" id="L41">        subtitle.getStyleClass().add(&quot;text-muted&quot;);</span>
+
+<span class="fc" id="L43">        Button cancelButton = new Button(&quot;Cancel&quot;);</span>
+<span class="fc" id="L44">        cancelButton.getStyleClass().addAll(&quot;button&quot;, &quot;secondary&quot;);</span>
+<span class="fc" id="L45">        cancelButton.setMaxWidth(Double.MAX_VALUE);</span>
+<span class="pc" id="L46">        cancelButton.setOnAction(e -&gt; onCancel.run());</span>
+
+<span class="fc" id="L48">        Button addNewTextButton = new Button(&quot;Add a new text&quot;);</span>
+<span class="fc" id="L49">        addNewTextButton.getStyleClass().addAll(&quot;button&quot;, &quot;primary&quot;);</span>
+<span class="fc" id="L50">        addNewTextButton.setMaxWidth(Double.MAX_VALUE);</span>
+<span class="pc" id="L51">        addNewTextButton.setOnAction(e -&gt; onAddNewText.accept(firstText));</span>
+
+<span class="fc" id="L53">        getChildren().addAll(new VBox(4, title, subtitle), selection, addNewTextButton, cancelButton);</span>
+<span class="fc" id="L54">        VBox.setVgrow(selection, Priority.ALWAYS);</span>
+<span class="fc" id="L55">    }</span>
+
+    public void setTexts(Text firstText, List&lt;Text&gt; texts) {
+<span class="fc" id="L58">        this.firstText = firstText;</span>
+<span class="fc" id="L59">        title.setText(&quot;Compare \&quot;&quot; + titleText(firstText) + &quot;\&quot; with:&quot;);</span>
+
+<span class="fc" id="L61">        FlowPane textCards = new FlowPane(16, 16);</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        for (Text secondText : texts) {</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">            if (!Objects.equals(firstText.getId(), secondText.getId())) {</span>
+<span class="fc" id="L64">                textCards.getChildren().add(createTextCard(firstText, secondText));</span>
+            }
+<span class="fc" id="L66">        }</span>
+
+<span class="pc bpc" id="L68" title="1 of 2 branches missed.">        if (textCards.getChildren().isEmpty()) {</span>
+<span class="nc" id="L69">            selection.getChildren().setAll(new EmptyState(</span>
+                    &quot;No other texts to compare&quot;,
+                    &quot;Add another text to your library first&quot;));
+<span class="nc" id="L72">            return;</span>
+        }
+
+<span class="fc" id="L75">        ScrollPane cardsScroll = new ScrollPane(textCards);</span>
+<span class="fc" id="L76">        cardsScroll.getStyleClass().add(&quot;shared-scroll&quot;);</span>
+<span class="fc" id="L77">        cardsScroll.setFitToWidth(true);</span>
+<span class="fc" id="L78">        cardsScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);</span>
+<span class="fc" id="L79">        cardsScroll.setPrefViewportHeight(430);</span>
+
+<span class="fc" id="L81">        selection.getChildren().setAll(cardsScroll);</span>
+<span class="fc" id="L82">        VBox.setVgrow(cardsScroll, Priority.ALWAYS);</span>
+<span class="fc" id="L83">    }</span>
+
+    public void setOnCompare(BiConsumer&lt;Text, Text&gt; handler) {
+<span class="pc bpc" id="L86" title="1 of 2 branches missed.">        if (handler != null) {</span>
+<span class="fc" id="L87">            onCompare = handler;</span>
+        }
+<span class="fc" id="L89">    }</span>
+
+    public void setOnCancel(Runnable handler) {
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">        if (handler != null) {</span>
+<span class="fc" id="L93">            onCancel = handler;</span>
+        }
+<span class="fc" id="L95">    }</span>
+
+    public void setOnAddNewText(Consumer&lt;Text&gt; handler) {
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">        if (handler != null) {</span>
+<span class="fc" id="L99">            onAddNewText = handler;</span>
+        }
+<span class="fc" id="L101">    }</span>
+
+    private Card createTextCard(Text firstText, Text secondText) {
+<span class="fc" id="L104">        Card card = new Card(titleText(secondText));</span>
+<span class="fc" id="L105">        card.getDeleteButton().setVisible(false);</span>
+<span class="fc" id="L106">        card.getDeleteButton().setManaged(false);</span>
+
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">        if (secondText.getFileType() != null) {</span>
+<span class="fc" id="L109">            card.setTypeText(secondText.getFileType().name());</span>
+        }
+<span class="fc" id="L111">        card.setSourceText(secondText.getFileName());</span>
+<span class="pc bpc" id="L112" title="1 of 2 branches missed.">        if (secondText.getCreatedAt() != null) {</span>
+<span class="fc" id="L113">            card.setFooterText(&quot;Added &quot; + DATE_FORMAT.format(secondText.getCreatedAt()));</span>
+        }
+
+<span class="fc" id="L116">        card.setActionText(&quot;Choose as second text&quot;);</span>
+<span class="fc" id="L117">        card.getActionButton().setOnAction(e -&gt; onCompare.accept(firstText, secondText));</span>
+<span class="fc" id="L118">        return card;</span>
+    }
+
+    private String titleText(Text text) {
+<span class="pc bpc" id="L122" title="2 of 4 branches missed.">        if (text.getTitle() != null &amp;&amp; !text.getTitle().isBlank()) {</span>
+<span class="fc" id="L123">            return text.getTitle();</span>
+        }
+<span class="nc" id="L125">        return text.getFileName();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>QuotationLocation.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.shared.quotation</a> &gt; <span class="el_source">QuotationLocation.java</span></div><h1>QuotationLocation.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.shared.quotation;
+
+import com.alexandria.model.QuotationType;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public final class QuotationLocation {
+
+<span class="fc" id="L10">    private static final Pattern TYPE_PATTERN = Pattern.compile(&quot;type:([A-Za-z]+)&quot;);</span>
+<span class="fc" id="L11">    private static final Pattern PAGE_PATTERN = Pattern.compile(&quot;page:(\\d+)&quot;);</span>
+<span class="fc" id="L12">    private static final Pattern OFFSET_PATTERN = Pattern.compile(&quot;offset:(\\d+)-(\\d+)&quot;);</span>
+
+    private QuotationLocation() {
+    }
+
+    public static String encode(QuotationType type, String rawLocation) {
+<span class="fc bfc" id="L18" title="All 2 branches covered.">        if (type == null) {</span>
+<span class="fc" id="L19">            return rawLocation;</span>
+        }
+
+<span class="fc" id="L22">        return &quot;type:&quot; + type.name() + &quot;;&quot; + rawLocation;</span>
+    }
+
+    public static QuotationType parseType(String location) {
+<span class="fc bfc" id="L26" title="All 2 branches covered.">        if (location == null) {</span>
+<span class="fc" id="L27">            return null;</span>
+        }
+
+<span class="fc" id="L30">        Matcher matcher = TYPE_PATTERN.matcher(location);</span>
+
+<span class="fc bfc" id="L32" title="All 2 branches covered.">        if (!matcher.find()) {</span>
+<span class="fc" id="L33">            return null;</span>
+        }
+
+        try {
+<span class="fc" id="L37">            return QuotationType.valueOf(matcher.group(1));</span>
+<span class="fc" id="L38">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L39">            return null;</span>
+        }
+    }
+
+    public static Integer parsePage(String location) {
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        if (location == null) {</span>
+<span class="fc" id="L45">            return null;</span>
+        }
+
+<span class="fc" id="L48">        Matcher matcher = PAGE_PATTERN.matcher(location);</span>
+
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        return matcher.find() ? Integer.valueOf(matcher.group(1)) : null;</span>
+    }
+
+    public static String withoutType(String location) {
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        if (location == null) {</span>
+<span class="fc" id="L55">            return null;</span>
+        }
+
+<span class="fc" id="L58">        return location.replaceFirst(&quot;^type:[A-Za-z]+;&quot;, &quot;&quot;);</span>
+    }
+
+    public static Integer parseStartOffset(String location) {
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">        if (location == null) {</span>
+<span class="nc" id="L63">            return null;</span>
+        }
+
+<span class="fc" id="L66">        Matcher matcher = OFFSET_PATTERN.matcher(location);</span>
+
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        return matcher.find()</span>
+<span class="fc" id="L69">                ? Integer.valueOf(matcher.group(1))</span>
+<span class="fc" id="L70">                : null;</span>
+    }
+
+    public static Integer parseEndOffset(String location) {
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">        if (location == null) {</span>
+<span class="nc" id="L75">            return null;</span>
+        }
+
+<span class="fc" id="L78">        Matcher matcher = OFFSET_PATTERN.matcher(location);</span>
+
+<span class="fc bfc" id="L80" title="All 2 branches covered.">        return matcher.find()</span>
+<span class="fc" id="L81">                ? Integer.valueOf(matcher.group(2))</span>
+<span class="fc" id="L82">                : null;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

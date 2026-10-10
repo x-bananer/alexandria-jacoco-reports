@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TrackedWordsList.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.shared.search</a> &gt; <span class="el_source">TrackedWordsList.java</span></div><h1>TrackedWordsList.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.shared.search;
+
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
+
+import com.alexandria.view.components.shared.FrequencyBar;
+
+import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
+import org.kordamp.ikonli.javafx.FontIcon;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.function.Consumer;
+
+public class TrackedWordsList extends VBox {
+<span class="fc" id="L22">    private final Label headingLabel = new Label(&quot;Tracked Words&quot;);</span>
+<span class="fc" id="L23">    private final Label countBadge = new Label(&quot;0&quot;);</span>
+<span class="fc" id="L24">    private final FontIcon toggleIcon = new FontIcon(FontAwesomeSolid.CHEVRON_UP);</span>
+<span class="fc" id="L25">    private final Button toggleButton = new Button();</span>
+
+<span class="fc" id="L27">    private final VBox rowsHost = new VBox(8);</span>
+<span class="fc" id="L28">    private final Label emptyLabel = new Label(&quot;Search a term to start tracking it.&quot;);</span>
+
+<span class="fc" id="L30">    private final Map&lt;String, Row&gt; rows = new LinkedHashMap&lt;&gt;();</span>
+
+<span class="fc" id="L32">    private boolean expanded = true;</span>
+    private String activeTerm;
+
+<span class="fc" id="L35">    private Consumer&lt;String&gt; onInfo = word -&gt; {</span>
+<span class="nc" id="L36">    };</span>
+<span class="fc" id="L37">    private Consumer&lt;String&gt; onRemove = word -&gt; {</span>
+<span class="nc" id="L38">    };</span>
+<span class="fc" id="L39">    private Consumer&lt;String&gt; onGoTo = word -&gt; {</span>
+<span class="nc" id="L40">    };</span>
+
+<span class="fc" id="L42">    public TrackedWordsList() {</span>
+<span class="fc" id="L43">        getStyleClass().add(&quot;tracked-words-panel&quot;);</span>
+<span class="fc" id="L44">        setSpacing(8);</span>
+<span class="fc" id="L45">        setPadding(new Insets(8, 0, 0, 0));</span>
+
+<span class="fc" id="L47">        headingLabel.getStyleClass().add(&quot;heading-md&quot;);</span>
+<span class="fc" id="L48">        countBadge.getStyleClass().add(&quot;text-muted&quot;);</span>
+
+<span class="fc" id="L50">        toggleIcon.getStyleClass().add(&quot;text-muted&quot;);</span>
+<span class="fc" id="L51">        toggleButton.setGraphic(toggleIcon);</span>
+<span class="fc" id="L52">        toggleButton.getStyleClass().add(&quot;icon-button&quot;);</span>
+<span class="pc bnc" id="L53" title="All 2 branches missed.">        toggleButton.setOnAction(e -&gt; setExpanded(!expanded));</span>
+
+<span class="fc" id="L55">        HBox headerLeft = new HBox(8, headingLabel, countBadge);</span>
+<span class="fc" id="L56">        headerLeft.setAlignment(Pos.CENTER_LEFT);</span>
+<span class="fc" id="L57">        HBox.setHgrow(headerLeft, Priority.ALWAYS);</span>
+
+<span class="fc" id="L59">        HBox header = new HBox(headerLeft, toggleButton);</span>
+<span class="fc" id="L60">        header.setAlignment(Pos.CENTER_LEFT);</span>
+<span class="fc" id="L61">        header.getStyleClass().add(&quot;tracked-words-header&quot;);</span>
+
+<span class="fc" id="L63">        emptyLabel.getStyleClass().add(&quot;text-muted&quot;);</span>
+
+<span class="fc" id="L65">        getChildren().addAll(header, rowsHost);</span>
+<span class="fc" id="L66">        showEmptyIfNeeded();</span>
+<span class="fc" id="L67">    }</span>
+
+    public void addOrUpdate(String word, int count) {
+<span class="nc bnc" id="L70" title="All 4 branches missed.">        if (word == null || word.isBlank()) {</span>
+<span class="nc" id="L71">            return;</span>
+        }
+
+<span class="nc" id="L74">        Row row = rows.get(word);</span>
+
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        if (row == null) {</span>
+<span class="nc" id="L77">            row = new Row(word);</span>
+<span class="nc" id="L78">            rows.put(word, row);</span>
+<span class="nc" id="L79">            rowsHost.getChildren().add(row.container);</span>
+        }
+
+<span class="nc" id="L82">        row.count = Math.max(0, count);</span>
+
+<span class="nc" id="L84">        refreshBars();</span>
+<span class="nc" id="L85">        showEmptyIfNeeded();</span>
+<span class="nc" id="L86">    }</span>
+
+    public void remove(String word) {
+<span class="nc" id="L89">        Row row = rows.remove(word);</span>
+
+<span class="nc bnc" id="L91" title="All 2 branches missed.">        if (row == null) {</span>
+<span class="nc" id="L92">            return;</span>
+        }
+
+<span class="nc" id="L95">        rowsHost.getChildren().remove(row.container);</span>
+
+<span class="nc bnc" id="L97" title="All 2 branches missed.">        if (word.equals(activeTerm)) {</span>
+<span class="nc" id="L98">            activeTerm = null;</span>
+        }
+
+<span class="nc" id="L101">        refreshBars();</span>
+<span class="nc" id="L102">        showEmptyIfNeeded();</span>
+<span class="nc" id="L103">    }</span>
+
+    public void setActiveTerm(String word) {
+<span class="nc bnc" id="L106" title="All 2 branches missed.">        if (activeTerm != null) {</span>
+<span class="nc" id="L107">            Row previous = rows.get(activeTerm);</span>
+        }
+
+<span class="nc" id="L110">        activeTerm = word;</span>
+
+<span class="nc bnc" id="L112" title="All 2 branches missed.">        if (activeTerm != null) {</span>
+<span class="nc" id="L113">            Row current = rows.get(activeTerm);</span>
+        }
+<span class="nc" id="L115">    }</span>
+
+    public void setOnInfo(Consumer&lt;String&gt; handler) {
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">        onInfo = handler == null ? word -&gt; {</span>
+<span class="pc" id="L119">        } : handler;</span>
+<span class="fc" id="L120">    }</span>
+
+    public void setOnRemove(Consumer&lt;String&gt; handler) {
+<span class="pc bpc" id="L123" title="1 of 2 branches missed.">        onRemove = handler == null ? word -&gt; {</span>
+<span class="pc" id="L124">        } : handler;</span>
+<span class="fc" id="L125">    }</span>
+
+    public void setOnGoTo(Consumer&lt;String&gt; handler) {
+<span class="pc bpc" id="L128" title="1 of 2 branches missed.">        onGoTo = handler == null ? word -&gt; {</span>
+<span class="pc" id="L129">        } : handler;</span>
+<span class="fc" id="L130">    }</span>
+
+    public void reset() {
+<span class="nc" id="L133">        rows.clear();</span>
+<span class="nc" id="L134">        rowsHost.getChildren().clear();</span>
+<span class="nc" id="L135">        activeTerm = null;</span>
+<span class="nc" id="L136">        showEmptyIfNeeded();</span>
+<span class="nc" id="L137">    }</span>
+
+    private void setExpanded(boolean value) {
+<span class="nc" id="L140">        expanded = value;</span>
+
+<span class="nc" id="L142">        rowsHost.setManaged(expanded);</span>
+<span class="nc" id="L143">        rowsHost.setVisible(expanded);</span>
+
+<span class="nc bnc" id="L145" title="All 2 branches missed.">        toggleIcon.setIconCode(expanded</span>
+<span class="nc" id="L146">                ? FontAwesomeSolid.CHEVRON_UP</span>
+<span class="nc" id="L147">                : FontAwesomeSolid.CHEVRON_DOWN);</span>
+<span class="nc" id="L148">    }</span>
+
+    private void showEmptyIfNeeded() {
+<span class="fc" id="L151">        countBadge.setText(String.valueOf(rows.size()));</span>
+
+<span class="fc" id="L153">        boolean isEmpty = rows.isEmpty();</span>
+
+<span class="pc bpc" id="L155" title="2 of 4 branches missed.">        if (isEmpty &amp;&amp; !rowsHost.getChildren().contains(emptyLabel)) {</span>
+<span class="fc" id="L156">            rowsHost.getChildren().setAll(emptyLabel);</span>
+<span class="nc bnc" id="L157" title="All 2 branches missed.">        } else if (!isEmpty) {</span>
+<span class="nc" id="L158">            rowsHost.getChildren().remove(emptyLabel);</span>
+        }
+<span class="fc" id="L160">    }</span>
+
+    private void refreshBars() {
+<span class="nc" id="L163">        int maxCount = rows.values().stream()</span>
+<span class="nc" id="L164">                .mapToInt(row -&gt; row.count)</span>
+<span class="nc" id="L165">                .max()</span>
+<span class="nc" id="L166">                .orElse(1);</span>
+
+<span class="nc bnc" id="L168" title="All 2 branches missed.">        for (Row row : rows.values()) {</span>
+<span class="nc" id="L169">            row.updateBar(maxCount);</span>
+<span class="nc" id="L170">        }</span>
+<span class="nc" id="L171">    }</span>
+
+    private final class Row {
+        private final String word;
+        private final HBox container;
+        private final FrequencyBar frequencyBar;
+        private final Label countLabel;
+
+        private int count;
+
+<span class="nc" id="L181">        private Row(String word) {</span>
+<span class="nc" id="L182">            this.word = word;</span>
+
+<span class="nc" id="L184">            Label termLabel = new Label(word);</span>
+<span class="nc" id="L185">            termLabel.getStyleClass().add(&quot;term-frequency-label&quot;);</span>
+<span class="nc" id="L186">            termLabel.setMinWidth(80);</span>
+<span class="nc" id="L187">            termLabel.setPrefWidth(80);</span>
+
+<span class="nc" id="L189">            frequencyBar = new FrequencyBar();</span>
+
+<span class="nc" id="L191">            HBox.setHgrow(frequencyBar, Priority.ALWAYS);</span>
+
+<span class="nc" id="L193">            countLabel = new Label(&quot;0&quot;);</span>
+<span class="nc" id="L194">            countLabel.getStyleClass().add(&quot;text-muted&quot;);</span>
+<span class="nc" id="L195">            countLabel.setMinWidth(28);</span>
+
+<span class="nc" id="L197">            Button goToButton = createIconButton(FontAwesomeSolid.LOCATION_ARROW, &quot;tracked-word-goto&quot;);</span>
+<span class="nc" id="L198">            goToButton.setOnAction(e -&gt; onGoTo.accept(word));</span>
+
+<span class="nc" id="L200">            Button removeButton = createIconButton(FontAwesomeSolid.TRASH, &quot;tracked-word-remove&quot;);</span>
+<span class="nc" id="L201">            removeButton.setOnAction(e -&gt; onRemove.accept(word));</span>
+
+<span class="nc" id="L203">            HBox clickableArea = new HBox(10, termLabel, frequencyBar, countLabel);</span>
+<span class="nc" id="L204">            clickableArea.setAlignment(Pos.CENTER_LEFT);</span>
+<span class="nc" id="L205">            HBox.setHgrow(clickableArea, Priority.ALWAYS);</span>
+<span class="nc" id="L206">            clickableArea.setOnMouseClicked(e -&gt; onInfo.accept(word));</span>
+
+<span class="nc" id="L208">            container = new HBox(8, clickableArea, goToButton, removeButton);</span>
+<span class="nc" id="L209">            container.setAlignment(Pos.CENTER_LEFT);</span>
+<span class="nc" id="L210">            container.getStyleClass().add(&quot;tracked-word-row&quot;);</span>
+<span class="nc" id="L211">        }</span>
+
+        private void updateBar(int maxCount) {
+<span class="nc" id="L214">            countLabel.setText(String.valueOf(count));</span>
+
+<span class="nc bnc" id="L216" title="All 2 branches missed.">            double ratio = maxCount &lt;= 0 ? 0 : (double) count / maxCount;</span>
+<span class="nc" id="L217">            frequencyBar.setRatio(ratio);</span>
+<span class="nc" id="L218">        }</span>
+
+        private Button createIconButton(FontAwesomeSolid icon, String styleClass) {
+<span class="nc" id="L221">            FontIcon fontIcon = new FontIcon(icon);</span>
+<span class="nc" id="L222">            fontIcon.getStyleClass().add(&quot;text-muted&quot;);</span>
+
+<span class="nc" id="L224">            Button button = new Button();</span>
+<span class="nc" id="L225">            button.setGraphic(fontIcon);</span>
+<span class="nc" id="L226">            button.getStyleClass().addAll(&quot;icon-button&quot;, styleClass);</span>
+
+<span class="nc" id="L228">            return button;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

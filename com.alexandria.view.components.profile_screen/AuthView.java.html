@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthView.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.profile_screen</a> &gt; <span class="el_source">AuthView.java</span></div><h1>AuthView.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.profile_screen;
+
+import java.util.Map;
+import java.util.function.Consumer;
+
+import javafx.geometry.Insets;
+import javafx.scene.control.Label;
+import javafx.scene.layout.VBox;
+
+import com.alexandria.view.components.shared.toggle.Toggle;
+
+public class AuthView extends VBox {
+    private final LoginForm loginForm;
+    private final RegisterForm registerForm;
+    private final Toggle toggle;
+    private final VBox formHost;
+<span class="fc" id="L17">    private Consumer&lt;Map&lt;String, String&gt;&gt; onLogin = values -&gt; {</span>
+<span class="nc" id="L18">    };</span>
+<span class="fc" id="L19">    private Consumer&lt;Map&lt;String, String&gt;&gt; onRegister = values -&gt; {</span>
+<span class="nc" id="L20">    };</span>
+
+<span class="fc" id="L22">    public AuthView() {</span>
+<span class="fc" id="L23">        getStyleClass().add(&quot;auth-view&quot;);</span>
+<span class="fc" id="L24">        getStyleClass().add(&quot;modal-card&quot;);</span>
+<span class="fc" id="L25">        setPrefWidth(420);</span>
+<span class="fc" id="L26">        setSpacing(20);</span>
+<span class="fc" id="L27">        setPadding(new Insets(24));</span>
+
+<span class="fc" id="L29">        Label title = new Label(&quot;Welcome to Alexandria&quot;);</span>
+<span class="fc" id="L30">        title.getStyleClass().add(&quot;heading-lg&quot;);</span>
+
+<span class="fc" id="L32">        toggle = new Toggle(&quot;Log In&quot;, &quot;Create Account&quot;);</span>
+
+<span class="fc" id="L34">        formHost = new VBox();</span>
+<span class="fc" id="L35">        loginForm = new LoginForm();</span>
+<span class="fc" id="L36">        registerForm = new RegisterForm();</span>
+<span class="pc" id="L37">        loginForm.setOnLogin(values -&gt; onLogin.accept(values));</span>
+<span class="pc" id="L38">        registerForm.setOnRegister(values -&gt; onRegister.accept(values));</span>
+<span class="fc" id="L39">        formHost.getChildren().add(loginForm);</span>
+
+<span class="fc" id="L41">        toggle.setOnToggle(index -&gt; {</span>
+<span class="pc bpc" id="L42" title="1 of 2 branches missed.">            if (index == 0) {</span>
+<span class="nc" id="L43">                showLogin();</span>
+            } else {
+<span class="fc" id="L45">                showRegister();</span>
+            }
+<span class="fc" id="L47">        });</span>
+
+<span class="fc" id="L49">        getChildren().addAll(title, toggle, formHost);</span>
+<span class="fc" id="L50">    }</span>
+
+    private void showLogin() {
+<span class="fc" id="L53">        loginForm.reset();</span>
+<span class="fc" id="L54">        formHost.getChildren().setAll(loginForm);</span>
+<span class="fc" id="L55">    }</span>
+
+    private void showRegister() {
+<span class="fc" id="L58">        registerForm.reset();</span>
+<span class="fc" id="L59">        formHost.getChildren().setAll(registerForm);</span>
+<span class="fc" id="L60">    }</span>
+
+    public void reset() {
+<span class="fc" id="L63">        toggle.setSelectedIndex(0);</span>
+<span class="fc" id="L64">        showLogin();</span>
+<span class="fc" id="L65">    }</span>
+
+    public void setOnLogin(Consumer&lt;Map&lt;String, String&gt;&gt; handler) {
+<span class="nc" id="L68">        this.onLogin = handler;</span>
+<span class="nc" id="L69">    }</span>
+
+    public void setOnRegister(Consumer&lt;Map&lt;String, String&gt;&gt; handler) {
+<span class="nc" id="L72">        this.onRegister = handler;</span>
+<span class="nc" id="L73">    }</span>
+
+    public void showLoginError(String message) {
+<span class="nc" id="L76">        loginForm.showError(message);</span>
+<span class="nc" id="L77">    }</span>
+
+    public void showRegisterError(String message) {
+<span class="nc" id="L80">        registerForm.showError(message);</span>
+<span class="nc" id="L81">    }</span>
+
+    public LoginForm getLoginForm() {
+<span class="fc" id="L84">        return loginForm;</span>
+    }
+
+    public RegisterForm getRegisterForm() {
+<span class="fc" id="L88">        return registerForm;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

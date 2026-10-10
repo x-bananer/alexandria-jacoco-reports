@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>QuotationDAO.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.dao</a> &gt; <span class="el_source">QuotationDAO.java</span></div><h1>QuotationDAO.java</h1><pre class="source lang-java linenums">package com.alexandria.dao;
+
+import com.alexandria.db.DatabaseConnection;
+import com.alexandria.model.Quotation;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+
+<span class="fc" id="L14">public class QuotationDAO {</span>
+	public Quotation create(Quotation quotation) throws SQLException {
+<span class="fc" id="L16">		String sql = &quot;INSERT INTO quotations (user_id, text_id, quotation_text, location) VALUES (?, ?, ?, ?)&quot;;</span>
+
+<span class="fc" id="L18">		try (Connection connection = DatabaseConnection.getConnection();</span>
+<span class="fc" id="L19">				PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {</span>
+<span class="fc" id="L20">			statement.setInt(1, quotation.getUserId());</span>
+<span class="fc" id="L21">			statement.setInt(2, quotation.getTextId());</span>
+<span class="fc" id="L22">			statement.setString(3, quotation.getQuotationText());</span>
+<span class="fc" id="L23">			statement.setString(4, quotation.getLocation());</span>
+
+<span class="fc" id="L25">			statement.executeUpdate();</span>
+
+<span class="fc" id="L27">			try (ResultSet keys = statement.getGeneratedKeys()) {</span>
+<span class="pc bpc" id="L28" title="1 of 2 branches missed.">				if (keys.next()) {</span>
+<span class="fc" id="L29">					quotation.setId(keys.getInt(1));</span>
+				}
+			}
+		}
+
+<span class="fc" id="L34">		return quotation;</span>
+	}
+
+	public Quotation findById(int id) throws SQLException {
+<span class="fc" id="L38">		String sql = &quot;SELECT * FROM quotations WHERE id = ?&quot;;</span>
+
+<span class="fc" id="L40">		try (Connection connection = DatabaseConnection.getConnection();</span>
+<span class="fc" id="L41">				PreparedStatement statement = connection.prepareStatement(sql)) {</span>
+<span class="fc" id="L42">			statement.setInt(1, id);</span>
+
+<span class="fc" id="L44">			try (ResultSet resultSet = statement.executeQuery()) {</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">				if (resultSet.next()) {</span>
+<span class="fc" id="L46">					return new Quotation(</span>
+<span class="fc" id="L47">							resultSet.getInt(&quot;id&quot;),</span>
+<span class="fc" id="L48">							resultSet.getInt(&quot;user_id&quot;),</span>
+<span class="fc" id="L49">							resultSet.getInt(&quot;text_id&quot;),</span>
+<span class="fc" id="L50">							resultSet.getString(&quot;quotation_text&quot;),</span>
+<span class="fc" id="L51">							resultSet.getString(&quot;location&quot;),</span>
+<span class="fc" id="L52">							resultSet.getTimestamp(&quot;created_at&quot;).toLocalDateTime());</span>
+				}
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">			}</span>
+<span class="pc bpc" id="L55" title="2 of 4 branches missed.">		}</span>
+
+<span class="fc" id="L57">		return null;</span>
+	}
+
+	public List&lt;Quotation&gt; findAllByUserId(int userId) throws SQLException {
+<span class="fc" id="L61">		String sql = &quot;SELECT * FROM quotations WHERE user_id = ?&quot;;</span>
+<span class="fc" id="L62">		List&lt;Quotation&gt; quotations = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L64">		try (Connection connection = DatabaseConnection.getConnection();</span>
+<span class="fc" id="L65">				PreparedStatement statement = connection.prepareStatement(sql)) {</span>
+<span class="fc" id="L66">			statement.setInt(1, userId);</span>
+
+<span class="fc" id="L68">			try (ResultSet resultSet = statement.executeQuery()) {</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">				while (resultSet.next()) {</span>
+<span class="fc" id="L70">					Quotation quotation = new Quotation(</span>
+<span class="fc" id="L71">							resultSet.getInt(&quot;id&quot;),</span>
+<span class="fc" id="L72">							resultSet.getInt(&quot;user_id&quot;),</span>
+<span class="fc" id="L73">							resultSet.getInt(&quot;text_id&quot;),</span>
+<span class="fc" id="L74">							resultSet.getString(&quot;quotation_text&quot;),</span>
+<span class="fc" id="L75">							resultSet.getString(&quot;location&quot;),</span>
+<span class="fc" id="L76">							resultSet.getTimestamp(&quot;created_at&quot;).toLocalDateTime());</span>
+
+<span class="fc" id="L78">					quotations.add(quotation);</span>
+<span class="fc" id="L79">				}</span>
+			}
+		}
+
+<span class="fc" id="L83">		return quotations;</span>
+	}
+
+	public List&lt;Quotation&gt; findAllByTextId(int textId) throws SQLException {
+<span class="fc" id="L87">		String sql = &quot;SELECT * FROM quotations WHERE text_id = ?&quot;;</span>
+<span class="fc" id="L88">		List&lt;Quotation&gt; quotations = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L90">		try (Connection connection = DatabaseConnection.getConnection();</span>
+<span class="fc" id="L91">				PreparedStatement statement = connection.prepareStatement(sql)) {</span>
+<span class="fc" id="L92">			statement.setInt(1, textId);</span>
+
+<span class="fc" id="L94">			try (ResultSet resultSet = statement.executeQuery()) {</span>
+<span class="fc bfc" id="L95" title="All 2 branches covered.">				while (resultSet.next()) {</span>
+<span class="fc" id="L96">					Quotation quotation = new Quotation(</span>
+<span class="fc" id="L97">							resultSet.getInt(&quot;id&quot;),</span>
+<span class="fc" id="L98">							resultSet.getInt(&quot;user_id&quot;),</span>
+<span class="fc" id="L99">							resultSet.getInt(&quot;text_id&quot;),</span>
+<span class="fc" id="L100">							resultSet.getString(&quot;quotation_text&quot;),</span>
+<span class="fc" id="L101">							resultSet.getString(&quot;location&quot;),</span>
+<span class="fc" id="L102">							resultSet.getTimestamp(&quot;created_at&quot;).toLocalDateTime());</span>
+
+<span class="fc" id="L104">					quotations.add(quotation);</span>
+<span class="fc" id="L105">				}</span>
+		}
+		}
+
+<span class="fc" id="L109">		return quotations;</span>
+	}
+
+	public boolean update(Quotation quotation) throws SQLException {
+<span class="fc" id="L113">		String sql = &quot;UPDATE quotations SET quotation_text = ?, location = ? WHERE id = ?&quot;;</span>
+
+<span class="fc" id="L115">		try (Connection connection = DatabaseConnection.getConnection();</span>
+<span class="fc" id="L116">				PreparedStatement statement = connection.prepareStatement(sql)) {</span>
+<span class="fc" id="L117">			statement.setString(1, quotation.getQuotationText());</span>
+<span class="fc" id="L118">			statement.setString(2, quotation.getLocation());</span>
+<span class="fc" id="L119">			statement.setInt(3, quotation.getId());</span>
+
+<span class="fc" id="L121">			int updatedRows = statement.executeUpdate();</span>
+
+<span class="pc bpc" id="L123" title="1 of 2 branches missed.">			return updatedRows &gt; 0;</span>
+		}
+	}
+
+	public boolean delete(int id) throws SQLException {
+<span class="fc" id="L128">		String sql = &quot;DELETE FROM quotations WHERE id = ?&quot;;</span>
+
+<span class="fc" id="L130">		try (Connection connection = DatabaseConnection.getConnection();</span>
+<span class="fc" id="L131">				PreparedStatement statement = connection.prepareStatement(sql)) {</span>
+<span class="fc" id="L132">			statement.setInt(1, id);</span>
+
+<span class="fc" id="L134">			int deletedRows = statement.executeUpdate();</span>
+
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">			return deletedRows &gt; 0;</span>
+		}
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

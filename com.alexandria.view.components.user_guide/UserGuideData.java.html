@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserGuideData.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.user_guide</a> &gt; <span class="el_source">UserGuideData.java</span></div><h1>UserGuideData.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.user_guide;
+
+import java.util.List;
+
+public final class UserGuideData {
+
+<span class="nc" id="L7">    public static final List&lt;String&gt; ABOUT_PARAGRAPHS = List.of(</span>
+            &quot;Alexandria is an application for working with texts.&quot;,
+            &quot;You can add your own text or upload a TXT or PDF file. Alexandria can search for the words &quot;
+                    + &quot;and phrases you need, count words and sentences, show which words are used most often, &quot;
+                    + &quot;analyze a specific word or phrase, and compare several texts.&quot;,
+            &quot;You can also save your texts, analysis results, comparisons, search results, and quotations to your account.&quot;);
+
+<span class="nc" id="L14">    public static final List&lt;String&gt; NEW_PROJECT_STEPS = List.of(</span>
+            &quot;Click + New Project in the sidebar to add a text.&quot;,
+            &quot;Choose Upload File or Paste Text. Only PDF and TXT files are supported.&quot;,
+            &quot;Enter the project name.&quot;,
+            &quot;Choose where to open your project.\n\n&quot;
+                    + &quot;Analyze lets you explore one text, search for words or phrases, and view its statistics.\n\n&quot;
+                    + &quot;Compare lets you compare word use across several texts.&quot;,
+            &quot;Click Create Project. You will be taken to either the Analyze or Compare page, depending on &quot;
+                    + &quot;your selection. Your project will be added to your Library so you can return to it later.&quot;);
+
+    public static final String ANALYZE_INTRODUCTION = &quot;Create a new project and choose Analyze, or open an existing project from Library. Analyze works with one text at a time. Reader is shown on the left, while the panel on the right shows automatically calculated Term Frequency and Key Paragraphs. The selected text remains available in Library, so you can return to the same project later.&quot;;
+<span class="nc" id="L25">    public static final List&lt;String&gt; ANALYZE_METHODS = List.of(</span>
+            &quot;Term Frequency: returns the five non-stop words with the highest raw occurrence counts. The fixed stop-word list excludes: the, be, to, of, and, a, in, that, have, i, it, for, not, on, with, he, as, you, do, and at.&quot;,
+            &quot;Term analysis: matches a word or phrase without regard to case and reports total occurrences, occurrences per 1,000 words, the number of sentences and paragraphs containing the term, and the five most frequent neighbouring words. Neighbours are counted within five word positions on either side of each match. Stop words are excluded.&quot;,
+            &quot;Search Term Frequency: searches the current text for a word or phrase and returns every matching occurrence with its page, when page information is available, and up to 40 characters of surrounding context on each side. Search settings can control case sensitivity and whole-word matching.&quot;,
+            &quot;Fuzzy search: performs case-insensitive approximate matching. Queries are limited to 64 characters. Queries shorter than four characters allow no differences, queries of four to seven characters allow one difference, and longer queries allow up to two differences.&quot;,
+            &quot;Tracked words list: keeps searched words and phrases with their occurrence counts. It marks the active term in the document, provides term details, and supports navigation to individual occurrences or removal of a tracked term.&quot;,
+            &quot;Key Paragraphs: the text is split into sentences. Each sentence receives a score equal to the sum of the overall frequencies of its words. The five highest-scoring sentences are returned with their page and paragraph references.&quot;);
+
+    public static final String COMPARE_INTRODUCTION = &quot;Create a new project and choose Compare, or open two projects from Library. Compare displays the documents side by side and calculates results for both texts. Use the Reader to review the documents, or open Quotations to work with quotations saved from either document.&quot;;
+<span class="nc" id="L34">    public static final List&lt;String&gt; COMPARE_METHODS = List.of(</span>
+            &quot;Similarity score: compares the word-frequency profiles of the two texts and shows a percentage together with a Low, Moderate, or High similarity label.&quot;,
+            &quot;Most frequent shared words: finds words that occur in both texts, ranks them by their combined occurrence count, and shows the count for each document. Select a word to compare it as a term.&quot;,
+            &quot;Term comparison: matches a word or phrase without regard to case in each document. For every document, it reports the total number of occurrences and the relative frequency per 1,000 words.&quot;,
+            &quot;Search in both texts: searches both documents for a word or phrase and highlights every match. Use the previous and next controls to move through matches across the two documents. The tracked words list keeps searched terms and their total match counts.&quot;,
+            &quot;Key paragraphs: compares paragraphs that are at least 50 characters long. A pair is shown when it shares at least three words from the common vocabulary. Up to five non-overlapping pairs with the highest similarity scores are displayed, with page and paragraph references when available.&quot;);
+
+<span class="nc" id="L41">    public static final List&lt;String&gt; LIBRARY_STEPS = List.of(</span>
+            &quot;Open Library to view the texts and projects saved to your account.&quot;,
+            &quot;Use the search field to find a text or project.&quot;,
+            &quot;Select a project and choose Open with.&quot;,
+            &quot;Choose Analyze to work with one text, or Compare to work with several texts.&quot;);
+
+<span class="nc" id="L47">    public static final List&lt;String&gt; ARCHIVE_STEPS = List.of(</span>
+            &quot;Sign in to access your Archive.&quot;,
+            &quot;Choose Text analysis, Term analysis, or Text comparisons.&quot;,
+            &quot;Use the search field to find saved findings.&quot;,
+            &quot;Open a saved result to review it, or remove it when you no longer need it.&quot;);
+
+<span class="nc" id="L53">    public static final List&lt;String&gt; PROFILE_STEPS = List.of(</span>
+            &quot;Open Profile from the sidebar.&quot;,
+            &quot;Choose Register to create an account, or Log in if you already have one.&quot;,
+            &quot;When signed in, update your profile details or change your password.&quot;,
+            &quot;Signing in lets you save projects and findings to your account.&quot;);
+
+<span class="nc" id="L59">    public static final List&lt;String&gt; SETTINGS_STEPS = List.of(</span>
+            &quot;Use the Dark theme switch to choose between the light and dark appearance.&quot;,
+            &quot;Turn on Show user tour on next launch to see this guided tour when you next open Alexandria.&quot;);
+    public static final String SETTINGS_NOTE = &quot;Language settings are under development and will be available later.&quot;;
+
+    private UserGuideData() {
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

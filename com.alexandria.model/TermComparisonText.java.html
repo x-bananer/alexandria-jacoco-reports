@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TermComparisonText.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.model</a> &gt; <span class="el_source">TermComparisonText.java</span></div><h1>TermComparisonText.java</h1><pre class="source lang-java linenums">package com.alexandria.model;
+
+/**
+ * Text Comparison with entered word/phrase junction.
+ *
+ * A term comparison can include several texts. This model stores one link
+ * between a saved term comparison and each text included in it.
+ */
+public class TermComparisonText {
+	private Integer comparisonId;
+	private Integer textId;
+
+<span class="nc" id="L13">	public TermComparisonText() {</span>
+<span class="nc" id="L14">	}</span>
+
+<span class="fc" id="L16">	public TermComparisonText(Integer comparisonId, Integer textId) {</span>
+<span class="fc" id="L17">		this.comparisonId = comparisonId;</span>
+<span class="fc" id="L18">		this.textId = textId;</span>
+<span class="fc" id="L19">	}</span>
+
+	public Integer getComparisonId() {
+<span class="fc" id="L22">		return comparisonId;</span>
+	}
+
+	public void setComparisonId(Integer comparisonId) {
+<span class="nc" id="L26">		this.comparisonId = comparisonId;</span>
+<span class="nc" id="L27">	}</span>
+
+	public Integer getTextId() {
+<span class="fc" id="L30">		return textId;</span>
+	}
+
+	public void setTextId(Integer textId) {
+<span class="nc" id="L34">		this.textId = textId;</span>
+<span class="nc" id="L35">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

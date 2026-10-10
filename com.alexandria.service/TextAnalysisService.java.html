@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TextAnalysisService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.service</a> &gt; <span class="el_source">TextAnalysisService.java</span></div><h1>TextAnalysisService.java</h1><pre class="source lang-java linenums">package com.alexandria.service;
+
+import com.alexandria.service.analysis.*;
+
+import java.util.*;
+
+import static com.alexandria.service.AnalysisUtils.*;
+
+<span class="fc" id="L9">public class TextAnalysisService implements TextAnalysisServiceINT {</span>
+
+    public TextAnalysisResult analyzeText(String content) {
+<span class="fc" id="L12">        return analyzeText(content, Collections.emptyList());</span>
+    }
+
+    @Override
+    public TextAnalysisResult analyzeText(String content, List&lt;Integer&gt; pageOffsets) {
+<span class="fc" id="L17">        var words = extractWords(content);</span>
+<span class="fc" id="L18">        var frequencies = countWordFrequencies(words);</span>
+
+<span class="fc" id="L20">        return new TextAnalysisResult(</span>
+<span class="fc" id="L21">                words.size(),</span>
+<span class="fc" id="L22">                frequencies.size(),</span>
+<span class="fc" id="L23">                countMatches(content, SENTENCE_PATTERN),</span>
+<span class="fc" id="L24">                countParagraphs(content),</span>
+<span class="fc" id="L25">                getTopWords(frequencies, words.size(), 5),</span>
+<span class="fc" id="L26">                getImportantFragments(content, frequencies, 5, pageOffsets));</span>
+    }
+
+    private List&lt;TextFragment&gt; getImportantFragments(String content, Map&lt;String, Long&gt; globalFreqs, int limit,
+            List&lt;Integer&gt; pageOffsets) {
+<span class="pc bpc" id="L31" title="2 of 4 branches missed.">        if (content == null || content.isBlank())</span>
+<span class="nc" id="L32">            return Collections.emptyList();</span>
+
+<span class="fc" id="L34">        var fragments = new ArrayList&lt;TextFragment&gt;();</span>
+<span class="fc" id="L35">        var paragraphs = PARAGRAPH_SPLIT_PATTERN.split(content.strip());</span>
+
+<span class="fc" id="L37">        int charOffset = 0;</span>
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        for (int i = 0; i &lt; paragraphs.length; i++) {</span>
+<span class="fc" id="L39">            int pIndex = i + 1;</span>
+<span class="fc" id="L40">            String paragraph = paragraphs[i];</span>
+
+<span class="fc" id="L42">            int pStart = content.indexOf(paragraph, charOffset);</span>
+<span class="pc bpc" id="L43" title="1 of 2 branches missed.">            if (pStart &gt;= 0)</span>
+<span class="fc" id="L44">                charOffset = pStart;</span>
+
+<span class="fc" id="L46">            Integer page = resolvePage(charOffset, pageOffsets);</span>
+
+<span class="fc" id="L48">            SENTENCE_PATTERN.matcher(paragraph).results()</span>
+<span class="fc" id="L49">                    .map(m -&gt; m.group().replaceAll(&quot;\\s+&quot;, &quot; &quot;).strip())</span>
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">                    .filter(s -&gt; !s.isBlank())</span>
+<span class="fc" id="L51">                    .forEach(sentence -&gt; {</span>
+<span class="fc" id="L52">                        int score = extractWords(sentence).stream()</span>
+<span class="fc" id="L53">                                .mapToInt(w -&gt; globalFreqs.getOrDefault(w, 0L).intValue()).sum();</span>
+<span class="fc" id="L54">                        fragments.add(new TextFragment(sentence, score, page, pIndex));</span>
+<span class="fc" id="L55">                    });</span>
+
+<span class="fc" id="L57">            charOffset += paragraph.length();</span>
+        }
+
+<span class="fc" id="L60">        return fragments.stream()</span>
+<span class="fc" id="L61">                .sorted(Comparator.comparingInt(TextFragment::score).reversed())</span>
+<span class="fc" id="L62">                .limit(limit)</span>
+<span class="fc" id="L63">                .toList();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>
