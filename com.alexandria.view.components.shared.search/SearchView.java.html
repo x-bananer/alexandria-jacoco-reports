@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SearchView.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.shared.search</a> &gt; <span class="el_source">SearchView.java</span></div><h1>SearchView.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.shared.search;
+
+
+import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
+import org.kordamp.ikonli.javafx.FontIcon;
+
+import com.alexandria.service.analysis.SearchSettings;
+import com.alexandria.view.components.shared.SearchInput;
+
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+
+public class SearchView extends VBox {
+
+    private final SearchInput searchInput;
+    private final Button previousButton;
+    private final Button nextButton;
+    private final TrackedWordsList trackedWordsList;
+
+<span class="fc" id="L26">    private final CheckBox fuzzyCheckBox = new CheckBox(&quot;Fuzzy&quot;);</span>
+<span class="fc" id="L27">    private final CheckBox caseCheckBox = new CheckBox(&quot;Case sensitive&quot;);</span>
+<span class="fc" id="L28">    private final CheckBox wholeWordCheckBox = new CheckBox(&quot;Whole word&quot;);</span>
+<span class="fc" id="L29">    private final CheckBox stopWordsCheckBox = new CheckBox(&quot;Stop words&quot;);</span>
+
+    private SearchCallback onSearch;
+    private Runnable onPreviousMatch;
+    private Runnable onNextMatch;
+
+<span class="fc" id="L35">    public SearchView() {</span>
+<span class="fc" id="L36">        getStyleClass().add(&quot;search-view&quot;);</span>
+
+<span class="fc" id="L38">        searchInput = new SearchInput(&quot;Search Term Frequency&quot;);</span>
+
+<span class="fc" id="L40">        previousButton = createIconButton(FontAwesomeSolid.CHEVRON_UP);</span>
+<span class="fc" id="L41">        nextButton = createIconButton(FontAwesomeSolid.CHEVRON_DOWN);</span>
+
+<span class="fc" id="L43">        trackedWordsList = new TrackedWordsList();</span>
+
+<span class="fc" id="L45">        HBox navigationButtons = new HBox(</span>
+                previousButton,
+                nextButton);
+
+<span class="fc" id="L49">        navigationButtons.setAlignment(Pos.CENTER_RIGHT);</span>
+<span class="fc" id="L50">        navigationButtons.getStyleClass().add(&quot;search-navigation-buttons&quot;);</span>
+
+<span class="fc" id="L52">        HBox searchControls = new HBox(</span>
+                searchInput,
+                navigationButtons);
+
+<span class="fc" id="L56">        searchControls.setAlignment(Pos.CENTER_LEFT);</span>
+<span class="fc" id="L57">        searchControls.setPadding(new Insets(4, 0, 4, 0));</span>
+
+<span class="fc" id="L59">        HBox.setHgrow(searchInput, Priority.ALWAYS);</span>
+
+<span class="fc" id="L61">        FlowPane searchOptions = new FlowPane(</span>
+                8,
+                4,
+                fuzzyCheckBox,
+                caseCheckBox,
+                wholeWordCheckBox,
+                stopWordsCheckBox);
+
+<span class="fc" id="L69">        getChildren().addAll(</span>
+                searchControls,
+                searchOptions,
+                trackedWordsList);
+
+<span class="fc" id="L74">        wireEvents();</span>
+<span class="fc" id="L75">    }</span>
+
+    private void wireEvents() {
+<span class="fc" id="L78">        searchInput.setOnSearch(term -&gt; {</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">            if (onSearch != null) {</span>
+<span class="nc" id="L80">                onSearch.onSearch(term);</span>
+            }
+<span class="nc" id="L82">        });</span>
+
+<span class="fc" id="L84">        previousButton.setOnAction(event -&gt; {</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">            if (onPreviousMatch != null) {</span>
+<span class="nc" id="L86">                onPreviousMatch.run();</span>
+            }
+<span class="nc" id="L88">        });</span>
+
+<span class="fc" id="L90">        nextButton.setOnAction(event -&gt; {</span>
+<span class="nc bnc" id="L91" title="All 2 branches missed.">            if (onNextMatch != null) {</span>
+<span class="nc" id="L92">                onNextMatch.run();</span>
+            }
+<span class="nc" id="L94">        });</span>
+
+<span class="fc" id="L96">        CheckBox[] options = {</span>
+                fuzzyCheckBox,
+                caseCheckBox,
+                wholeWordCheckBox,
+                stopWordsCheckBox
+        };
+
+<span class="fc bfc" id="L103" title="All 2 branches covered.">        for (CheckBox option : options) {</span>
+<span class="fc" id="L104">            option.getStyleClass().add(&quot;text-muted&quot;);</span>
+<span class="fc" id="L105">            option.setOnAction(e -&gt; {</span>
+<span class="nc" id="L106">                String term = searchInput.getText();</span>
+<span class="nc bnc" id="L107" title="All 4 branches missed.">                if (onSearch != null &amp;&amp; term != null) {</span>
+<span class="nc bnc" id="L108" title="All 2 branches missed.">                    if (!term.isBlank()) {</span>
+<span class="nc" id="L109">                        onSearch.onSearch(term);</span>
+                    }
+                }
+<span class="nc" id="L112">            });</span>
+        }
+<span class="fc" id="L114">    }</span>
+
+    public SearchSettings getSearchSettings() {
+<span class="nc" id="L117">        return new SearchSettings(</span>
+<span class="nc" id="L118">                caseCheckBox.isSelected(),</span>
+<span class="nc" id="L119">                fuzzyCheckBox.isSelected(),</span>
+<span class="nc" id="L120">                wholeWordCheckBox.isSelected(),</span>
+<span class="nc" id="L121">                stopWordsCheckBox.isSelected());</span>
+    }
+
+    private Button createIconButton(FontAwesomeSolid icon) {
+<span class="fc" id="L125">        FontIcon fontIcon = new FontIcon(icon);</span>
+<span class="fc" id="L126">        fontIcon.getStyleClass().add(&quot;text-muted&quot;);</span>
+
+<span class="fc" id="L128">        Button button = new Button();</span>
+<span class="fc" id="L129">        button.setGraphic(fontIcon);</span>
+
+<span class="fc" id="L131">        button.getStyleClass().add(&quot;icon-button&quot;);</span>
+<span class="fc" id="L132">        button.getStyleClass().add(&quot;search-navigation-button&quot;);</span>
+
+<span class="fc" id="L134">        return button;</span>
+    }
+
+    public void setOnSearch(SearchCallback callback) {
+<span class="fc" id="L138">        this.onSearch = callback;</span>
+<span class="fc" id="L139">    }</span>
+
+    public void setOnPreviousMatch(Runnable callback) {
+<span class="fc" id="L142">        this.onPreviousMatch = callback;</span>
+<span class="fc" id="L143">    }</span>
+
+    public void setOnNextMatch(Runnable callback) {
+<span class="fc" id="L146">        this.onNextMatch = callback;</span>
+<span class="fc" id="L147">    }</span>
+
+    public String getSearchText() {
+<span class="nc" id="L150">        return searchInput.getText();</span>
+    }
+
+    public SearchInput getSearchInput() {
+<span class="nc" id="L154">        return searchInput;</span>
+    }
+
+    public TrackedWordsList getTrackedWordsList() {
+<span class="fc" id="L158">        return trackedWordsList;</span>
+    }
+
+    public void reset() {
+<span class="nc" id="L162">        trackedWordsList.reset();</span>
+<span class="nc" id="L163">    }</span>
+
+    @FunctionalInterface
+    public interface SearchCallback {
+        void onSearch(String term);
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

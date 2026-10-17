@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ArchiveAnalysisModal.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.archive_screen</a> &gt; <span class="el_source">ArchiveAnalysisModal.java</span></div><h1>ArchiveAnalysisModal.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.archive_screen;
+
+import com.alexandria.model.ArchiveComparison;
+import com.alexandria.model.ArchiveTermAnalysis;
+import com.alexandria.model.ArchiveTextAnalysis;
+import com.alexandria.service.analysis.TermAnalysisResult;
+import com.alexandria.service.analysis.TermComparisonResult;
+import com.alexandria.service.analysis.TextAnalysisResult;
+import com.alexandria.service.analysis.TextComparisonResult;
+import com.alexandria.service.analysis.TextFragment;
+import com.alexandria.service.analysis.WordFrequency;
+import com.alexandria.view.components.shared.modal.Modal;
+
+import javafx.geometry.Insets;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Separator;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
+
+import java.util.List;
+
+<span class="fc" id="L24">public class ArchiveAnalysisModal extends Modal {</span>
+
+    private static final int SNIPPET_CHAR_BUDGET = 180;
+
+    public void showTextAnalysis(ArchiveTextAnalysis analysis) {
+<span class="fc" id="L29">        TextAnalysisResult result = analysis.getTextAnalysisResult();</span>
+
+<span class="fc" id="L31">        Label title = new Label(&quot;Text analysis&quot;);</span>
+<span class="fc" id="L32">        title.getStyleClass().addAll(&quot;heading-lg&quot;, &quot;archive-modal-title&quot;);</span>
+<span class="fc" id="L33">        VBox content = new VBox(20, title);</span>
+
+<span class="fc" id="L35">        Label generalAnalysisTitle = new Label(&quot;General analysis&quot;);</span>
+<span class="fc" id="L36">        generalAnalysisTitle.getStyleClass().addAll(&quot;heading-md&quot;, &quot;archive-modal-section-title&quot;);</span>
+<span class="fc" id="L37">        GridPane statisticsTable = createTable(&quot;Statistic&quot;, &quot;Value&quot;);</span>
+<span class="fc" id="L38">        addTableRow(statisticsTable, 1, &quot;Total words&quot;, result.totalWords());</span>
+<span class="fc" id="L39">        addTableRow(statisticsTable, 2, &quot;Unique words&quot;, result.uniqueWords());</span>
+<span class="fc" id="L40">        addTableRow(statisticsTable, 3, &quot;Sentences&quot;, result.totalSentences());</span>
+<span class="fc" id="L41">        addTableRow(statisticsTable, 4, &quot;Paragraphs&quot;, result.totalParagraphs());</span>
+<span class="fc" id="L42">        VBox generalAnalysis = new VBox(16, generalAnalysisTitle, statisticsTable);</span>
+
+<span class="fc" id="L44">        Label frequentWordsTitle = new Label(&quot;Frequent words&quot;);</span>
+<span class="fc" id="L45">        frequentWordsTitle.getStyleClass().addAll(&quot;heading-md&quot;, &quot;archive-modal-section-title&quot;);</span>
+<span class="fc" id="L46">        VBox frequentWords = new VBox(16, frequentWordsTitle,</span>
+<span class="fc" id="L47">                createWordsTable(result.frequentWords(), false));</span>
+
+<span class="fc" id="L49">        Label fragmentsTitle = new Label(&quot;Important fragments&quot;);</span>
+<span class="fc" id="L50">        fragmentsTitle.getStyleClass().addAll(&quot;heading-md&quot;, &quot;archive-modal-section-title&quot;);</span>
+<span class="fc" id="L51">        VBox fragments = new VBox(12);</span>
+
+<span class="fc bfc" id="L53" title="All 2 branches covered.">        for (int index = 0; index &lt; result.importantFragments().size(); index++) {</span>
+<span class="fc" id="L54">            TextFragment fragment = result.importantFragments().get(index);</span>
+<span class="fc" id="L55">            Label fragmentLabel = new Label((index + 1) + &quot;. &quot; + fragment.text());</span>
+<span class="fc" id="L56">            fragmentLabel.getStyleClass().add(&quot;archive-fragment&quot;);</span>
+<span class="fc" id="L57">            fragmentLabel.setWrapText(true);</span>
+<span class="fc" id="L58">            fragments.getChildren().add(fragmentLabel);</span>
+
+<span class="fc bfc" id="L60" title="All 2 branches covered.">            if (index &lt; result.importantFragments().size() - 1) {</span>
+<span class="fc" id="L61">                Separator divider = new Separator();</span>
+<span class="fc" id="L62">                divider.getStyleClass().add(&quot;archive-fragment-divider&quot;);</span>
+<span class="fc" id="L63">                fragments.getChildren().add(divider);</span>
+            }
+        }
+
+<span class="fc" id="L67">        VBox importantFragments = new VBox(16, fragmentsTitle, fragments);</span>
+<span class="fc" id="L68">        content.getChildren().addAll(generalAnalysis, frequentWords, importantFragments);</span>
+<span class="fc" id="L69">        showAnalysis(content);</span>
+<span class="fc" id="L70">    }</span>
+
+    public void showTermAnalysis(ArchiveTermAnalysis analysis) {
+<span class="fc" id="L73">        TermAnalysisResult result = analysis.getTermAnalysisResult();</span>
+
+<span class="fc" id="L75">        Label title = new Label(&quot;Term analysis&quot;);</span>
+<span class="fc" id="L76">        title.getStyleClass().addAll(&quot;heading-lg&quot;, &quot;archive-modal-title&quot;);</span>
+<span class="fc" id="L77">        Label analyzedTermLabel = new Label(&quot;Analyzed term&quot;);</span>
+<span class="fc" id="L78">        analyzedTermLabel.getStyleClass().add(&quot;text-muted&quot;);</span>
+<span class="fc" id="L79">        Label term = new Label(result.term());</span>
+<span class="fc" id="L80">        term.getStyleClass().add(&quot;archive-modal-term&quot;);</span>
+<span class="fc" id="L81">        VBox analyzedTerm = new VBox(2, analyzedTermLabel, term);</span>
+<span class="fc" id="L82">        VBox termHeader = new VBox(16, title, analyzedTerm);</span>
+<span class="fc" id="L83">        VBox content = new VBox(20, termHeader);</span>
+
+<span class="fc" id="L85">        Label generalAnalysisTitle = new Label(&quot;General analysis&quot;);</span>
+<span class="fc" id="L86">        generalAnalysisTitle.getStyleClass().addAll(&quot;heading-md&quot;, &quot;archive-modal-section-title&quot;);</span>
+<span class="fc" id="L87">        GridPane statisticsTable = createTable(&quot;Statistic&quot;, &quot;Value&quot;);</span>
+<span class="fc" id="L88">        addTableRow(statisticsTable, 1, &quot;Occurrences&quot;, result.totalOccurrences());</span>
+<span class="fc" id="L89">        addTableRow(statisticsTable, 2, &quot;Per 1,000 words&quot;, result.relativeFrequency());</span>
+<span class="fc" id="L90">        addTableRow(statisticsTable, 3, &quot;Sentences&quot;, result.sentenceCount());</span>
+<span class="fc" id="L91">        addTableRow(statisticsTable, 4, &quot;Paragraphs&quot;, result.paragraphCount());</span>
+<span class="fc" id="L92">        VBox generalAnalysis = new VBox(16, generalAnalysisTitle, statisticsTable);</span>
+
+<span class="fc" id="L94">        Label neighboringWordsTitle = new Label(&quot;Neighboring words&quot;);</span>
+<span class="fc" id="L95">        neighboringWordsTitle.getStyleClass().addAll(&quot;heading-md&quot;, &quot;archive-modal-section-title&quot;);</span>
+<span class="fc" id="L96">        VBox neighboringWords = new VBox(16, neighboringWordsTitle,</span>
+<span class="fc" id="L97">                createWordsTable(result.neighboringWords(), true));</span>
+
+<span class="fc" id="L99">        content.getChildren().addAll(generalAnalysis, neighboringWords);</span>
+<span class="fc" id="L100">        showAnalysis(content);</span>
+<span class="fc" id="L101">    }</span>
+
+    public void showTextComparison(ArchiveComparison comparison) {
+<span class="nc" id="L104">        TextComparisonResult result = comparison.textResult();</span>
+
+<span class="nc" id="L106">        Label title = new Label(&quot;Text comparison&quot;);</span>
+<span class="nc" id="L107">        title.getStyleClass().addAll(&quot;heading-lg&quot;, &quot;archive-modal-title&quot;);</span>
+<span class="nc" id="L108">        Label texts = new Label(comparison.title());</span>
+<span class="nc" id="L109">        texts.getStyleClass().add(&quot;text-muted&quot;);</span>
+<span class="nc" id="L110">        texts.setWrapText(true);</span>
+<span class="nc" id="L111">        VBox content = new VBox(20, new VBox(8, title, texts));</span>
+
+<span class="nc" id="L113">        Label summaryTitle = new Label(&quot;Similarity&quot;);</span>
+<span class="nc" id="L114">        summaryTitle.getStyleClass().addAll(&quot;heading-md&quot;, &quot;archive-modal-section-title&quot;);</span>
+<span class="nc" id="L115">        GridPane summaryTable = createTable(&quot;Statistic&quot;, &quot;Value&quot;);</span>
+<span class="nc" id="L116">        double score = result.similarityScore();</span>
+<span class="nc" id="L117">        addTableRow(summaryTable, 1, &quot;Similarity index&quot;, Math.round(score) + &quot;%&quot;);</span>
+<span class="nc" id="L118">        addTableRow(summaryTable, 2, &quot;Correlation&quot;, result.similarityAmount());</span>
+<span class="nc" id="L119">        VBox summary = new VBox(16, summaryTitle, summaryTable);</span>
+
+<span class="nc" id="L121">        Label wordsTitle = new Label(&quot;Most frequent shared words&quot;);</span>
+<span class="nc" id="L122">        wordsTitle.getStyleClass().addAll(&quot;heading-md&quot;, &quot;archive-modal-section-title&quot;);</span>
+<span class="nc" id="L123">        GridPane wordsTable = createTable(&quot;Word&quot;, &quot;Doc A · Doc B&quot;);</span>
+<span class="nc" id="L124">        int row = 1;</span>
+<span class="nc bnc" id="L125" title="All 2 branches missed.">        for (TextComparisonResult.TextComparisonRow word : result.commonWords()) {</span>
+<span class="nc" id="L126">            addTableCell(wordsTable, 0, row, capitalize(word.word()), &quot;archive-table-cell&quot;);</span>
+<span class="nc" id="L127">            addTableCell(wordsTable, 1, row, countsForDocuments(word, result.textIds()), &quot;archive-table-cell&quot;);</span>
+<span class="nc" id="L128">            row++;</span>
+<span class="nc" id="L129">        }</span>
+<span class="nc" id="L130">        VBox sharedWords = new VBox(16, wordsTitle, wordsTable);</span>
+
+<span class="nc" id="L132">        Label paragraphsTitle = new Label(&quot;Key paragraphs&quot;);</span>
+<span class="nc" id="L133">        paragraphsTitle.getStyleClass().addAll(&quot;heading-md&quot;, &quot;archive-modal-section-title&quot;);</span>
+<span class="nc" id="L134">        VBox paragraphs = new VBox(12);</span>
+<span class="nc" id="L135">        List&lt;TextComparisonResult.ParagraphMatch&gt; matches = result.similarParagraphs();</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">        for (int index = 0; index &lt; matches.size(); index++) {</span>
+<span class="nc" id="L137">            TextComparisonResult.ParagraphMatch match = matches.get(index);</span>
+<span class="nc" id="L138">            Label score1 = new Label(String.format(&quot;Similarity score: %.0f%%&quot;, match.scorePercent()));</span>
+<span class="nc" id="L139">            score1.getStyleClass().add(&quot;heading-sm&quot;);</span>
+<span class="nc" id="L140">            paragraphs.getChildren().addAll(</span>
+                    score1,
+<span class="nc" id="L142">                    snippetLabel(&quot;Doc A&quot;, match.first()),</span>
+<span class="nc" id="L143">                    snippetLabel(&quot;Doc B&quot;, match.second()));</span>
+
+<span class="nc bnc" id="L145" title="All 2 branches missed.">            if (index &lt; matches.size() - 1) {</span>
+<span class="nc" id="L146">                Separator divider = new Separator();</span>
+<span class="nc" id="L147">                divider.getStyleClass().add(&quot;archive-fragment-divider&quot;);</span>
+<span class="nc" id="L148">                paragraphs.getChildren().add(divider);</span>
+            }
+        }
+<span class="nc" id="L151">        VBox keyParagraphs = new VBox(16, paragraphsTitle, paragraphs);</span>
+
+<span class="nc" id="L153">        content.getChildren().addAll(summary, sharedWords, keyParagraphs);</span>
+<span class="nc" id="L154">        showAnalysis(content);</span>
+<span class="nc" id="L155">    }</span>
+
+    public void showTermComparison(ArchiveComparison comparison) {
+<span class="nc" id="L158">        TermComparisonResult result = comparison.termResult();</span>
+
+<span class="nc" id="L160">        Label title = new Label(&quot;Term comparison&quot;);</span>
+<span class="nc" id="L161">        title.getStyleClass().addAll(&quot;heading-lg&quot;, &quot;archive-modal-title&quot;);</span>
+<span class="nc" id="L162">        Label comparedTermLabel = new Label(&quot;Compared term&quot;);</span>
+<span class="nc" id="L163">        comparedTermLabel.getStyleClass().add(&quot;text-muted&quot;);</span>
+<span class="nc" id="L164">        Label term = new Label(comparison.term());</span>
+<span class="nc" id="L165">        term.getStyleClass().add(&quot;archive-modal-term&quot;);</span>
+<span class="nc" id="L166">        VBox comparedTerm = new VBox(2, comparedTermLabel, term);</span>
+<span class="nc" id="L167">        VBox content = new VBox(20, new VBox(16, title, comparedTerm));</span>
+
+<span class="nc" id="L169">        Label occurrencesTitle = new Label(&quot;Occurrences per text&quot;);</span>
+<span class="nc" id="L170">        occurrencesTitle.getStyleClass().addAll(&quot;heading-md&quot;, &quot;archive-modal-section-title&quot;);</span>
+<span class="nc" id="L171">        GridPane table = createTable(&quot;Text&quot;, &quot;Occurrences&quot;);</span>
+<span class="nc" id="L172">        int row = 1;</span>
+<span class="nc bnc" id="L173" title="All 2 branches missed.">        for (TermComparisonResult.TermTextOccurrence occurrence : result.occurrencesPerText()) {</span>
+<span class="nc" id="L174">            addTableCell(table, 0, row, occurrence.textTitle(), &quot;archive-table-cell&quot;);</span>
+<span class="nc" id="L175">            addTableCell(table, 1, row,</span>
+<span class="nc" id="L176">                    occurrence.occurrences() + &quot; · &quot;</span>
+<span class="nc" id="L177">                            + String.format(&quot;%.2f / 1,000 words&quot;, occurrence.relativeFrequency()),</span>
+                    &quot;archive-table-cell&quot;);
+<span class="nc" id="L179">            row++;</span>
+<span class="nc" id="L180">        }</span>
+
+<span class="nc" id="L182">        content.getChildren().add(new VBox(16, occurrencesTitle, table));</span>
+<span class="nc" id="L183">        showAnalysis(content);</span>
+<span class="nc" id="L184">    }</span>
+
+    private Label snippetLabel(String documentName, TextComparisonResult.ParagraphSnippet snippet) {
+<span class="nc bnc" id="L187" title="All 2 branches missed.">        String page = snippet.page() == null ? &quot;&quot; : &quot;Page &quot; + snippet.page() + &quot; · &quot;;</span>
+<span class="nc" id="L188">        Label label = new Label(documentName + &quot; · &quot; + page + &quot;Para &quot; + snippet.paragraphIndex()</span>
+<span class="nc" id="L189">                + &quot;: &quot; + truncate(snippet.text()));</span>
+<span class="nc" id="L190">        label.getStyleClass().add(&quot;archive-fragment&quot;);</span>
+<span class="nc" id="L191">        label.setWrapText(true);</span>
+<span class="nc" id="L192">        return label;</span>
+    }
+
+    private String countsForDocuments(TextComparisonResult.TextComparisonRow row, List&lt;Integer&gt; textIds) {
+<span class="nc bnc" id="L196" title="All 4 branches missed.">        if (textIds == null || textIds.isEmpty()) {</span>
+<span class="nc" id="L197">            return String.valueOf(row.countsByTextId().values().stream().mapToInt(Integer::intValue).sum());</span>
+        }
+<span class="nc" id="L199">        StringBuilder counts = new StringBuilder();</span>
+<span class="nc bnc" id="L200" title="All 2 branches missed.">        for (int index = 0; index &lt; textIds.size(); index++) {</span>
+<span class="nc bnc" id="L201" title="All 2 branches missed.">            if (index &gt; 0) {</span>
+<span class="nc" id="L202">                counts.append(&quot; · &quot;);</span>
+            }
+<span class="nc" id="L204">            counts.append(row.countsByTextId().getOrDefault(textIds.get(index), 0));</span>
+        }
+<span class="nc" id="L206">        return counts.toString();</span>
+    }
+
+    private String truncate(String text) {
+<span class="nc bnc" id="L210" title="All 2 branches missed.">        if (text == null) {</span>
+<span class="nc" id="L211">            return &quot;&quot;;</span>
+        }
+<span class="nc" id="L213">        String flat = text.replaceAll(&quot;\\s+&quot;, &quot; &quot;).strip();</span>
+<span class="nc bnc" id="L214" title="All 2 branches missed.">        if (flat.length() &lt;= SNIPPET_CHAR_BUDGET) {</span>
+<span class="nc" id="L215">            return flat;</span>
+        }
+<span class="nc" id="L217">        int cut = flat.lastIndexOf(' ', SNIPPET_CHAR_BUDGET);</span>
+<span class="nc bnc" id="L218" title="All 2 branches missed.">        return flat.substring(0, cut &lt;= 0 ? SNIPPET_CHAR_BUDGET : cut).stripTrailing() + &quot;...&quot;;</span>
+    }
+
+    private GridPane createTable(String firstHeader, String secondHeader) {
+<span class="fc" id="L222">        GridPane table = new GridPane();</span>
+<span class="fc" id="L223">        table.getStyleClass().add(&quot;archive-analysis-table&quot;);</span>
+
+<span class="fc" id="L225">        ColumnConstraints firstColumn = new ColumnConstraints();</span>
+<span class="fc" id="L226">        firstColumn.setPercentWidth(65);</span>
+<span class="fc" id="L227">        ColumnConstraints secondColumn = new ColumnConstraints();</span>
+<span class="fc" id="L228">        secondColumn.setPercentWidth(35);</span>
+<span class="fc" id="L229">        table.getColumnConstraints().addAll(firstColumn, secondColumn);</span>
+
+<span class="fc" id="L231">        addTableCell(table, 0, 0, firstHeader, &quot;archive-table-header&quot;);</span>
+<span class="fc" id="L232">        addTableCell(table, 1, 0, secondHeader, &quot;archive-table-header&quot;);</span>
+<span class="fc" id="L233">        return table;</span>
+    }
+
+    private void addTableRow(GridPane table, int row, String label, Object value) {
+<span class="fc" id="L237">        addTableCell(table, 0, row, label, &quot;archive-table-cell&quot;);</span>
+<span class="fc" id="L238">        addTableCell(table, 1, row, String.valueOf(value), &quot;archive-table-cell&quot;);</span>
+<span class="fc" id="L239">    }</span>
+
+    private Label addTableCell(GridPane table, int column, int row, String text, String styleClass) {
+<span class="fc" id="L242">        Label cell = new Label(text);</span>
+<span class="fc" id="L243">        cell.getStyleClass().add(styleClass);</span>
+<span class="fc" id="L244">        cell.setMaxWidth(Double.MAX_VALUE);</span>
+<span class="fc" id="L245">        cell.setWrapText(true);</span>
+<span class="fc" id="L246">        table.add(cell, column, row);</span>
+<span class="fc" id="L247">        return cell;</span>
+    }
+
+    private GridPane createWordsTable(List&lt;WordFrequency&gt; words, boolean italicWords) {
+<span class="fc" id="L251">        GridPane table = createTable(&quot;Word&quot;, &quot;Count&quot;);</span>
+<span class="fc" id="L252">        int row = 1;</span>
+
+<span class="fc bfc" id="L254" title="All 2 branches covered.">        for (WordFrequency word : words) {</span>
+<span class="fc" id="L255">            Label wordLabel = addTableCell(table, 0, row, capitalize(word.word()), &quot;archive-table-cell&quot;);</span>
+
+<span class="fc bfc" id="L257" title="All 2 branches covered.">            if (italicWords) {</span>
+<span class="fc" id="L258">                wordLabel.getStyleClass().add(&quot;archive-neighboring-word&quot;);</span>
+            }
+
+<span class="fc" id="L261">            addTableCell(table, 1, row, String.valueOf(word.count()), &quot;archive-table-cell&quot;);</span>
+<span class="fc" id="L262">            row++;</span>
+<span class="fc" id="L263">        }</span>
+
+<span class="fc" id="L265">        return table;</span>
+    }
+
+    private String capitalize(String word) {
+<span class="pc bpc" id="L269" title="2 of 4 branches missed.">        if (word == null || word.isEmpty()) {</span>
+<span class="nc" id="L270">            return word;</span>
+        }
+
+<span class="fc" id="L273">        return word.substring(0, 1).toUpperCase() + word.substring(1);</span>
+    }
+
+    private void showAnalysis(VBox content) {
+<span class="fc" id="L277">        ScrollPane scroll = new ScrollPane(content);</span>
+<span class="fc" id="L278">        scroll.getStyleClass().add(&quot;shared-scroll&quot;);</span>
+<span class="fc" id="L279">        scroll.setFitToWidth(true);</span>
+<span class="fc" id="L280">        scroll.setPrefViewportHeight(520);</span>
+<span class="fc" id="L281">        scroll.setMaxWidth(Double.MAX_VALUE);</span>
+<span class="fc" id="L282">        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);</span>
+<span class="fc" id="L283">        scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);</span>
+
+<span class="fc" id="L285">        VBox analysisDialog = new VBox(scroll);</span>
+<span class="fc" id="L286">        analysisDialog.getStyleClass().addAll(&quot;modal-card&quot;, &quot;archive-analysis-modal&quot;);</span>
+<span class="fc" id="L287">        analysisDialog.setPadding(new Insets(24));</span>
+<span class="fc" id="L288">        analysisDialog.setPrefWidth(400);</span>
+<span class="fc" id="L289">        analysisDialog.setMaxWidth(400);</span>
+<span class="fc" id="L290">        show(analysisDialog);</span>
+<span class="fc" id="L291">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

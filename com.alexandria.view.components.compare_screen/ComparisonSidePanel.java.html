@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ComparisonSidePanel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.compare_screen</a> &gt; <span class="el_source">ComparisonSidePanel.java</span></div><h1>ComparisonSidePanel.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.compare_screen;
+
+import com.alexandria.service.analysis.TextComparisonResult;
+import com.alexandria.view.components.shared.search.SearchView;
+import com.alexandria.view.components.shared.FrequencyBar;
+import com.alexandria.view.components.shared.ContextMatchCard;
+import com.alexandria.view.components.shared.PassagePreview;
+
+import java.util.List;
+import java.util.function.Consumer;
+
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+
+/**
+ * Comparison-specific result panels built with the same search, tracker and
+ * card
+ * patterns as AnalyseScreen. The data differs: every row has a document A/B
+ * side.
+ */
+public class ComparisonSidePanel extends VBox {
+<span class="fc" id="L27">    private final CommonWordsPanel commonWordsPanel = new CommonWordsPanel();</span>
+<span class="fc" id="L28">    private final SearchView searchView = new SearchView();</span>
+<span class="fc" id="L29">    private final SimilarParagraphsPanel paragraphsPanel = new SimilarParagraphsPanel();</span>
+
+<span class="fc" id="L31">    private Consumer&lt;String&gt; onCommonWordSelected = word -&gt; {</span>
+<span class="nc" id="L32">    };</span>
+<span class="fc" id="L33">    private Consumer&lt;TextComparisonResult.ParagraphSnippet&gt; onDocumentAParagraphSelected = snippet -&gt; {</span>
+<span class="nc" id="L34">    };</span>
+<span class="fc" id="L35">    private Consumer&lt;TextComparisonResult.ParagraphSnippet&gt; onDocumentBParagraphSelected = snippet -&gt; {</span>
+<span class="nc" id="L36">    };</span>
+
+<span class="fc" id="L38">    public ComparisonSidePanel() {</span>
+<span class="fc" id="L39">        getStyleClass().add(&quot;comparison-side-panel&quot;);</span>
+<span class="fc" id="L40">        setSpacing(16);</span>
+<span class="fc" id="L41">        setPadding(new Insets(0));</span>
+<span class="fc" id="L42">        setMinSize(0, 0);</span>
+<span class="fc" id="L43">        setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);</span>
+
+<span class="fc" id="L45">        VBox searchCard = new VBox(12, heading(&quot;Search in both texts&quot;), searchView);</span>
+<span class="fc" id="L46">        searchCard.getStyleClass().add(&quot;card&quot;);</span>
+<span class="fc" id="L47">        searchCard.setPadding(new Insets(14));</span>
+
+<span class="fc" id="L49">        getChildren().addAll(commonWordsPanel, searchCard, paragraphsPanel);</span>
+
+<span class="pc" id="L51">        commonWordsPanel.setOnWordSelected(word -&gt; onCommonWordSelected.accept(word));</span>
+<span class="pc" id="L52">        paragraphsPanel.setOnDocumentASelected(snippet -&gt; onDocumentAParagraphSelected.accept(snippet));</span>
+<span class="pc" id="L53">        paragraphsPanel.setOnDocumentBSelected(snippet -&gt; onDocumentBParagraphSelected.accept(snippet));</span>
+<span class="fc" id="L54">    }</span>
+
+    public void setTextComparison(TextComparisonResult result) {
+<span class="nc" id="L57">        commonWordsPanel.setResult(result);</span>
+<span class="nc bnc" id="L58" title="All 2 branches missed.">        paragraphsPanel.setResults(result == null ? List.of() : result.similarParagraphs());</span>
+<span class="nc" id="L59">    }</span>
+
+    public SearchView getSearchView() {
+<span class="fc" id="L62">        return searchView;</span>
+    }
+
+    public Node getCommonWordsPanel() {
+<span class="nc" id="L66">        return commonWordsPanel;</span>
+    }
+
+    public Node getSimilarParagraphsPanel() {
+<span class="nc" id="L70">        return paragraphsPanel;</span>
+    }
+
+    public void setOnCommonWordSelected(Consumer&lt;String&gt; handler) {
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">        onCommonWordSelected = handler == null ? word -&gt; {</span>
+<span class="pc" id="L75">        } : handler;</span>
+<span class="fc" id="L76">    }</span>
+
+    public void setOnDocumentAParagraphSelected(Consumer&lt;TextComparisonResult.ParagraphSnippet&gt; handler) {
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">        onDocumentAParagraphSelected = handler == null ? snippet -&gt; {</span>
+<span class="pc" id="L80">        } : handler;</span>
+<span class="fc" id="L81">    }</span>
+
+    public void setOnDocumentBParagraphSelected(Consumer&lt;TextComparisonResult.ParagraphSnippet&gt; handler) {
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">        onDocumentBParagraphSelected = handler == null ? snippet -&gt; {</span>
+<span class="pc" id="L85">        } : handler;</span>
+<span class="fc" id="L86">    }</span>
+
+    public void clear() {
+<span class="nc" id="L89">        commonWordsPanel.setResult(null);</span>
+<span class="nc" id="L90">        paragraphsPanel.setResults(List.of());</span>
+<span class="nc" id="L91">        searchView.reset();</span>
+<span class="nc" id="L92">    }</span>
+
+    private static Label heading(String text) {
+<span class="fc" id="L95">        Label label = new Label(text);</span>
+<span class="fc" id="L96">        label.getStyleClass().add(&quot;heading-sm&quot;);</span>
+<span class="fc" id="L97">        return label;</span>
+    }
+
+    private static final class CommonWordsPanel extends VBox {
+<span class="fc" id="L101">        private final VBox rowsHost = new VBox(10);</span>
+<span class="fc" id="L102">        private final Label emptyLabel = new Label(&quot;Run comparison to see shared words.&quot;);</span>
+<span class="fc" id="L103">        private Consumer&lt;String&gt; onWordSelected = word -&gt; {</span>
+<span class="nc" id="L104">        };</span>
+
+<span class="fc" id="L106">        private CommonWordsPanel() {</span>
+<span class="fc" id="L107">            getStyleClass().add(&quot;card&quot;);</span>
+<span class="fc" id="L108">            setSpacing(12);</span>
+<span class="fc" id="L109">            setPadding(new Insets(14));</span>
+<span class="fc" id="L110">            emptyLabel.getStyleClass().add(&quot;text-muted&quot;);</span>
+<span class="fc" id="L111">            getChildren().addAll(heading(&quot;Most frequent shared words&quot;), rowsHost);</span>
+<span class="fc" id="L112">            showEmpty();</span>
+<span class="fc" id="L113">        }</span>
+
+        private void setResult(TextComparisonResult result) {
+<span class="nc" id="L116">            rowsHost.getChildren().clear();</span>
+<span class="nc bnc" id="L117" title="All 4 branches missed.">            if (result == null || result.commonWords().isEmpty()) {</span>
+<span class="nc" id="L118">                showEmpty();</span>
+<span class="nc" id="L119">                return;</span>
+            }
+
+<span class="nc" id="L122">            int maxCount = result.commonWords().stream()</span>
+<span class="nc" id="L123">                    .mapToInt(CommonWordsPanel::totalCount)</span>
+<span class="nc" id="L124">                    .max()</span>
+<span class="nc" id="L125">                    .orElse(1);</span>
+<span class="nc bnc" id="L126" title="All 2 branches missed.">            for (TextComparisonResult.TextComparisonRow word : result.commonWords()) {</span>
+<span class="nc" id="L127">                rowsHost.getChildren().add(buildRow(word, maxCount, result.textIds()));</span>
+<span class="nc" id="L128">            }</span>
+<span class="nc" id="L129">        }</span>
+
+        private HBox buildRow(
+                TextComparisonResult.TextComparisonRow word,
+                int maxCount,
+                List&lt;Integer&gt; textIds) {
+<span class="nc" id="L135">            Label termLabel = new Label(word.word());</span>
+<span class="nc" id="L136">            termLabel.getStyleClass().add(&quot;term-frequency-label&quot;);</span>
+<span class="nc" id="L137">            termLabel.setMinWidth(72);</span>
+
+<span class="nc" id="L139">            FrequencyBar frequencyBar = new FrequencyBar();</span>
+<span class="nc" id="L140">            frequencyBar.setRatio((double) totalCount(word) / Math.max(1, maxCount));</span>
+<span class="nc" id="L141">            HBox.setHgrow(frequencyBar, Priority.ALWAYS);</span>
+
+<span class="nc" id="L143">            Label countLabel = new Label(countsForDocuments(word, textIds));</span>
+<span class="nc" id="L144">            countLabel.getStyleClass().add(&quot;text-muted&quot;);</span>
+<span class="nc" id="L145">            HBox row = new HBox(10, termLabel, frequencyBar, countLabel);</span>
+<span class="nc" id="L146">            row.setAlignment(Pos.CENTER_LEFT);</span>
+<span class="nc" id="L147">            row.getStyleClass().add(&quot;frequency-row&quot;);</span>
+<span class="nc" id="L148">            row.setOnMouseClicked(event -&gt; onWordSelected.accept(word.word()));</span>
+<span class="nc" id="L149">            return row;</span>
+        }
+
+        private static int totalCount(TextComparisonResult.TextComparisonRow row) {
+<span class="nc" id="L153">            return row.countsByTextId().values().stream().mapToInt(Integer::intValue).sum();</span>
+        }
+
+        private static String countsForDocuments(
+                TextComparisonResult.TextComparisonRow row,
+                List&lt;Integer&gt; textIds) {
+<span class="nc bnc" id="L159" title="All 4 branches missed.">            if (textIds == null || textIds.isEmpty()) {</span>
+<span class="nc" id="L160">                return String.valueOf(totalCount(row));</span>
+            }
+<span class="nc" id="L162">            StringBuilder counts = new StringBuilder();</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">            for (int index = 0; index &lt; textIds.size(); index++) {</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">                if (index &gt; 0) {</span>
+<span class="nc" id="L165">                    counts.append(&quot; · &quot;);</span>
+                }
+<span class="nc" id="L167">                counts.append(&quot;Doc &quot;).append((char) ('A' + index)).append(&quot;: &quot;)</span>
+<span class="nc" id="L168">                        .append(row.countsByTextId().getOrDefault(textIds.get(index), 0));</span>
+            }
+<span class="nc" id="L170">            return counts.toString();</span>
+        }
+
+        private void setOnWordSelected(Consumer&lt;String&gt; handler) {
+<span class="fc" id="L174">            onWordSelected = handler;</span>
+<span class="fc" id="L175">        }</span>
+
+        private void showEmpty() {
+<span class="fc" id="L178">            rowsHost.getChildren().setAll(emptyLabel);</span>
+<span class="fc" id="L179">        }</span>
+    }
+
+    private static final class SimilarParagraphsPanel extends VBox {
+        // Roughly two lines of the side panel; the full passage is read via &quot;go to&quot;.
+        private static final int SNIPPET_CHAR_BUDGET = 100;
+
+<span class="fc" id="L186">        private final VBox cardsHost = new VBox(10);</span>
+<span class="fc" id="L187">        private final Label emptyLabel = new Label(&quot;No similar paragraphs found.&quot;);</span>
+<span class="fc" id="L188">        private Consumer&lt;TextComparisonResult.ParagraphSnippet&gt; onDocumentASelected = snippet -&gt; {</span>
+<span class="nc" id="L189">        };</span>
+<span class="fc" id="L190">        private Consumer&lt;TextComparisonResult.ParagraphSnippet&gt; onDocumentBSelected = snippet -&gt; {</span>
+<span class="nc" id="L191">        };</span>
+
+<span class="fc" id="L193">        private SimilarParagraphsPanel() {</span>
+<span class="fc" id="L194">            getStyleClass().add(&quot;comparison-key-paragraphs&quot;);</span>
+<span class="fc" id="L195">            setSpacing(12);</span>
+<span class="fc" id="L196">            emptyLabel.getStyleClass().add(&quot;text-muted&quot;);</span>
+<span class="fc" id="L197">            getChildren().addAll(heading(&quot;Key paragraphs&quot;), cardsHost);</span>
+<span class="fc" id="L198">            showEmpty();</span>
+<span class="fc" id="L199">        }</span>
+
+        private void setResults(List&lt;TextComparisonResult.ParagraphMatch&gt; matches) {
+<span class="nc" id="L202">            cardsHost.getChildren().clear();</span>
+<span class="nc bnc" id="L203" title="All 4 branches missed.">            if (matches == null || matches.isEmpty()) {</span>
+<span class="nc" id="L204">                showEmpty();</span>
+<span class="nc" id="L205">                return;</span>
+            }
+<span class="nc bnc" id="L207" title="All 2 branches missed.">            for (TextComparisonResult.ParagraphMatch match : matches) {</span>
+<span class="nc" id="L208">                cardsHost.getChildren().add(buildCard(match));</span>
+<span class="nc" id="L209">            }</span>
+<span class="nc" id="L210">        }</span>
+
+        private VBox buildCard(TextComparisonResult.ParagraphMatch match) {
+<span class="nc" id="L213">            Label score = new Label(String.format(&quot;Similarity score: %.0f%%&quot;, match.scorePercent()));</span>
+<span class="nc" id="L214">            score.getStyleClass().add(&quot;context-match-page&quot;);</span>
+
+<span class="nc" id="L216">            ContextMatchCard card = new ContextMatchCard(</span>
+                    score,
+<span class="nc" id="L218">                    documentPassage(&quot;Doc A&quot;, match.first(), onDocumentASelected),</span>
+<span class="nc" id="L219">                    documentPassage(&quot;Doc B&quot;, match.second(), onDocumentBSelected));</span>
+<span class="nc" id="L220">            card.setSpacing(7);</span>
+<span class="nc" id="L221">            return card;</span>
+        }
+
+        private VBox documentPassage(
+                String documentName,
+                TextComparisonResult.ParagraphSnippet snippet,
+                Consumer&lt;TextComparisonResult.ParagraphSnippet&gt; onGoTo) {
+<span class="nc" id="L228">            return new PassagePreview(</span>
+<span class="nc" id="L229">                    documentName + &quot; · &quot; + formatLocation(snippet),</span>
+<span class="nc" id="L230">                    truncate(snippet.text()),</span>
+<span class="nc" id="L231">                    () -&gt; onGoTo.accept(snippet));</span>
+        }
+
+        private void setOnDocumentASelected(Consumer&lt;TextComparisonResult.ParagraphSnippet&gt; handler) {
+<span class="fc" id="L235">            onDocumentASelected = handler;</span>
+<span class="fc" id="L236">        }</span>
+
+        private void setOnDocumentBSelected(Consumer&lt;TextComparisonResult.ParagraphSnippet&gt; handler) {
+<span class="fc" id="L239">            onDocumentBSelected = handler;</span>
+<span class="fc" id="L240">        }</span>
+
+        private void showEmpty() {
+<span class="fc" id="L243">            cardsHost.getChildren().setAll(emptyLabel);</span>
+<span class="fc" id="L244">        }</span>
+
+        private static String formatLocation(TextComparisonResult.ParagraphSnippet snippet) {
+<span class="nc bnc" id="L247" title="All 2 branches missed.">            String page = snippet.page() == null ? &quot;&quot; : &quot;Page &quot; + snippet.page() + &quot; · &quot;;</span>
+<span class="nc" id="L248">            return page + &quot;Para &quot; + snippet.paragraphIndex();</span>
+        }
+
+        /** Keeps only the beginning of the paragraph, followed by &quot;...&quot;. */
+        private static String truncate(String text) {
+<span class="nc bnc" id="L253" title="All 2 branches missed.">            if (text == null) {</span>
+<span class="nc" id="L254">                return &quot;&quot;;</span>
+            }
+<span class="nc" id="L256">            String flat = text.replaceAll(&quot;\\s+&quot;, &quot; &quot;).strip();</span>
+<span class="nc bnc" id="L257" title="All 2 branches missed.">            if (flat.length() &lt;= SNIPPET_CHAR_BUDGET) {</span>
+<span class="nc" id="L258">                return flat;</span>
+            }
+<span class="nc" id="L260">            int cut = flat.lastIndexOf(' ', SNIPPET_CHAR_BUDGET);</span>
+<span class="nc bnc" id="L261" title="All 2 branches missed.">            return flat.substring(0, cut &lt;= 0 ? SNIPPET_CHAR_BUDGET : cut).stripTrailing() + &quot;...&quot;;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

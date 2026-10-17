@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EmptyState.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.shared</a> &gt; <span class="el_source">EmptyState.java</span></div><h1>EmptyState.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.shared;
+
+import javafx.geometry.Pos;
+import javafx.scene.control.Label;
+import javafx.scene.layout.VBox;
+
+public class EmptyState extends VBox {
+
+<span class="fc" id="L9">    public EmptyState(String titleText, String subtitleText) {</span>
+<span class="fc" id="L10">        getStyleClass().add(&quot;empty-state&quot;);</span>
+<span class="fc" id="L11">        setSpacing(8);</span>
+<span class="fc" id="L12">        setAlignment(Pos.CENTER);</span>
+
+<span class="fc" id="L14">        Label title = new Label(titleText);</span>
+<span class="fc" id="L15">        title.getStyleClass().add(&quot;heading-lg&quot;);</span>
+<span class="fc" id="L16">        getChildren().add(title);</span>
+
+<span class="pc bpc" id="L18" title="1 of 4 branches missed.">        if (subtitleText != null &amp;&amp; !subtitleText.isBlank()) {</span>
+<span class="fc" id="L19">            Label subtitle = new Label(subtitleText);</span>
+<span class="fc" id="L20">            subtitle.getStyleClass().add(&quot;text-muted&quot;);</span>
+<span class="fc" id="L21">            subtitle.getStyleClass().add(&quot;empty-state-subtitle&quot;);</span>
+<span class="fc" id="L22">            getChildren().add(subtitle);</span>
+        }
+<span class="fc" id="L24">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

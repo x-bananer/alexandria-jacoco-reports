@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>QuotationCard.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.shared.quotation</a> &gt; <span class="el_source">QuotationCard.java</span></div><h1>QuotationCard.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.shared.quotation;
+
+import com.alexandria.model.Quotation;
+import com.alexandria.model.QuotationType;
+import com.alexandria.view.components.shared.Card;
+
+import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
+import org.kordamp.ikonli.javafx.FontIcon;
+
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextArea;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
+
+import java.util.function.Consumer;
+
+public class QuotationCard extends Card {
+    private static final double CARD_HEIGHT = 280;
+    private static final double QUOTE_AREA_HEIGHT = 180;
+
+    private final Quotation quotation;
+<span class="nc" id="L25">    private final Button editButton = iconButton(FontAwesomeSolid.PEN, &quot;Edit&quot;);</span>
+<span class="nc" id="L26">    private final TextArea quoteEditor = new TextArea();</span>
+
+<span class="nc" id="L28">    private boolean editing = false;</span>
+<span class="nc" id="L29">    private Consumer&lt;Quotation&gt; onEdit = quotation -&gt; {</span>
+<span class="nc" id="L30">    };</span>
+
+    public QuotationCard(Quotation quotation) {
+<span class="nc" id="L33">        super(&quot;&quot;);</span>
+
+<span class="nc" id="L35">        this.quotation = quotation;</span>
+
+<span class="nc" id="L37">        setPrefHeight(CARD_HEIGHT);</span>
+
+<span class="nc" id="L39">        QuotationType type = QuotationLocation.parseType(quotation.getLocation());</span>
+<span class="nc bnc" id="L40" title="All 2 branches missed.">        setTypeText(type == null ? null : type.label());</span>
+
+<span class="nc" id="L42">        Integer page = QuotationLocation.parsePage(quotation.getLocation());</span>
+
+<span class="nc bnc" id="L44" title="All 2 branches missed.">        if (page != null) {</span>
+<span class="nc" id="L45">            addTag(&quot;Page &quot; + page).getStyleClass().add(&quot;tags-secondary&quot;);</span>
+        }
+
+<span class="nc" id="L48">        Label quote = new Label(&quot;\u201C&quot; + quotation.getQuotationText() + &quot;\u201D&quot;);</span>
+<span class="nc" id="L49">        quote.getStyleClass().add(&quot;quotation-card-preview&quot;);</span>
+<span class="nc" id="L50">        quote.setWrapText(true);</span>
+
+<span class="nc" id="L52">        ScrollPane quoteScroll = new ScrollPane(quote);</span>
+<span class="nc" id="L53">        quoteScroll.getStyleClass().add(&quot;shared-scroll&quot;);</span>
+<span class="nc" id="L54">        quoteScroll.setFitToWidth(true);</span>
+<span class="nc" id="L55">        quoteScroll.setPrefHeight(QUOTE_AREA_HEIGHT);</span>
+<span class="nc" id="L56">        quoteScroll.setMinHeight(60);</span>
+<span class="nc" id="L57">        quoteScroll.setMaxHeight(QUOTE_AREA_HEIGHT);</span>
+
+<span class="nc" id="L59">        quoteEditor.setText(quotation.getQuotationText());</span>
+<span class="nc" id="L60">        quoteEditor.setWrapText(true);</span>
+<span class="nc" id="L61">        quoteEditor.setPrefHeight(QUOTE_AREA_HEIGHT);</span>
+<span class="nc" id="L62">        quoteEditor.setMinHeight(60);</span>
+<span class="nc" id="L63">        quoteEditor.setMaxHeight(QUOTE_AREA_HEIGHT);</span>
+<span class="nc" id="L64">        quoteEditor.getStyleClass().add(&quot;quotation-card-editor&quot;);</span>
+<span class="nc" id="L65">        quoteEditor.setVisible(false);</span>
+<span class="nc" id="L66">        quoteEditor.setManaged(false);</span>
+
+<span class="nc" id="L68">        setExtraContent(quoteScroll);</span>
+
+<span class="nc" id="L70">        setActionText(&quot;Go to \u2192&quot;);</span>
+<span class="nc" id="L71">        setActionButtonExpand(false);</span>
+<span class="nc" id="L72">        setActionAlignment(Pos.CENTER_RIGHT);</span>
+<span class="nc" id="L73">        setActionDividerVisible(true);</span>
+<span class="nc" id="L74">        getActionButton().getStyleClass().setAll(&quot;button&quot;, &quot;card-link-action&quot;);</span>
+
+<span class="nc" id="L76">        Button copyButton = iconButton(FontAwesomeSolid.COPY, &quot;Copy&quot;);</span>
+<span class="nc" id="L77">        copyButton.setOnAction(e -&gt; copyQuotationText());</span>
+
+<span class="nc" id="L79">        editButton.setOnAction(e -&gt; toggleEdit(quote, quoteScroll));</span>
+
+<span class="nc" id="L81">        setSecondaryActions(copyButton, editButton);</span>
+<span class="nc" id="L82">    }</span>
+
+    public Quotation getQuotation() {
+<span class="nc" id="L85">        return quotation;</span>
+    }
+
+    public Button getGoToButton() {
+<span class="nc" id="L89">        return getActionButton();</span>
+    }
+
+    public Button getEditButton() {
+<span class="nc" id="L93">        return editButton;</span>
+    }
+
+    public void setOnEdit(Consumer&lt;Quotation&gt; handler) {
+<span class="nc bnc" id="L97" title="All 2 branches missed.">        onEdit = handler == null ? quotation -&gt; {</span>
+<span class="nc" id="L98">        } : handler;</span>
+<span class="nc" id="L99">    }</span>
+
+    private void toggleEdit(Label quote, ScrollPane quoteScroll) {
+<span class="nc bnc" id="L102" title="All 2 branches missed.">        if (!editing) {</span>
+<span class="nc" id="L103">            editing = true;</span>
+
+<span class="nc" id="L105">            quoteEditor.setText(quotation.getQuotationText());</span>
+
+<span class="nc" id="L107">            quoteScroll.setVisible(false);</span>
+<span class="nc" id="L108">            quoteScroll.setManaged(false);</span>
+
+<span class="nc" id="L110">            setExtraContent(quoteEditor);</span>
+
+<span class="nc" id="L112">            quoteEditor.setVisible(true);</span>
+<span class="nc" id="L113">            quoteEditor.setManaged(true);</span>
+
+<span class="nc" id="L115">            editButton.setText(&quot;Update&quot;);</span>
+
+<span class="nc" id="L117">            FontIcon icon = new FontIcon(FontAwesomeSolid.SAVE);</span>
+<span class="nc" id="L118">            icon.setIconSize(12);</span>
+<span class="nc" id="L119">            editButton.setGraphic(icon);</span>
+
+<span class="nc" id="L121">        } else {</span>
+<span class="nc" id="L122">            String updatedText = quoteEditor.getText();</span>
+
+<span class="nc bnc" id="L124" title="All 4 branches missed.">            if (updatedText != null &amp;&amp; !updatedText.isBlank()) {</span>
+<span class="nc" id="L125">                updatedText = updatedText.strip();</span>
+
+<span class="nc" id="L127">                quotation.setQuotationText(updatedText);</span>
+<span class="nc" id="L128">                quote.setText(&quot;\u201C&quot; + updatedText + &quot;\u201D&quot;);</span>
+
+<span class="nc" id="L130">                onEdit.accept(quotation);</span>
+            }
+
+<span class="nc" id="L133">            editing = false;</span>
+
+<span class="nc" id="L135">            quoteEditor.setVisible(false);</span>
+<span class="nc" id="L136">            quoteEditor.setManaged(false);</span>
+
+<span class="nc" id="L138">            setExtraContent(quoteScroll);</span>
+
+<span class="nc" id="L140">            quoteScroll.setVisible(true);</span>
+<span class="nc" id="L141">            quoteScroll.setManaged(true);</span>
+
+<span class="nc" id="L143">            editButton.setText(&quot;Edit&quot;);</span>
+
+<span class="nc" id="L145">            FontIcon icon = new FontIcon(FontAwesomeSolid.PEN);</span>
+<span class="nc" id="L146">            icon.setIconSize(12);</span>
+<span class="nc" id="L147">            editButton.setGraphic(icon);</span>
+        }
+<span class="nc" id="L149">    }</span>
+
+    private void copyQuotationText() {
+<span class="nc" id="L152">        ClipboardContent content = new ClipboardContent();</span>
+<span class="nc" id="L153">        content.putString(quotation.getQuotationText());</span>
+<span class="nc" id="L154">        Clipboard.getSystemClipboard().setContent(content);</span>
+<span class="nc" id="L155">    }</span>
+
+    private static Button iconButton(FontAwesomeSolid icon, String text) {
+<span class="nc" id="L158">        FontIcon fontIcon = new FontIcon(icon);</span>
+<span class="nc" id="L159">        fontIcon.setIconSize(12);</span>
+
+<span class="nc" id="L161">        Button button = new Button(text, fontIcon);</span>
+<span class="nc" id="L162">        button.getStyleClass().setAll(&quot;button&quot;, &quot;card-pill-button&quot;);</span>
+<span class="nc" id="L163">        return button;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

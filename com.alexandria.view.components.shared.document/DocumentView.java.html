@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DocumentView.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.shared.document</a> &gt; <span class="el_source">DocumentView.java</span></div><h1>DocumentView.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.shared.document;
+
+import java.nio.file.Path;
+import java.util.List;
+import java.util.function.BiFunction;
+
+import com.alexandria.model.FileType;
+import com.alexandria.service.analysis.SearchMatch;
+
+import javafx.application.Platform;
+import javafx.event.EventHandler;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollBar;
+import javafx.scene.control.ToolBar;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+
+public class DocumentView extends BorderPane {
+<span class="fc" id="L25">        private final Label pageLabel = new Label(&quot;Page 1 / 1&quot;);</span>
+<span class="fc" id="L26">        private final Button previous = new Button(&quot;‹&quot;);</span>
+<span class="fc" id="L27">        private final Button next = new Button(&quot;›&quot;);</span>
+<span class="fc" id="L28">        private final Button zoomOut = new Button(&quot;−&quot;);</span>
+<span class="fc" id="L29">        private final Button zoomIn = new Button(&quot;+&quot;);</span>
+        private PdfDocumentRenderer pdfRenderer;
+        private TextDocumentRenderer textRenderer;
+        private boolean showingPdf;
+<span class="fc" id="L33">        private boolean selectionEnabled = true;</span>
+<span class="fc" id="L34">        private int currentPage = 1;</span>
+<span class="fc" id="L35">        private double zoom = 1.0;</span>
+<span class="pc" id="L36">        private BiFunction&lt;String, String, Integer&gt; onQuotationRequested = (quotationText, location) -&gt; null;</span>
+
+<span class="fc" id="L38">        public DocumentView() {</span>
+<span class="fc" id="L39">                getStyleClass().add(&quot;document-view&quot;);</span>
+<span class="fc" id="L40">                setMinSize(0, 0);</span>
+<span class="fc" id="L41">                setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);</span>
+<span class="fc" id="L42">                configureToolbar();</span>
+
+                // When text selection is disabled, mouse input on the document itself is
+                // swallowed before the
+                // renderers see it (no live selection, no citation popup). Scrollbars and the
+                // toolbar keep working.
+<span class="fc" id="L48">                EventHandler&lt;MouseEvent&gt; selectionBlocker = event -&gt; {</span>
+<span class="nc bnc" id="L49" title="All 4 branches missed.">                        if (!selectionEnabled &amp;&amp; isDocumentContentTarget(event.getTarget())) {</span>
+<span class="nc" id="L50">                                event.consume();</span>
+                        }
+<span class="nc" id="L52">                };</span>
+<span class="fc" id="L53">                addEventFilter(MouseEvent.MOUSE_PRESSED, selectionBlocker);</span>
+<span class="fc" id="L54">                addEventFilter(MouseEvent.MOUSE_DRAGGED, selectionBlocker);</span>
+<span class="fc" id="L55">                addEventFilter(MouseEvent.MOUSE_RELEASED, selectionBlocker);</span>
+
+                // ctrl + scroll to zoom
+<span class="fc" id="L58">                addEventFilter(ScrollEvent.SCROLL, event -&gt; {</span>
+<span class="nc bnc" id="L59" title="All 2 branches missed.">                        if (event.isControlDown()) {</span>
+<span class="nc" id="L60">                                event.consume();</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">                                if (event.getDeltaY() &gt; 0) {</span>
+<span class="nc" id="L62">                                        setZoom(zoom + 0.1);</span>
+<span class="nc bnc" id="L63" title="All 2 branches missed.">                                } else if (event.getDeltaY() &lt; 0) {</span>
+<span class="nc" id="L64">                                        setZoom(zoom - 0.1);</span>
+                                }
+                        }
+<span class="nc" id="L67">                });</span>
+<span class="fc" id="L68">        }</span>
+
+        /**
+         * Enables/disables selecting text in the document (and with it the
+         * citation/annotation popup).
+         */
+        public void setSelectionEnabled(boolean enabled) {
+<span class="fc" id="L75">                selectionEnabled = enabled;</span>
+<span class="fc" id="L76">        }</span>
+
+        private boolean isDocumentContentTarget(Object target) {
+<span class="nc bnc" id="L79" title="All 2 branches missed.">                if (!(target instanceof Node node)) {</span>
+<span class="nc" id="L80">                        return false;</span>
+                }
+<span class="nc" id="L82">                boolean insideDocument = false;</span>
+<span class="nc bnc" id="L83" title="All 2 branches missed.">                for (Node current = node; current != null; current = current.getParent()) {</span>
+<span class="nc bnc" id="L84" title="All 2 branches missed.">                        if (current instanceof ScrollBar) {</span>
+<span class="nc" id="L85">                                return false;</span>
+                        }
+<span class="nc bnc" id="L87" title="All 2 branches missed.">                        if (current == getCenter()) {</span>
+<span class="nc" id="L88">                                insideDocument = true;</span>
+                        }
+                }
+<span class="nc" id="L91">                return insideDocument;</span>
+        }
+
+        private void configureToolbar() {
+<span class="fc" id="L95">                previous.getStyleClass().add(&quot;viewer-nav-button&quot;);</span>
+<span class="fc" id="L96">                next.getStyleClass().add(&quot;viewer-nav-button&quot;);</span>
+<span class="fc" id="L97">                zoomOut.getStyleClass().add(&quot;viewer-nav-button&quot;);</span>
+<span class="fc" id="L98">                zoomIn.getStyleClass().add(&quot;viewer-nav-button&quot;);</span>
+<span class="fc" id="L99">                pageLabel.getStyleClass().add(&quot;viewer-page-label&quot;);</span>
+
+<span class="pc" id="L101">                previous.setOnAction(e -&gt; previousPage());</span>
+<span class="pc" id="L102">                next.setOnAction(e -&gt; nextPage());</span>
+<span class="pc" id="L103">                zoomOut.setOnAction(e -&gt; setZoom(zoom - 0.1));</span>
+<span class="pc" id="L104">                zoomIn.setOnAction(e -&gt; setZoom(zoom + 0.1));</span>
+<span class="fc" id="L105">                previous.setDisable(true);</span>
+<span class="fc" id="L106">                next.setDisable(true);</span>
+
+<span class="fc" id="L108">                HBox zoomControls = new HBox(8, zoomOut, zoomIn);</span>
+<span class="fc" id="L109">                HBox pageControls = new HBox(8, previous, pageLabel, next);</span>
+<span class="fc" id="L110">                pageControls.setAlignment(Pos.CENTER);</span>
+
+<span class="fc" id="L112">                HBox leftSpacer = spacer();</span>
+<span class="fc" id="L113">                HBox rightSpacer = spacer();</span>
+<span class="fc" id="L114">                HBox content = new HBox(12, zoomControls, leftSpacer, pageControls, rightSpacer);</span>
+<span class="fc" id="L115">                content.setAlignment(Pos.CENTER);</span>
+
+<span class="fc" id="L117">                ToolBar toolbar = new ToolBar(content);</span>
+<span class="fc" id="L118">                toolbar.getStyleClass().add(&quot;viewer-toolbar&quot;);</span>
+<span class="fc" id="L119">                setBottom(toolbar);</span>
+<span class="fc" id="L120">        }</span>
+
+        private HBox spacer() {
+<span class="fc" id="L123">                HBox box = new HBox();</span>
+<span class="fc" id="L124">                HBox.setHgrow(box, Priority.ALWAYS);</span>
+<span class="fc" id="L125">                return box;</span>
+        }
+
+        public void loadDocument(String content, FileType fileType, Path sourcePath) {
+<span class="nc" id="L129">                dispose();</span>
+<span class="nc" id="L130">                currentPage = 1;</span>
+<span class="nc" id="L131">                zoom = 1.0;</span>
+<span class="nc bnc" id="L132" title="All 4 branches missed.">                showingPdf = fileType == FileType.PDF &amp;&amp; sourcePath != null;</span>
+
+<span class="nc bnc" id="L134" title="All 2 branches missed.">                if (showingPdf) {</span>
+<span class="nc" id="L135">                        pdfRenderer = new PdfDocumentRenderer();</span>
+<span class="nc" id="L136">                        pdfRenderer.setOnVisiblePageChanged(this::onPageChanged);</span>
+<span class="nc" id="L137">                        pdfRenderer.setOnQuotationRequested(onQuotationRequested);</span>
+<span class="nc" id="L138">                        pdfRenderer.setPdf(sourcePath);</span>
+<span class="nc" id="L139">                        setCenter(pdfRenderer.getNode());</span>
+                } else {
+<span class="nc" id="L141">                        textRenderer = new TextDocumentRenderer(content);</span>
+<span class="nc" id="L142">                        textRenderer.setOnVisiblePageChanged(this::onPageChanged);</span>
+<span class="nc" id="L143">                        textRenderer.setOnQuotationRequested(onQuotationRequested);</span>
+<span class="nc" id="L144">                        setCenter(textRenderer.getNode());</span>
+                }
+
+<span class="nc" id="L147">                BorderPane.setAlignment(getCenter(), Pos.CENTER);</span>
+<span class="nc" id="L148">                setZoom(zoom);</span>
+<span class="nc" id="L149">                updatePageInformation();</span>
+<span class="nc" id="L150">        }</span>
+
+        private void onPageChanged(int page) {
+<span class="nc" id="L153">                currentPage = Math.max(1, page);</span>
+<span class="nc" id="L154">                updatePageInformation();</span>
+<span class="nc" id="L155">        }</span>
+
+        private void previousPage() {
+<span class="nc" id="L158">                int total = getPageCount();</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">                if (total &lt;= 0)</span>
+<span class="nc" id="L160">                        return;</span>
+<span class="nc" id="L161">                int target = Math.max(1, currentPage - 1);</span>
+<span class="nc bnc" id="L162" title="All 2 branches missed.">                if (target != currentPage)</span>
+<span class="nc" id="L163">                        goToPage(target, null);</span>
+<span class="nc" id="L164">        }</span>
+
+        private void nextPage() {
+<span class="nc" id="L167">                int total = getPageCount();</span>
+<span class="nc bnc" id="L168" title="All 2 branches missed.">                if (total &lt;= 0)</span>
+<span class="nc" id="L169">                        return;</span>
+<span class="nc" id="L170">                int target = Math.min(total, currentPage + 1);</span>
+<span class="nc bnc" id="L171" title="All 2 branches missed.">                if (target != currentPage)</span>
+<span class="nc" id="L172">                        goToPage(target, null);</span>
+<span class="nc" id="L173">        }</span>
+
+        public void goToPage(Integer page, Integer paragraph) {
+<span class="pc bpc" id="L176" title="1 of 2 branches missed.">                if (page == null)</span>
+<span class="nc" id="L177">                        return;</span>
+<span class="pc bpc" id="L178" title="3 of 4 branches missed.">                if (showingPdf &amp;&amp; pdfRenderer != null) {</span>
+<span class="nc" id="L179">                        pdfRenderer.goToPage(page, paragraph);</span>
+<span class="pc bpc" id="L180" title="1 of 2 branches missed.">                } else if (textRenderer != null) {</span>
+<span class="nc" id="L181">                        textRenderer.goToPage(page, paragraph);</span>
+                }
+<span class="fc" id="L183">        }</span>
+
+        public void jumpToPassage(Integer page, String passage) {
+<span class="nc bnc" id="L186" title="All 2 branches missed.">                if (page == null)</span>
+<span class="nc" id="L187">                        return;</span>
+
+<span class="nc" id="L189">                goToPage(page, null);</span>
+
+<span class="nc" id="L191">                Platform.runLater(() -&gt; {</span>
+                        try {
+<span class="nc bnc" id="L193" title="All 4 branches missed.">                                if (showingPdf &amp;&amp; pdfRenderer != null) {</span>
+<span class="nc" id="L194">                                        pdfRenderer.highlightPassage(passage);</span>
+<span class="nc bnc" id="L195" title="All 2 branches missed.">                                } else if (textRenderer != null) {</span>
+<span class="nc" id="L196">                                        textRenderer.highlightPassage(page, passage);</span>
+                                }
+<span class="nc" id="L198">                        } catch (RuntimeException e) {</span>
+<span class="nc" id="L199">                                e.printStackTrace();</span>
+<span class="nc" id="L200">                        }</span>
+<span class="nc" id="L201">                });</span>
+<span class="nc" id="L202">        }</span>
+
+        private void setZoom(double value) {
+<span class="nc" id="L205">                zoom = Math.max(0.30, Math.min(2.0, value));</span>
+<span class="nc bnc" id="L206" title="All 4 branches missed.">                if (showingPdf &amp;&amp; pdfRenderer != null) {</span>
+<span class="nc" id="L207">                        pdfRenderer.setZoom(zoom);</span>
+<span class="nc bnc" id="L208" title="All 2 branches missed.">                } else if (textRenderer != null) {</span>
+<span class="nc" id="L209">                        textRenderer.setZoom(zoom);</span>
+                }
+<span class="nc" id="L211">        }</span>
+
+        private int getPageCount() {
+<span class="nc bnc" id="L214" title="All 4 branches missed.">                if (showingPdf &amp;&amp; pdfRenderer != null)</span>
+<span class="nc" id="L215">                        return pdfRenderer.getPageCount();</span>
+<span class="nc bnc" id="L216" title="All 2 branches missed.">                if (textRenderer != null)</span>
+<span class="nc" id="L217">                        return textRenderer.getPageCount();</span>
+<span class="nc" id="L218">                return 0;</span>
+        }
+
+        private void updatePageInformation() {
+<span class="nc" id="L222">                int total = Math.max(1, getPageCount());</span>
+<span class="nc" id="L223">                currentPage = Math.max(1, Math.min(currentPage, total));</span>
+<span class="nc" id="L224">                pageLabel.setText(&quot;Page &quot; + currentPage + &quot; / &quot; + total);</span>
+<span class="nc bnc" id="L225" title="All 4 branches missed.">                previous.setDisable(total &lt;= 1 || currentPage &lt;= 1);</span>
+<span class="nc bnc" id="L226" title="All 4 branches missed.">                next.setDisable(total &lt;= 1 || currentPage &gt;= total);</span>
+<span class="nc" id="L227">        }</span>
+
+        public void highlightPdfSearch(String searchTerm) {
+<span class="nc bnc" id="L230" title="All 4 branches missed.">                if (showingPdf &amp;&amp; pdfRenderer != null)</span>
+<span class="nc" id="L231">                        pdfRenderer.highlightSearch(searchTerm);</span>
+<span class="nc" id="L232">        }</span>
+
+        public void showSearchMatches(List&lt;SearchMatch&gt; matches, int activeIndex) {
+<span class="pc bpc" id="L235" title="2 of 4 branches missed.">                if (matches == null || matches.isEmpty()) {</span>
+<span class="nc" id="L236">                        clearSearchHighlights();</span>
+<span class="nc" id="L237">                        return;</span>
+                }
+
+<span class="fc" id="L240">                int safeIndex = Math.max(0, Math.min(activeIndex, matches.size() - 1));</span>
+
+<span class="pc bpc" id="L242" title="3 of 4 branches missed.">                if (showingPdf &amp;&amp; pdfRenderer != null) {</span>
+<span class="nc" id="L243">                        pdfRenderer.highlightSearchMatches(matches, safeIndex);</span>
+<span class="pc bpc" id="L244" title="1 of 2 branches missed.">                } else if (textRenderer != null) {</span>
+<span class="nc" id="L245">                        textRenderer.highlightSearchMatches(matches, safeIndex);</span>
+                }
+<span class="fc" id="L247">        }</span>
+
+        public void showSearchMatch(SearchMatch match) {
+<span class="nc bnc" id="L250" title="All 2 branches missed.">                if (match == null)</span>
+<span class="nc" id="L251">                        return;</span>
+
+<span class="nc bnc" id="L253" title="All 4 branches missed.">                if (showingPdf &amp;&amp; pdfRenderer != null) {</span>
+<span class="nc" id="L254">                        pdfRenderer.highlightSearch(match.text());</span>
+<span class="nc bnc" id="L255" title="All 2 branches missed.">                } else if (textRenderer != null) {</span>
+<span class="nc" id="L256">                        textRenderer.highlightSearchMatch(match);</span>
+                }
+<span class="nc" id="L258">        }</span>
+
+        public void clearSearchHighlights() {
+<span class="pc bpc" id="L261" title="3 of 4 branches missed.">                if (showingPdf &amp;&amp; pdfRenderer != null) {</span>
+<span class="nc" id="L262">                        pdfRenderer.clearHighlights();</span>
+<span class="pc bpc" id="L263" title="1 of 2 branches missed.">                } else if (textRenderer != null) {</span>
+<span class="nc" id="L264">                        textRenderer.clearSearchHighlights();</span>
+                }
+<span class="fc" id="L266">        }</span>
+
+        public void highlightPdfQuotation(String quotedText) {
+<span class="nc bnc" id="L269" title="All 4 branches missed.">                if (showingPdf &amp;&amp; pdfRenderer != null)</span>
+<span class="nc" id="L270">                        pdfRenderer.highlightQuotation(quotedText);</span>
+<span class="nc" id="L271">        }</span>
+
+        public void clearPdfHighlights() {
+<span class="nc bnc" id="L274" title="All 4 branches missed.">                if (showingPdf &amp;&amp; pdfRenderer != null)</span>
+<span class="nc" id="L275">                        pdfRenderer.clearHighlights();</span>
+<span class="nc" id="L276">        }</span>
+
+        public void setOnQuotationRequested(BiFunction&lt;String, String, Integer&gt; handler) {
+<span class="pc bpc" id="L279" title="1 of 2 branches missed.">                onQuotationRequested = handler == null ? (quotationText, location) -&gt; null : handler;</span>
+<span class="pc bpc" id="L280" title="1 of 2 branches missed.">                if (pdfRenderer != null)</span>
+<span class="nc" id="L281">                        pdfRenderer.setOnQuotationRequested(onQuotationRequested);</span>
+<span class="pc bpc" id="L282" title="1 of 2 branches missed.">                if (textRenderer != null)</span>
+<span class="nc" id="L283">                        textRenderer.setOnQuotationRequested(onQuotationRequested);</span>
+<span class="fc" id="L284">        }</span>
+
+        public void removeQuotationHighlight(int quotationId) {
+<span class="pc bpc" id="L287" title="3 of 4 branches missed.">                if (showingPdf &amp;&amp; pdfRenderer != null) {</span>
+<span class="nc" id="L288">                        pdfRenderer.removeQuotationHighlight(quotationId);</span>
+<span class="pc bpc" id="L289" title="1 of 2 branches missed.">                } else if (textRenderer != null) {</span>
+<span class="nc" id="L290">                        textRenderer.removeQuotationHighlight(quotationId);</span>
+                }
+<span class="fc" id="L292">        }</span>
+
+        public void dispose() {
+<span class="pc bpc" id="L295" title="1 of 2 branches missed.">                if (pdfRenderer != null) {</span>
+<span class="nc" id="L296">                        pdfRenderer.dispose();</span>
+<span class="nc" id="L297">                        pdfRenderer = null;</span>
+                }
+<span class="pc bpc" id="L299" title="1 of 2 branches missed.">                if (textRenderer != null) {</span>
+<span class="nc" id="L300">                        textRenderer.dispose();</span>
+<span class="nc" id="L301">                        textRenderer = null;</span>
+                }
+
+<span class="fc" id="L304">                setCenter(null);</span>
+<span class="fc" id="L305">                showingPdf = false;</span>
+<span class="fc" id="L306">                currentPage = 1;</span>
+<span class="fc" id="L307">                zoom = 1.0;</span>
+<span class="fc" id="L308">                pageLabel.setText(&quot;Page 1 / 1&quot;);</span>
+<span class="fc" id="L309">                previous.setDisable(true);</span>
+<span class="fc" id="L310">                next.setDisable(true);</span>
+<span class="fc" id="L311">        }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

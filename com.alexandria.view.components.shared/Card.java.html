@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Card.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.shared</a> &gt; <span class="el_source">Card.java</span></div><h1>Card.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.shared;
+
+import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
+import org.kordamp.ikonli.javafx.FontIcon;
+
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.Separator;
+import javafx.scene.control.Tooltip;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
+
+public class Card extends VBox {
+<span class="fc" id="L19">    private final VBox details = new VBox(4);</span>
+<span class="fc" id="L20">    private final Button deleteButton = createDeleteButton();</span>
+<span class="fc" id="L21">    private final Label type = new Label();</span>
+<span class="fc" id="L22">    private final HBox tagsBox = new HBox(6);</span>
+<span class="fc" id="L23">    private final Label source = new Label();</span>
+<span class="fc" id="L24">    private final Label footerText = new Label();</span>
+<span class="fc" id="L25">    private final Separator actionDivider = new Separator();</span>
+<span class="fc" id="L26">    private final Button actionButton = new Button();</span>
+<span class="fc" id="L27">    private final HBox actionRow = new HBox();</span>
+<span class="fc" id="L28">    private final HBox secondaryActions = new HBox(8);</span>
+    private Node extraContent;
+
+<span class="fc" id="L31">    public Card(String titleText) {</span>
+
+<span class="fc" id="L33">        getStyleClass().add(&quot;card&quot;);</span>
+<span class="fc" id="L34">        setSpacing(12);</span>
+<span class="fc" id="L35">        setPrefWidth(280);</span>
+<span class="fc" id="L36">        setPrefHeight(200);</span>
+
+<span class="fc" id="L38">        type.getStyleClass().add(&quot;tags&quot;);</span>
+<span class="fc" id="L39">        type.setVisible(false);</span>
+<span class="fc" id="L40">        type.setManaged(false);</span>
+<span class="fc" id="L41">        tagsBox.getChildren().add(type);</span>
+
+<span class="fc" id="L43">        AnchorPane header = new AnchorPane(tagsBox, deleteButton);</span>
+<span class="fc" id="L44">        header.setPrefHeight(20);</span>
+<span class="fc" id="L45">        AnchorPane.setTopAnchor(tagsBox, 0.0);</span>
+<span class="fc" id="L46">        AnchorPane.setLeftAnchor(tagsBox, 0.0);</span>
+<span class="fc" id="L47">        AnchorPane.setTopAnchor(deleteButton, -10.0);</span>
+<span class="fc" id="L48">        AnchorPane.setRightAnchor(deleteButton, 0.0);</span>
+
+<span class="fc" id="L50">        Label title = new Label(titleText);</span>
+<span class="fc" id="L51">        title.getStyleClass().add(&quot;heading-md&quot;);</span>
+<span class="fc" id="L52">        title.setWrapText(true);</span>
+<span class="pc bpc" id="L53" title="2 of 4 branches missed.">        title.setVisible(titleText != null &amp;&amp; !titleText.isBlank());</span>
+<span class="fc" id="L54">        title.setManaged(title.isVisible());</span>
+
+<span class="fc" id="L56">        source.getStyleClass().add(&quot;text-muted&quot;);</span>
+<span class="fc" id="L57">        source.setWrapText(true);</span>
+<span class="fc" id="L58">        source.setVisible(false);</span>
+<span class="fc" id="L59">        source.setManaged(false);</span>
+
+<span class="fc" id="L61">        details.getChildren().addAll(title, source);</span>
+
+<span class="fc" id="L63">        footerText.getStyleClass().addAll(&quot;text-muted&quot;, &quot;mono-text&quot;);</span>
+<span class="fc" id="L64">        footerText.setVisible(false);</span>
+<span class="fc" id="L65">        footerText.setManaged(false);</span>
+<span class="fc" id="L66">        Region footerSpacer = new Region();</span>
+<span class="fc" id="L67">        HBox.setHgrow(footerSpacer, Priority.ALWAYS);</span>
+<span class="fc" id="L68">        HBox footer = new HBox(footerSpacer, footerText);</span>
+<span class="fc" id="L69">        footer.setAlignment(Pos.CENTER_LEFT);</span>
+
+<span class="fc" id="L71">        Region spacer = new Region();</span>
+<span class="fc" id="L72">        VBox.setVgrow(spacer, Priority.ALWAYS);</span>
+
+<span class="fc" id="L74">        actionDivider.setVisible(false);</span>
+<span class="fc" id="L75">        actionDivider.setManaged(false);</span>
+
+<span class="fc" id="L77">        actionButton.getStyleClass().addAll(&quot;button&quot;, &quot;primary&quot;);</span>
+<span class="fc" id="L78">        actionButton.setMaxWidth(Double.MAX_VALUE);</span>
+<span class="fc" id="L79">        actionButton.setVisible(false);</span>
+<span class="fc" id="L80">        actionButton.setManaged(false);</span>
+
+<span class="fc" id="L82">        actionRow.getChildren().add(actionButton);</span>
+<span class="fc" id="L83">        actionRow.setAlignment(Pos.CENTER);</span>
+<span class="fc" id="L84">        HBox.setHgrow(actionButton, Priority.ALWAYS);</span>
+
+<span class="fc" id="L86">        secondaryActions.setVisible(false);</span>
+<span class="fc" id="L87">        secondaryActions.setManaged(false);</span>
+
+<span class="fc" id="L89">        getChildren().addAll(header, details, spacer, footer, actionDivider, actionRow, secondaryActions);</span>
+<span class="fc" id="L90">    }</span>
+
+    public void setExtraContent(Node content) {
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">        if (extraContent != null) {</span>
+<span class="nc" id="L94">            details.getChildren().remove(extraContent);</span>
+        }
+
+<span class="fc" id="L97">        extraContent = content;</span>
+
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">        if (extraContent != null) {</span>
+<span class="fc" id="L100">            details.getChildren().add(1, extraContent);</span>
+        }
+<span class="fc" id="L102">    }</span>
+
+    public void setTypeText(String text) {
+<span class="fc" id="L105">        type.setText(text);</span>
+<span class="pc bpc" id="L106" title="2 of 4 branches missed.">        type.setVisible(text != null &amp;&amp; !text.isBlank());</span>
+<span class="fc" id="L107">        type.setManaged(type.isVisible());</span>
+<span class="fc" id="L108">    }</span>
+
+    public Label addTag(String text) {
+<span class="nc" id="L111">        Label tag = new Label(text);</span>
+<span class="nc" id="L112">        tag.getStyleClass().add(&quot;tags&quot;);</span>
+<span class="nc" id="L113">        tagsBox.getChildren().add(tag);</span>
+<span class="nc" id="L114">        return tag;</span>
+    }
+
+    public void setSourceText(String text) {
+<span class="fc" id="L118">        source.setText(text);</span>
+<span class="pc bpc" id="L119" title="2 of 4 branches missed.">        source.setVisible(text != null &amp;&amp; !text.isBlank());</span>
+<span class="fc" id="L120">        source.setManaged(source.isVisible());</span>
+<span class="fc" id="L121">    }</span>
+
+    public void setFooterText(String text) {
+<span class="fc" id="L124">        footerText.setText(text);</span>
+<span class="pc bpc" id="L125" title="2 of 4 branches missed.">        footerText.setVisible(text != null &amp;&amp; !text.isBlank());</span>
+<span class="fc" id="L126">        footerText.setManaged(footerText.isVisible());</span>
+<span class="fc" id="L127">    }</span>
+
+    public void setActionText(String text) {
+<span class="fc" id="L130">        actionButton.setText(text);</span>
+<span class="pc bpc" id="L131" title="2 of 4 branches missed.">        actionButton.setVisible(text != null &amp;&amp; !text.isBlank());</span>
+<span class="fc" id="L132">        actionButton.setManaged(actionButton.isVisible());</span>
+<span class="fc" id="L133">    }</span>
+
+    public void setActionButtonExpand(boolean expand) {
+<span class="nc bnc" id="L136" title="All 2 branches missed.">        actionButton.setMaxWidth(expand ? Double.MAX_VALUE : Region.USE_PREF_SIZE);</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">        HBox.setHgrow(actionButton, expand ? Priority.ALWAYS : Priority.NEVER);</span>
+<span class="nc" id="L138">    }</span>
+
+    public void setActionAlignment(Pos alignment) {
+<span class="nc" id="L141">        actionRow.setAlignment(alignment);</span>
+<span class="nc" id="L142">    }</span>
+
+    public void setActionDividerVisible(boolean visible) {
+<span class="nc" id="L145">        actionDivider.setVisible(visible);</span>
+<span class="nc" id="L146">        actionDivider.setManaged(visible);</span>
+<span class="nc" id="L147">    }</span>
+
+    public void setSecondaryActions(Node... actions) {
+<span class="nc" id="L150">        secondaryActions.getChildren().clear();</span>
+
+<span class="nc bnc" id="L152" title="All 2 branches missed.">        if (actions != null) {</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">            for (Node node : actions) {</span>
+<span class="nc" id="L154">                HBox.setHgrow(node, Priority.ALWAYS);</span>
+<span class="nc" id="L155">                secondaryActions.getChildren().add(node);</span>
+            }
+        }
+
+<span class="nc bnc" id="L159" title="All 2 branches missed.">        boolean hasContent = !secondaryActions.getChildren().isEmpty();</span>
+<span class="nc" id="L160">        secondaryActions.setVisible(hasContent);</span>
+<span class="nc" id="L161">        secondaryActions.setManaged(hasContent);</span>
+<span class="nc" id="L162">    }</span>
+
+    public Button getDeleteButton() {
+<span class="fc" id="L165">        return deleteButton;</span>
+    }
+
+    public Button getActionButton() {
+<span class="fc" id="L169">        return actionButton;</span>
+    }
+
+    private Button createDeleteButton() {
+<span class="fc" id="L173">        FontIcon icon = new FontIcon(FontAwesomeSolid.TRASH_ALT);</span>
+<span class="fc" id="L174">        icon.setIconSize(12);</span>
+
+<span class="fc" id="L176">        Button delete = new Button();</span>
+<span class="fc" id="L177">        delete.setGraphic(icon);</span>
+<span class="fc" id="L178">        delete.setTooltip(new Tooltip(&quot;Delete&quot;));</span>
+<span class="fc" id="L179">        delete.getStyleClass().addAll(&quot;button&quot;, &quot;card-delete-button&quot;);</span>
+<span class="fc" id="L180">        return delete;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SuccessToast.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.shared</a> &gt; <span class="el_source">SuccessToast.java</span></div><h1>SuccessToast.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.shared;
+
+import javafx.animation.PauseTransition;
+import javafx.geometry.Pos;
+import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
+import javafx.util.Duration;
+
+import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
+import org.kordamp.ikonli.javafx.FontIcon;
+
+public class SuccessToast extends HBox {
+
+<span class="fc" id="L15">    private final Label message = new Label();</span>
+<span class="fc" id="L16">    private final PauseTransition hideTimer = new PauseTransition(Duration.seconds(2.5));</span>
+
+<span class="fc" id="L18">    public SuccessToast() {</span>
+<span class="fc" id="L19">        getStyleClass().add(&quot;success-toast&quot;);</span>
+<span class="fc" id="L20">        setAlignment(Pos.CENTER_LEFT);</span>
+<span class="fc" id="L21">        setSpacing(8);</span>
+<span class="fc" id="L22">        setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);</span>
+<span class="fc" id="L23">        setMouseTransparent(true);</span>
+<span class="fc" id="L24">        setVisible(false);</span>
+
+<span class="fc" id="L26">        FontIcon icon = new FontIcon(FontAwesomeSolid.CHECK_CIRCLE);</span>
+<span class="fc" id="L27">        icon.getStyleClass().add(&quot;success-toast-icon&quot;);</span>
+<span class="fc" id="L28">        message.getStyleClass().add(&quot;success-toast-text&quot;);</span>
+
+<span class="fc" id="L30">        getChildren().addAll(icon, message);</span>
+
+<span class="pc" id="L32">        hideTimer.setOnFinished(e -&gt; setVisible(false));</span>
+<span class="fc" id="L33">    }</span>
+
+    public void show(String text) {
+<span class="nc" id="L36">        message.setText(text);</span>
+<span class="nc" id="L37">        setVisible(true);</span>
+<span class="nc" id="L38">        hideTimer.playFromStart();</span>
+<span class="nc" id="L39">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

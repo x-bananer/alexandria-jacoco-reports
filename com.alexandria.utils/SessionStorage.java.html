@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SessionStorage.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.utils</a> &gt; <span class="el_source">SessionStorage.java</span></div><h1>SessionStorage.java</h1><pre class="source lang-java linenums">package com.alexandria.utils;
+
+import java.util.prefs.Preferences;
+
+<span class="fc" id="L5">public class SessionStorage {</span>
+    private static final String USER_ID_KEY = &quot;userId&quot;;
+<span class="fc" id="L7">    private final Preferences preferences = Preferences.userNodeForPackage(SessionStorage.class);</span>
+
+    public void saveUserId(int userId) {
+<span class="fc" id="L10">        preferences.putInt(USER_ID_KEY, userId);</span>
+<span class="fc" id="L11">    }</span>
+
+    public Integer getUserId() {
+<span class="fc" id="L14">        int userId = preferences.getInt(USER_ID_KEY, -1);</span>
+<span class="fc bfc" id="L15" title="All 2 branches covered.">        return userId == -1 ? null : userId;</span>
+    }
+
+    public void clear() {
+<span class="fc" id="L19">        preferences.remove(USER_ID_KEY);</span>
+<span class="fc" id="L20">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

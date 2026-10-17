@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PdfHighlight.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.shared.document.highlight</a> &gt; <span class="el_source">PdfHighlight.java</span></div><h1>PdfHighlight.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.shared.document.highlight;
+
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
+import org.apache.pdfbox.text.TextPosition;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+public final class PdfHighlight {
+
+    public static final String SEARCH_STYLE_CLASS = &quot;pdf-search-highlight&quot;;
+    public static final String ACTIVE_SEARCH_STYLE_CLASS = &quot;pdf-search-highlight-active&quot;;
+    public static final String QUOTATION_STYLE_CLASS = &quot;pdf-quotation-highlight&quot;;
+
+    private PdfHighlight() {
+    }
+
+    public static List&lt;Rectangle&gt; findHighlights(
+            PDDocument document,
+            int zeroBasedPage,
+            String text,
+            float renderDpi,
+            String styleClass) throws IOException {
+
+<span class="fc" id="L30">        List&lt;Rectangle&gt; results = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L32" title="All 4 branches covered.">        if (text == null || text.isBlank()) {</span>
+<span class="fc" id="L33">            return results;</span>
+        }
+
+<span class="fc" id="L36">        String needle = text.strip().toLowerCase(Locale.ROOT);</span>
+<span class="fc" id="L37">        float scale = renderDpi / 72f;</span>
+
+<span class="fc" id="L39">        List&lt;TextPosition&gt; positions = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L40">        StringBuilder extractedText = new StringBuilder();</span>
+
+<span class="fc" id="L42">        PDFTextStripper stripper = new PDFTextStripper() {</span>
+            @Override
+            protected void writeString(
+                    String string,
+                    List&lt;TextPosition&gt; textPositions) {
+<span class="fc" id="L47">                extractedText.append(string.toLowerCase(Locale.ROOT));</span>
+<span class="fc" id="L48">                positions.addAll(textPositions);</span>
+<span class="fc" id="L49">            }</span>
+        };
+
+<span class="fc" id="L52">        stripper.setStartPage(zeroBasedPage + 1);</span>
+<span class="fc" id="L53">        stripper.setEndPage(zeroBasedPage + 1);</span>
+<span class="fc" id="L54">        stripper.getText(document);</span>
+
+<span class="fc" id="L56">        String haystack = extractedText.toString();</span>
+
+<span class="fc" id="L58">        int index = haystack.indexOf(needle);</span>
+
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        while (index &gt;= 0) {</span>
+<span class="fc" id="L61">            int end = index + needle.length();</span>
+
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">            if (end &lt;= positions.size()) {</span>
+<span class="fc" id="L64">                results.add(</span>
+<span class="fc" id="L65">                        buildRectangle(</span>
+<span class="fc" id="L66">                                positions.subList(index, end),</span>
+                                scale,
+                                styleClass));
+            }
+
+<span class="fc" id="L71">            index = haystack.indexOf(needle, index + 1);</span>
+
+<span class="fc" id="L73">        }</span>
+
+<span class="fc" id="L75">        return results;</span>
+    }
+
+    public static List&lt;Rectangle&gt; findSearchHighlights(
+            PDDocument document,
+            int zeroBasedPage,
+            String searchTerm,
+            float renderDpi) throws IOException {
+<span class="fc" id="L83">        return findHighlights(</span>
+                document,
+                zeroBasedPage,
+                searchTerm,
+                renderDpi,
+                SEARCH_STYLE_CLASS);
+    }
+
+    public static List&lt;Rectangle&gt; findQuotationHighlights(
+            PDDocument document,
+            int zeroBasedPage,
+            String quotedText,
+            float renderDpi) throws IOException {
+<span class="fc" id="L96">        return findHighlights(</span>
+                document,
+                zeroBasedPage,
+                quotedText,
+                renderDpi,
+                QUOTATION_STYLE_CLASS);
+    }
+
+    private static Rectangle buildRectangle(
+            List&lt;TextPosition&gt; run,
+            float scale,
+            String styleClass) {
+<span class="fc" id="L108">        float minX = Float.MAX_VALUE;</span>
+<span class="fc" id="L109">        float minY = Float.MAX_VALUE;</span>
+<span class="fc" id="L110">        float maxX = 0;</span>
+<span class="fc" id="L111">        float maxY = 0;</span>
+
+<span class="fc bfc" id="L113" title="All 2 branches covered.">        for (TextPosition position : run) {</span>
+<span class="fc" id="L114">            minX = Math.min(</span>
+                    minX,
+<span class="fc" id="L116">                    position.getXDirAdj());</span>
+
+<span class="fc" id="L118">            minY = Math.min(</span>
+                    minY,
+<span class="fc" id="L120">                    position.getYDirAdj() - position.getHeightDir());</span>
+
+<span class="fc" id="L122">            maxX = Math.max(</span>
+                    maxX,
+<span class="fc" id="L124">                    position.getXDirAdj() + position.getWidthDirAdj());</span>
+
+<span class="fc" id="L126">            maxY = Math.max(</span>
+                    maxY,
+<span class="fc" id="L128">                    position.getYDirAdj());</span>
+<span class="fc" id="L129">        }</span>
+
+<span class="fc" id="L131">        Rectangle rectangle = new Rectangle(</span>
+                minX * scale,
+                minY * scale,
+                (maxX - minX) * scale,
+                (maxY - minY) * scale);
+
+<span class="fc" id="L137">        rectangle.setFill(Color.TRANSPARENT);</span>
+
+<span class="pc bpc" id="L139" title="1 of 4 branches missed.">        if (styleClass != null &amp;&amp; !styleClass.isBlank()) {</span>
+<span class="fc" id="L140">            rectangle.getStyleClass().add(styleClass);</span>
+        }
+
+<span class="fc" id="L143">        rectangle.setMouseTransparent(true);</span>
+
+<span class="fc" id="L145">        return rectangle;</span>
+
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

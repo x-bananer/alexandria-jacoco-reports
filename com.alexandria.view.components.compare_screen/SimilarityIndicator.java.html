@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SimilarityIndicator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.compare_screen</a> &gt; <span class="el_source">SimilarityIndicator.java</span></div><h1>SimilarityIndicator.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.compare_screen;
+
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.geometry.Pos;
+import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+
+public class SimilarityIndicator extends HBox {
+
+    private static final String HIGH = &quot;similarity-badge-high&quot;;
+    private static final String MODERATE = &quot;similarity-badge-moderate&quot;;
+    private static final String LOW = &quot;similarity-badge-low&quot;;
+
+<span class="fc" id="L18">    private final Label percentLabel = new Label(&quot;--&quot;);</span>
+<span class="fc" id="L19">    private final Label levelBadge = new Label();</span>
+<span class="fc" id="L20">    private final DoubleProperty fraction = new SimpleDoubleProperty(0);</span>
+
+<span class="fc" id="L22">    public SimilarityIndicator() {</span>
+<span class="fc" id="L23">        getStyleClass().add(&quot;similarity-indicator&quot;);</span>
+<span class="fc" id="L24">        setAlignment(Pos.CENTER_LEFT);</span>
+<span class="fc" id="L25">        setSpacing(12);</span>
+
+<span class="fc" id="L27">        Label caption = new Label(&quot;Similarity Index:&quot;);</span>
+<span class="fc" id="L28">        caption.getStyleClass().add(&quot;heading-md&quot;);</span>
+
+<span class="fc" id="L30">        percentLabel.getStyleClass().add(&quot;similarity-percent&quot;);</span>
+<span class="fc" id="L31">        levelBadge.getStyleClass().add(&quot;similarity-badge&quot;);</span>
+
+<span class="fc" id="L33">        HBox valueRow = new HBox(8, percentLabel, levelBadge);</span>
+<span class="fc" id="L34">        valueRow.setAlignment(Pos.CENTER_LEFT);</span>
+
+<span class="fc" id="L36">        Region fill = new Region();</span>
+<span class="fc" id="L37">        fill.getStyleClass().add(&quot;meter-fill&quot;);</span>
+
+<span class="fc" id="L39">        StackPane track = new StackPane(fill);</span>
+<span class="fc" id="L40">        track.getStyleClass().add(&quot;meter-track&quot;);</span>
+<span class="fc" id="L41">        track.setPrefSize(0, 6);</span>
+<span class="fc" id="L42">        track.setMinHeight(6);</span>
+<span class="fc" id="L43">        track.setMaxHeight(6);</span>
+<span class="fc" id="L44">        StackPane.setAlignment(fill, Pos.CENTER_LEFT);</span>
+<span class="fc" id="L45">        fill.maxWidthProperty().bind(track.widthProperty().multiply(fraction));</span>
+
+<span class="fc" id="L47">        getChildren().addAll(caption, new VBox(4, valueRow, track));</span>
+
+<span class="fc" id="L49">        clear();</span>
+<span class="fc" id="L50">    }</span>
+
+    public void setSimilarity(Double percent, String similarityAmount) {
+<span class="nc bnc" id="L53" title="All 4 branches missed.">        if (percent == null || percent.isNaN()) {</span>
+<span class="nc" id="L54">            clear();</span>
+<span class="nc" id="L55">            return;</span>
+        }
+
+<span class="nc" id="L58">        double value = Math.max(0, Math.min(100, percent));</span>
+
+<span class="nc" id="L60">        percentLabel.setText(Math.round(value) + &quot;%&quot;);</span>
+<span class="nc" id="L61">        fraction.set(value / 100);</span>
+
+<span class="nc" id="L63">        levelBadge.getStyleClass().removeAll(HIGH, MODERATE, LOW);</span>
+
+<span class="nc bnc" id="L65" title="All 2 branches missed.">        if (&quot;High&quot;.equalsIgnoreCase(similarityAmount)) {</span>
+<span class="nc" id="L66">            levelBadge.setText(&quot;HIGH CORRELATION&quot;);</span>
+<span class="nc" id="L67">            levelBadge.getStyleClass().add(HIGH);</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        } else if (&quot;Moderate&quot;.equalsIgnoreCase(similarityAmount)) {</span>
+<span class="nc" id="L69">            levelBadge.setText(&quot;MODERATE CORRELATION&quot;);</span>
+<span class="nc" id="L70">            levelBadge.getStyleClass().add(MODERATE);</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">        } else if (&quot;Low&quot;.equalsIgnoreCase(similarityAmount)) {</span>
+<span class="nc" id="L72">            levelBadge.setText(&quot;LOW CORRELATION&quot;);</span>
+<span class="nc" id="L73">            levelBadge.getStyleClass().add(LOW);</span>
+        } else {
+<span class="nc" id="L75">            levelBadge.setVisible(false);</span>
+<span class="nc" id="L76">            levelBadge.setManaged(false);</span>
+<span class="nc" id="L77">            return;</span>
+        }
+
+<span class="nc" id="L80">        levelBadge.setVisible(true);</span>
+<span class="nc" id="L81">        levelBadge.setManaged(true);</span>
+<span class="nc" id="L82">    }</span>
+
+    public void clear() {
+<span class="fc" id="L85">        percentLabel.setText(&quot;--&quot;);</span>
+<span class="fc" id="L86">        fraction.set(0);</span>
+<span class="fc" id="L87">        levelBadge.setVisible(false);</span>
+<span class="fc" id="L88">        levelBadge.setManaged(false);</span>
+<span class="fc" id="L89">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

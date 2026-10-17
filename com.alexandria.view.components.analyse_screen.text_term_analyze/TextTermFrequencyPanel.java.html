@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TextTermFrequencyPanel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.analyse_screen.text_term_analyze</a> &gt; <span class="el_source">TextTermFrequencyPanel.java</span></div><h1>TextTermFrequencyPanel.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.analyse_screen.text_term_analyze;
+
+import com.alexandria.service.analysis.WordFrequency;
+import com.alexandria.view.components.shared.FrequencyBar;
+
+import javafx.geometry.Pos;
+import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+
+import java.util.List;
+import java.util.function.Consumer;
+
+public class TextTermFrequencyPanel extends VBox {
+
+<span class="fc" id="L17">    private final VBox rowsHost = new VBox(10);</span>
+<span class="fc" id="L18">    private final Label emptyLabel = new Label(&quot;Open a document to see frequent words.&quot;);</span>
+<span class="fc" id="L19">    private Consumer&lt;String&gt; onRowClick = word -&gt; {</span>
+<span class="nc" id="L20">    };</span>
+
+<span class="fc" id="L22">    public TextTermFrequencyPanel() {</span>
+<span class="fc" id="L23">        getStyleClass().add(&quot;text-term-frequency-panel&quot;);</span>
+<span class="fc" id="L24">        setSpacing(12);</span>
+
+<span class="fc" id="L26">        Label heading = new Label(&quot;Term Frequency (Top 5)&quot;);</span>
+<span class="fc" id="L27">        heading.getStyleClass().add(&quot;heading-md&quot;);</span>
+<span class="fc" id="L28">        emptyLabel.getStyleClass().add(&quot;text-muted&quot;);</span>
+
+<span class="fc" id="L30">        getChildren().addAll(heading, rowsHost);</span>
+<span class="fc" id="L31">        showEmpty();</span>
+<span class="fc" id="L32">    }</span>
+
+    public void setResults(List&lt;WordFrequency&gt; words) {
+<span class="fc" id="L35">        rowsHost.getChildren().clear();</span>
+
+<span class="pc bpc" id="L37" title="2 of 4 branches missed.">        if (words == null || words.isEmpty()) {</span>
+<span class="fc" id="L38">            showEmpty();</span>
+<span class="fc" id="L39">            return;</span>
+        }
+
+<span class="nc" id="L42">        int maxCount = words.stream().mapToInt(WordFrequency::count).max().orElse(1);</span>
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        for (WordFrequency word : words) {</span>
+<span class="nc" id="L44">            rowsHost.getChildren().add(buildRow(word, maxCount));</span>
+<span class="nc" id="L45">        }</span>
+<span class="nc" id="L46">    }</span>
+
+    private HBox buildRow(WordFrequency word, int maxCount) {
+<span class="nc" id="L49">        Label termLabel = new Label(word.word());</span>
+<span class="nc" id="L50">        termLabel.getStyleClass().add(&quot;term-frequency-label&quot;);</span>
+<span class="nc" id="L51">        termLabel.setMinWidth(80);</span>
+<span class="nc" id="L52">        termLabel.setPrefWidth(80);</span>
+
+<span class="nc bnc" id="L54" title="All 2 branches missed.">        double ratio = maxCount &lt;= 0 ? 0 : (double) word.count() / maxCount;</span>
+
+<span class="nc" id="L56">        FrequencyBar frequencyBar = new FrequencyBar();</span>
+<span class="nc" id="L57">        frequencyBar.setRatio(ratio);</span>
+
+<span class="nc" id="L59">        HBox.setHgrow(frequencyBar, Priority.ALWAYS);</span>
+
+<span class="nc" id="L61">        Label countLabel = new Label(String.valueOf(word.count()));</span>
+<span class="nc" id="L62">        countLabel.getStyleClass().add(&quot;text-muted&quot;);</span>
+<span class="nc" id="L63">        countLabel.setMinWidth(36);</span>
+
+<span class="nc" id="L65">        HBox row = new HBox(10, termLabel, frequencyBar, countLabel);</span>
+<span class="nc" id="L66">        row.setAlignment(Pos.CENTER_LEFT);</span>
+<span class="nc" id="L67">        row.getStyleClass().add(&quot;frequency-row&quot;);</span>
+<span class="nc" id="L68">        row.setOnMouseClicked(event -&gt; onRowClick.accept(word.word()));</span>
+
+<span class="nc" id="L70">        return row;</span>
+    }
+
+    public void setOnRowClick(Consumer&lt;String&gt; handler) {
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">        onRowClick = handler == null ? word -&gt; {</span>
+<span class="pc" id="L75">        } : handler;</span>
+<span class="fc" id="L76">    }</span>
+
+    private void showEmpty() {
+<span class="fc" id="L79">        rowsHost.getChildren().setAll(emptyLabel);</span>
+<span class="fc" id="L80">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

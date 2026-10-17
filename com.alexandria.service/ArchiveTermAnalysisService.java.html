@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ArchiveTermAnalysisService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.service</a> &gt; <span class="el_source">ArchiveTermAnalysisService.java</span></div><h1>ArchiveTermAnalysisService.java</h1><pre class="source lang-java linenums">package com.alexandria.service;
+
+import com.alexandria.dao.TermAnalysisDAO;
+import com.alexandria.dao.TextDAO;
+import com.alexandria.model.ArchiveTermAnalysis;
+import com.alexandria.model.TermAnalysis;
+import com.alexandria.model.Text;
+import com.alexandria.service.analysis.TermAnalysisResult;
+import com.alexandria.utils.JsonMapper;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class ArchiveTermAnalysisService {
+	private final TermAnalysisDAO termAnalysisDAO;
+	private final TextDAO textDAO;
+
+	public ArchiveTermAnalysisService() {
+<span class="fc" id="L22">		this(new TermAnalysisDAO(), new TextDAO());</span>
+<span class="fc" id="L23">	}</span>
+
+<span class="fc" id="L25">	ArchiveTermAnalysisService(TermAnalysisDAO termAnalysisDAO, TextDAO textDAO) {</span>
+<span class="fc" id="L26">		this.termAnalysisDAO = termAnalysisDAO;</span>
+<span class="fc" id="L27">		this.textDAO = textDAO;</span>
+<span class="fc" id="L28">	}</span>
+
+	ArchiveTermAnalysisService(TermAnalysisDAO termAnalysisDAO) {
+<span class="nc" id="L31">		this(termAnalysisDAO, new TextDAO());</span>
+<span class="nc" id="L32">	}</span>
+
+	public TermAnalysis save(Text text, TermAnalysisResult termAnalysisResult) throws SQLException {
+<span class="pc bpc" id="L35" title="2 of 4 branches missed.">		boolean hasUserId = text != null &amp;&amp; text.getUserId() != null;</span>
+<span class="pc bpc" id="L36" title="2 of 4 branches missed.">		boolean hasTextId = text != null &amp;&amp; text.getId() != null;</span>
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">		boolean hasTermAnalysisResult = termAnalysisResult != null;</span>
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">		boolean hasTerm = hasTermAnalysisResult</span>
+<span class="pc bpc" id="L39" title="1 of 2 branches missed.">				&amp;&amp; termAnalysisResult.term() != null</span>
+<span class="pc bpc" id="L40" title="1 of 2 branches missed.">				&amp;&amp; !termAnalysisResult.term().isBlank();</span>
+
+<span class="pc bpc" id="L42" title="2 of 4 branches missed.">		if (!hasUserId || !hasTextId) {</span>
+<span class="nc" id="L43">			throw new IllegalArgumentException(&quot;A saved text belonging to a user is required.&quot;);</span>
+		}
+
+<span class="pc bpc" id="L46" title="2 of 4 branches missed.">		if (!hasTermAnalysisResult || !hasTerm) {</span>
+<span class="nc" id="L47">			throw new IllegalArgumentException(&quot;Term analysis result with a term is required.&quot;);</span>
+		}
+
+<span class="fc" id="L50">		TermAnalysis termAnalysis = new TermAnalysis(text.getUserId(), text.getId(), termAnalysisResult.term(), JsonMapper.toJson(termAnalysisResult));</span>
+<span class="fc" id="L51">		TermAnalysis savedTermAnalysis = termAnalysisDAO.create(termAnalysis);</span>
+
+<span class="fc" id="L53">		return savedTermAnalysis;</span>
+	}
+
+	public ArchiveTermAnalysis findById(int id, int userId) throws SQLException {
+<span class="fc" id="L57">		TermAnalysis termAnalysis = termAnalysisDAO.findById(id);</span>
+
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">		if (termAnalysis == null) {</span>
+<span class="nc" id="L60">			throw new IllegalArgumentException(&quot;Term analysis with the provided ID was not found.&quot;);</span>
+		}
+
+<span class="fc bfc" id="L63" title="All 2 branches covered.">		if (!Integer.valueOf(userId).equals(termAnalysis.getUserId())) {</span>
+<span class="fc" id="L64">			throw new IllegalArgumentException(&quot;Term analysis does not belong to the provided user.&quot;);</span>
+		}
+
+<span class="fc" id="L67">		Text text = textDAO.findById(termAnalysis.getTextId());</span>
+
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">		if (text == null) {</span>
+<span class="nc" id="L70">			throw new IllegalStateException(&quot;Text for the saved analysis was not found.&quot;);</span>
+		}
+
+<span class="fc" id="L73">		TermAnalysisResult termAnalysisResult = JsonMapper.fromJson(termAnalysis.getAnalysisData(), TermAnalysisResult.class);</span>
+
+<span class="fc" id="L75">		return new ArchiveTermAnalysis(</span>
+<span class="fc" id="L76">				termAnalysis.getId(),</span>
+<span class="fc" id="L77">				termAnalysis.getTextId(),</span>
+<span class="fc" id="L78">				text.getTitle(),</span>
+<span class="fc" id="L79">				text.getFileName(),</span>
+<span class="fc" id="L80">				termAnalysis.getTerm(),</span>
+<span class="fc" id="L81">				termAnalysis.getCreatedAt(),</span>
+				termAnalysisResult);
+	}
+
+	public List&lt;ArchiveTermAnalysis&gt; findAllByUserId(int userId) throws SQLException {
+<span class="fc" id="L86">		List&lt;TermAnalysis&gt; termAnalyses = termAnalysisDAO.findAllByUserId(userId);</span>
+<span class="fc" id="L87">		List&lt;Text&gt; texts = textDAO.findAllByUserId(userId);</span>
+<span class="fc" id="L88">		Map&lt;Integer, Text&gt; textsById = new HashMap&lt;&gt;();</span>
+
+<span class="fc bfc" id="L90" title="All 2 branches covered.">		for (Text text : texts) {</span>
+<span class="fc" id="L91">			textsById.put(text.getId(), text);</span>
+<span class="fc" id="L92">		}</span>
+
+<span class="fc" id="L94">		List&lt;ArchiveTermAnalysis&gt; archiveTermAnalyses = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L96" title="All 2 branches covered.">		for (TermAnalysis termAnalysis : termAnalyses) {</span>
+<span class="fc" id="L97">			Text text = textsById.get(termAnalysis.getTextId());</span>
+
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">			if (text == null) {</span>
+<span class="nc" id="L100">				throw new IllegalStateException(&quot;Text for the saved analysis was not found.&quot;);</span>
+			}
+
+<span class="fc" id="L103">			TermAnalysisResult termAnalysisResult = JsonMapper.fromJson(termAnalysis.getAnalysisData(), TermAnalysisResult.class);</span>
+
+<span class="fc" id="L105">			ArchiveTermAnalysis archiveTermAnalysis = new ArchiveTermAnalysis(</span>
+<span class="fc" id="L106">					termAnalysis.getId(),</span>
+<span class="fc" id="L107">					termAnalysis.getTextId(),</span>
+<span class="fc" id="L108">					text.getTitle(),</span>
+<span class="fc" id="L109">					text.getFileName(),</span>
+<span class="fc" id="L110">					termAnalysis.getTerm(),</span>
+<span class="fc" id="L111">					termAnalysis.getCreatedAt(),</span>
+					termAnalysisResult);
+
+<span class="fc" id="L114">			archiveTermAnalyses.add(archiveTermAnalysis);</span>
+<span class="fc" id="L115">		}</span>
+
+<span class="fc" id="L117">		return archiveTermAnalyses;</span>
+	}
+
+	public List&lt;ArchiveTermAnalysis&gt; findAllByTextId(int textId, int userId) throws SQLException {
+<span class="fc" id="L121">		Text text = textDAO.findById(textId);</span>
+
+<span class="pc bpc" id="L123" title="1 of 2 branches missed.">		if (text == null) {</span>
+<span class="nc" id="L124">			throw new IllegalArgumentException(&quot;Text with the provided ID was not found.&quot;);</span>
+		}
+
+<span class="fc bfc" id="L127" title="All 2 branches covered.">		if (!Integer.valueOf(userId).equals(text.getUserId())) {</span>
+<span class="fc" id="L128">			throw new IllegalArgumentException(&quot;Text does not belong to the provided user.&quot;);</span>
+		}
+
+<span class="fc" id="L131">		List&lt;TermAnalysis&gt; termAnalyses = termAnalysisDAO.findAllByTextId(textId);</span>
+<span class="fc" id="L132">		List&lt;ArchiveTermAnalysis&gt; archiveTermAnalyses = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L134" title="All 2 branches covered.">		for (TermAnalysis termAnalysis : termAnalyses) {</span>
+<span class="pc bpc" id="L135" title="1 of 2 branches missed.">			if (!Integer.valueOf(userId).equals(termAnalysis.getUserId())) {</span>
+<span class="nc" id="L136">				throw new IllegalArgumentException(&quot;Term analysis does not belong to the provided user.&quot;);</span>
+			}
+
+<span class="fc" id="L139">			TermAnalysisResult termAnalysisResult = JsonMapper.fromJson(termAnalysis.getAnalysisData(), TermAnalysisResult.class);</span>
+
+<span class="fc" id="L141">			ArchiveTermAnalysis archiveTermAnalysis = new ArchiveTermAnalysis(</span>
+<span class="fc" id="L142">					termAnalysis.getId(),</span>
+<span class="fc" id="L143">					termAnalysis.getTextId(),</span>
+<span class="fc" id="L144">					text.getTitle(),</span>
+<span class="fc" id="L145">					text.getFileName(),</span>
+<span class="fc" id="L146">					termAnalysis.getTerm(),</span>
+<span class="fc" id="L147">					termAnalysis.getCreatedAt(),</span>
+					termAnalysisResult);
+
+<span class="fc" id="L150">			archiveTermAnalyses.add(archiveTermAnalysis);</span>
+<span class="fc" id="L151">		}</span>
+
+<span class="fc" id="L153">		return archiveTermAnalyses;</span>
+	}
+
+	public boolean deleteById(Integer id, int userId) throws SQLException {
+<span class="fc" id="L157">		TermAnalysis termAnalysis = termAnalysisDAO.findById(id);</span>
+
+<span class="pc bpc" id="L159" title="1 of 2 branches missed.">		if (termAnalysis == null) {</span>
+<span class="nc" id="L160">			throw new IllegalArgumentException(&quot;Term analysis with the provided ID was not found.&quot;);</span>
+		}
+
+<span class="fc bfc" id="L163" title="All 2 branches covered.">		if (!Integer.valueOf(userId).equals(termAnalysis.getUserId())) {</span>
+<span class="fc" id="L164">			throw new IllegalArgumentException(&quot;Term analysis does not belong to the provided user.&quot;);</span>
+		}
+
+<span class="fc" id="L167">		return termAnalysisDAO.delete(id);</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

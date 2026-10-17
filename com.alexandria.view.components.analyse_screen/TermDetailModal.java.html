@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TermDetailModal.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.analyse_screen</a> &gt; <span class="el_source">TermDetailModal.java</span></div><h1>TermDetailModal.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.analyse_screen;
+
+import com.alexandria.service.analysis.SearchMatch;
+import com.alexandria.service.analysis.TermAnalysisResult;
+import com.alexandria.service.analysis.WordFrequency;
+
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+
+import java.util.List;
+import java.util.function.IntConsumer;
+
+public class TermDetailModal extends VBox {
+
+<span class="fc" id="L20">    private final Label titleLabel = new Label();</span>
+<span class="fc" id="L21">    private final Label statsLabel = new Label();</span>
+<span class="fc" id="L22">    private final VBox neighborsHost = new VBox(6);</span>
+<span class="fc" id="L23">    private final VBox occurrencesHost = new VBox(8);</span>
+
+<span class="fc" id="L25">    public TermDetailModal() {</span>
+<span class="fc" id="L26">        getStyleClass().add(&quot;modal-card&quot;);</span>
+<span class="fc" id="L27">        setSpacing(16);</span>
+<span class="fc" id="L28">        setPadding(new Insets(24));</span>
+<span class="fc" id="L29">        setPrefWidth(460);</span>
+<span class="fc" id="L30">        setMaxHeight(560);</span>
+
+<span class="fc" id="L32">        titleLabel.getStyleClass().add(&quot;heading-lg&quot;);</span>
+<span class="fc" id="L33">        statsLabel.getStyleClass().add(&quot;text-muted&quot;);</span>
+
+<span class="fc" id="L35">        Label neighborsHeading = new Label(&quot;Nearby Words&quot;);</span>
+<span class="fc" id="L36">        neighborsHeading.getStyleClass().add(&quot;heading-md&quot;);</span>
+<span class="fc" id="L37">        Label occurrencesHeading = new Label(&quot;Occurrences&quot;);</span>
+<span class="fc" id="L38">        occurrencesHeading.getStyleClass().add(&quot;heading-sm&quot;);</span>
+
+<span class="fc" id="L40">        ScrollPane occurrencesScroll = new ScrollPane(occurrencesHost);</span>
+<span class="fc" id="L41">        occurrencesScroll.setFitToWidth(true);</span>
+<span class="fc" id="L42">        occurrencesScroll.getStyleClass().add(&quot;inputed-scroll&quot;);</span>
+
+<span class="fc" id="L44">        getChildren().addAll(</span>
+                titleLabel, statsLabel,
+                neighborsHeading, neighborsHost,
+                occurrencesHeading, occurrencesScroll);
+<span class="fc" id="L48">    }</span>
+
+    public void setData(
+            String term,
+            TermAnalysisResult analysis,
+            List&lt;SearchMatch&gt; matches,
+            IntConsumer onJumpToMatch) {
+<span class="nc" id="L55">        titleLabel.setText(&quot;\&quot;&quot; + term + &quot;\&quot;&quot;);</span>
+<span class="nc" id="L56">        statsLabel.setText(String.format(</span>
+                &quot;%d occurrences · %.1f per 1,000 words · %d sentences · %d paragraphs&quot;,
+<span class="nc" id="L58">                analysis.totalOccurrences(), analysis.relativeFrequency(),</span>
+<span class="nc" id="L59">                analysis.sentenceCount(), analysis.paragraphCount()));</span>
+
+<span class="nc" id="L61">        neighborsHost.getChildren().clear();</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        if (analysis.neighboringWords().isEmpty()) {</span>
+<span class="nc" id="L63">            neighborsHost.getChildren().add(mutedLabel(&quot;No nearby words found.&quot;));</span>
+        } else {
+<span class="nc" id="L65">            HBox chips = new HBox(6);</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">            for (WordFrequency word : analysis.neighboringWords()) {</span>
+<span class="nc" id="L67">                Label chip = new Label(word.word() + &quot; (&quot; + word.count() + &quot;)&quot;);</span>
+<span class="nc" id="L68">                chip.getStyleClass().add(&quot;chip&quot;);</span>
+<span class="nc" id="L69">                chips.getChildren().add(chip);</span>
+<span class="nc" id="L70">            }</span>
+<span class="nc" id="L71">            neighborsHost.getChildren().add(chips);</span>
+        }
+
+<span class="nc" id="L74">        occurrencesHost.getChildren().clear();</span>
+<span class="nc bnc" id="L75" title="All 4 branches missed.">        if (matches == null || matches.isEmpty()) {</span>
+<span class="nc" id="L76">            occurrencesHost.getChildren().add(mutedLabel(&quot;No located occurrences.&quot;));</span>
+        } else {
+<span class="nc bnc" id="L78" title="All 2 branches missed.">            for (int i = 0; i &lt; matches.size(); i++) {</span>
+<span class="nc" id="L79">                occurrencesHost.getChildren().add(buildOccurrenceRow(i, matches.get(i), onJumpToMatch));</span>
+            }
+        }
+<span class="nc" id="L82">    }</span>
+
+    private HBox buildOccurrenceRow(int index, SearchMatch match, IntConsumer onJumpToMatch) {
+
+<span class="nc" id="L86">        VBox textBox = new VBox(2);</span>
+<span class="nc" id="L87">        textBox.setMinWidth(0);</span>
+<span class="nc" id="L88">        HBox.setHgrow(textBox, javafx.scene.layout.Priority.ALWAYS);</span>
+
+<span class="nc" id="L90">        Label pageLabel = new Label(</span>
+<span class="nc" id="L91">                formatPageLabel(match.page(), match.paragraph()));</span>
+<span class="nc" id="L92">        pageLabel.getStyleClass().add(&quot;context-match-page&quot;);</span>
+
+<span class="nc" id="L94">        Label snippet = new Label(match.context());</span>
+<span class="nc" id="L95">        snippet.setWrapText(true);</span>
+<span class="nc" id="L96">        snippet.setMaxWidth(Double.MAX_VALUE);</span>
+<span class="nc" id="L97">        snippet.getStyleClass().add(&quot;context-match-snippet&quot;);</span>
+
+<span class="nc" id="L99">        textBox.getChildren().addAll(pageLabel, snippet);</span>
+
+<span class="nc" id="L101">        Button goToButton = new Button(&quot;Go to →&quot;);</span>
+<span class="nc" id="L102">        goToButton.getStyleClass().addAll(&quot;button&quot;, &quot;secondary&quot;);</span>
+<span class="nc" id="L103">        goToButton.setMinWidth(90);</span>
+<span class="nc" id="L104">        goToButton.setMaxWidth(100);</span>
+<span class="nc" id="L105">        goToButton.setOnAction(e -&gt; onJumpToMatch.accept(index));</span>
+
+<span class="nc" id="L107">        HBox row = new HBox(10, textBox, goToButton);</span>
+<span class="nc" id="L108">        row.setAlignment(Pos.TOP_LEFT);</span>
+<span class="nc" id="L109">        row.setFillHeight(true);</span>
+<span class="nc" id="L110">        row.getStyleClass().add(&quot;context-match-card&quot;);</span>
+
+<span class="nc" id="L112">        return row;</span>
+    }
+
+    private Label mutedLabel(String text) {
+<span class="nc" id="L116">        Label label = new Label(text);</span>
+<span class="nc" id="L117">        label.getStyleClass().add(&quot;text-muted&quot;);</span>
+<span class="nc" id="L118">        return label;</span>
+    }
+
+    private static String formatPageLabel(Integer page, Integer paragraph) {
+<span class="nc bnc" id="L122" title="All 4 branches missed.">        if (page != null &amp;&amp; paragraph != null)</span>
+<span class="nc" id="L123">            return &quot;Page &quot; + page + &quot; · Para &quot; + paragraph;</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">        if (page != null)</span>
+<span class="nc" id="L125">            return &quot;Page &quot; + page;</span>
+<span class="nc bnc" id="L126" title="All 2 branches missed.">        if (paragraph != null)</span>
+<span class="nc" id="L127">            return &quot;Para &quot; + paragraph;</span>
+<span class="nc" id="L128">        return &quot;&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

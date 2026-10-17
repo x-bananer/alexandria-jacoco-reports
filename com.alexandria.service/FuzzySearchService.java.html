@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FuzzySearchService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.service</a> &gt; <span class="el_source">FuzzySearchService.java</span></div><h1>FuzzySearchService.java</h1><pre class="source lang-java linenums">package com.alexandria.service;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import com.alexandria.service.analysis.SearchMatch;
+import com.alexandria.service.analysis.SearchSettings;
+
+
+/*  * Fuzzy Search 
+Implementation based on the &quot;Wu-Manber Bitap&quot; -algorithm. 
+Heavy bitwise operation madness incoming.
+
+Determines the lowest number of edits additions, changes or removal of letters 
+required to transform one string into another. 
+A lower Wu-Manber Bitap indicates greater similarity. For instance, 
+&quot;sack&quot; and &quot;back&quot; have a &quot;difference&quot; length of 1*/
+
+<span class="fc" id="L20">public class FuzzySearchService {</span>
+
+    public List&lt;SearchMatch&gt; findWithFuzzy(String text, String searchable) {
+<span class="fc" id="L23">        return findWithFuzzy(text, searchable, null, null, null);</span>
+    }
+
+    public List&lt;SearchMatch&gt; findWithFuzzy(
+            String text,
+            String searchable,
+            List&lt;Integer&gt; pageOffsets,
+            List&lt;Integer&gt; paragraphOffsets) {
+<span class="nc" id="L31">        return findWithFuzzy(text, searchable, null, pageOffsets, paragraphOffsets);</span>
+    }
+
+    public List&lt;SearchMatch&gt; findWithFuzzy(
+            String text,
+            String searchable,
+            SearchSettings setting,
+            List&lt;Integer&gt; pageOffsets,
+            List&lt;Integer&gt; paragraphOffsets) {
+<span class="fc" id="L40">        List&lt;SearchMatch&gt; matches = new ArrayList&lt;&gt;();</span>
+
+<span class="pc bpc" id="L42" title="4 of 8 branches missed.">        if (text == null || searchable == null || searchable.isEmpty() || text.isEmpty()) {</span>
+<span class="nc" id="L43">            return matches;</span>
+        }
+
+<span class="fc" id="L46">        boolean caseSensitive = false;</span>
+<span class="fc" id="L47">        boolean wholeWordsOnly = false;</span>
+<span class="fc" id="L48">        boolean ignoreStopWords = false;</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        if (setting != null) {</span>
+<span class="fc" id="L50">            caseSensitive = setting.caseSensitive();</span>
+<span class="fc" id="L51">            wholeWordsOnly = setting.wholeWordsOnly();</span>
+<span class="fc" id="L52">            ignoreStopWords = setting.ignoreStopWords();</span>
+        }
+
+<span class="pc bpc" id="L55" title="3 of 4 branches missed.">        if (ignoreStopWords &amp;&amp; AnalysisUtils.STOP_WORDS.contains(searchable.toLowerCase())) {</span>
+<span class="nc" id="L56">            return matches;</span>
+        }
+
+<span class="fc" id="L59">        int m = searchable.length();</span>
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">        if (m &gt; 64) {</span>
+<span class="nc" id="L61">            searchable = searchable.substring(0, 64);</span>
+<span class="nc" id="L62">            m = 64;</span>
+        }
+
+        // Typo budget. Amount of allowed letter differences
+        // TODO: Add the ability to change the &quot;budget&quot; from the UI?
+        int k;
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        if (m &gt;= 5) {</span>
+<span class="fc" id="L69">            k = 2;</span>
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">        } else if (m &gt;= 4) {</span>
+<span class="fc" id="L71">            k = 1;</span>
+        } else {
+<span class="nc" id="L73">            k = 0;</span>
+        }
+
+        // Build character masks
+<span class="fc" id="L77">        long[] mask = new long[65536];</span>
+<span class="fc" id="L78">        Arrays.fill(mask, ~0L);</span>
+
+<span class="fc bfc" id="L80" title="All 2 branches covered.">        for (int i = 0; i &lt; m; i++) {</span>
+<span class="fc" id="L81">            char c = searchable.charAt(i);</span>
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">            if (!caseSensitive) {</span>
+<span class="fc" id="L83">                c = Character.toLowerCase(c);</span>
+            }
+<span class="fc" id="L85">            mask[c] &amp;= ~(1L &lt;&lt; i);</span>
+        }
+
+        // Initialize error states
+<span class="fc" id="L89">        long[] R = new long[k + 1];</span>
+<span class="fc bfc" id="L90" title="All 2 branches covered.">        for (int d = 0; d &lt;= k; d++) {</span>
+<span class="fc" id="L91">            R[d] = ~0L &lt;&lt; d;</span>
+        }
+
+<span class="fc" id="L94">        long matchBit = 1L &lt;&lt; (m - 1);</span>
+
+        // Scan text and note word startpoint
+<span class="fc" id="L97">        int wordStart = 0;</span>
+<span class="fc" id="L98">        int bestMatchEnd = -1;</span>
+<span class="fc" id="L99">        int bestError = Integer.MAX_VALUE;</span>
+
+<span class="fc bfc" id="L101" title="All 2 branches covered.">        for (int i = 0; i &lt;= text.length(); i++) {</span>
+<span class="fc bfc" id="L102" title="All 4 branches covered.">            boolean atEnd = (i == text.length() || !Character.isLetterOrDigit(text.charAt(i)));</span>
+<span class="fc bfc" id="L103" title="All 2 branches covered.">            if (atEnd) {</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">                if (i &gt; wordStart) {</span>
+<span class="fc bfc" id="L105" title="All 2 branches covered.">                    if (wholeWordsOnly) {</span>
+<span class="pc bpc" id="L106" title="1 of 4 branches missed.">                        if (Math.abs((i - wordStart) - m) &lt;= k &amp;&amp; (R[k] &amp; matchBit) == 0L) {</span>
+<span class="nc" id="L107">                            String matchedSnippet = text.substring(wordStart, i);</span>
+<span class="nc" id="L108">                            String ctx = text.substring(Math.max(0, wordStart - 40), Math.min(text.length(), i + 40)).strip();</span>
+<span class="nc" id="L109">                            Integer page = AnalysisUtils.resolvePage(wordStart, pageOffsets);</span>
+<span class="nc" id="L110">                            Integer paragraph = AnalysisUtils.resolveParagraph(wordStart, paragraphOffsets);</span>
+<span class="nc" id="L111">                            matches.add(new SearchMatch(matchedSnippet, wordStart, i, page, paragraph, ctx));</span>
+<span class="nc" id="L112">                        }</span>
+                    } else {
+<span class="fc bfc" id="L114" title="All 4 branches covered.">                        if (Math.abs((i - wordStart) - m) &lt;= k &amp;&amp; (R[k] &amp; matchBit) == 0L) {</span>
+<span class="fc" id="L115">                            String matchedSnippet = text.substring(wordStart, i);</span>
+<span class="fc" id="L116">                            String ctx = text.substring(Math.max(0, wordStart - 40), Math.min(text.length(), i + 40)).strip();</span>
+<span class="fc" id="L117">                            Integer page = AnalysisUtils.resolvePage(wordStart, pageOffsets);</span>
+<span class="fc" id="L118">                            Integer paragraph = AnalysisUtils.resolveParagraph(wordStart, paragraphOffsets);</span>
+<span class="fc" id="L119">                            matches.add(new SearchMatch(matchedSnippet, wordStart, i, page, paragraph, ctx));</span>
+<span class="pc bpc" id="L120" title="1 of 4 branches missed.">                        } else if (bestMatchEnd &gt; wordStart &amp;&amp; bestError &lt;= k) {</span>
+<span class="fc" id="L121">                            int matchStart = findBestStart(text, wordStart, bestMatchEnd, searchable, bestError, caseSensitive);</span>
+<span class="fc" id="L122">                            String matchedSnippet = text.substring(matchStart, bestMatchEnd);</span>
+<span class="fc" id="L123">                            String ctx = text.substring(Math.max(0, matchStart - 40), Math.min(text.length(), bestMatchEnd + 40)).strip();</span>
+<span class="fc" id="L124">                            Integer page = AnalysisUtils.resolvePage(matchStart, pageOffsets);</span>
+<span class="fc" id="L125">                            Integer paragraph = AnalysisUtils.resolveParagraph(matchStart, paragraphOffsets);</span>
+<span class="fc" id="L126">                            matches.add(new SearchMatch(matchedSnippet, matchStart, bestMatchEnd, page, paragraph, ctx));</span>
+                        }
+                    }
+                }
+<span class="fc bfc" id="L130" title="All 2 branches covered.">                for (int d = 0; d &lt;= k; d++) {</span>
+<span class="fc" id="L131">                    R[d] = ~0L &lt;&lt; d;</span>
+                }
+<span class="fc" id="L133">                wordStart = i + 1;</span>
+<span class="fc" id="L134">                bestMatchEnd = -1;</span>
+<span class="fc" id="L135">                bestError = Integer.MAX_VALUE;</span>
+<span class="fc" id="L136">                continue;</span>
+            }
+
+<span class="fc" id="L139">            char c = text.charAt(i);</span>
+<span class="pc bpc" id="L140" title="1 of 2 branches missed.">            if (!caseSensitive) {</span>
+<span class="fc" id="L141">                c = Character.toLowerCase(c);</span>
+            }
+<span class="fc" id="L143">            long charMask = mask[c];</span>
+
+            // Update exact match
+<span class="fc" id="L146">            long oldR = R[0];</span>
+<span class="fc" id="L147">            R[0] = (R[0] &lt;&lt; 1) | charMask;</span>
+
+<span class="fc bfc" id="L149" title="All 2 branches covered.">            for (int d = 1; d &lt;= k; d++) {</span>
+<span class="fc" id="L150">                long match      = (R[d] &lt;&lt; 1) | charMask;</span>
+<span class="fc" id="L151">                long substitute = oldR &lt;&lt; 1;</span>
+<span class="fc" id="L152">                long insert     = oldR;</span>
+<span class="fc" id="L153">                long delete     = R[d - 1] &lt;&lt; 1;</span>
+
+<span class="fc" id="L155">                oldR = R[d];</span>
+<span class="fc" id="L156">                R[d] = match &amp; substitute &amp; insert &amp; delete;</span>
+            }
+
+<span class="fc bfc" id="L159" title="All 2 branches covered.">            if (!wholeWordsOnly) {</span>
+<span class="fc bfc" id="L160" title="All 2 branches covered.">                for (int d = 0; d &lt;= k; d++) {</span>
+<span class="fc bfc" id="L161" title="All 2 branches covered.">                    if ((R[d] &amp; matchBit) == 0L) {</span>
+<span class="fc bfc" id="L162" title="All 6 branches covered.">                        if (d &lt; bestError || (d == bestError &amp;&amp; Math.abs((i + 1 - wordStart) - m) &lt; Math.abs((bestMatchEnd - wordStart) - m))) {</span>
+<span class="fc" id="L163">                            bestError = d;</span>
+<span class="fc" id="L164">                            bestMatchEnd = i + 1;</span>
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+<span class="pc bpc" id="L172" title="1 of 2 branches missed.">        if (ignoreStopWords) {</span>
+<span class="nc" id="L173">            return matches.stream()</span>
+<span class="nc bnc" id="L174" title="All 2 branches missed.">                    .filter(match -&gt; !AnalysisUtils.STOP_WORDS.contains(match.text().toLowerCase()))</span>
+<span class="nc" id="L175">                    .toList();</span>
+        }
+
+<span class="fc" id="L178">        return matches;</span>
+    }
+
+    private int findBestStart(String text, int wordStart, int matchEnd, String searchable, int d, boolean caseSensitive) {
+<span class="fc" id="L182">        int m = searchable.length();</span>
+<span class="fc bfc" id="L183" title="All 2 branches covered.">        if (d == 0) {</span>
+<span class="fc" id="L184">            return Math.max(wordStart, matchEnd - m);</span>
+        }
+<span class="fc" id="L186">        int bestStart = Math.max(wordStart, matchEnd - m);</span>
+<span class="fc" id="L187">        int bestDist = Integer.MAX_VALUE;</span>
+
+<span class="fc" id="L189">        int minLen = Math.max(1, m - d);</span>
+<span class="fc" id="L190">        int maxLen = m + d;</span>
+
+<span class="fc bfc" id="L192" title="All 2 branches covered.">        for (int len = minLen; len &lt;= maxLen; len++) {</span>
+<span class="fc" id="L193">            int start = matchEnd - len;</span>
+<span class="fc bfc" id="L194" title="All 2 branches covered.">            if (start &lt; wordStart) {</span>
+<span class="fc" id="L195">                continue;</span>
+            }
+<span class="fc" id="L197">            String candidate = text.substring(start, matchEnd);</span>
+<span class="fc" id="L198">            int dist = computeEditDistance(candidate, searchable, caseSensitive);</span>
+<span class="fc bfc" id="L199" title="All 2 branches covered.">            if (dist &lt; bestDist) {</span>
+<span class="fc" id="L200">                bestDist = dist;</span>
+<span class="fc" id="L201">                bestStart = start;</span>
+<span class="fc bfc" id="L202" title="All 2 branches covered.">            } else if (dist == bestDist) {</span>
+<span class="fc bfc" id="L203" title="All 2 branches covered.">                if (Math.abs(len - m) &lt; Math.abs((matchEnd - bestStart) - m)) {</span>
+<span class="fc" id="L204">                    bestStart = start;</span>
+                }
+            }
+        }
+<span class="fc" id="L208">        return bestStart;</span>
+    }
+
+    private int computeEditDistance(String s1, String s2, boolean caseSensitive) {
+<span class="fc" id="L212">        int len1 = s1.length();</span>
+<span class="fc" id="L213">        int len2 = s2.length();</span>
+<span class="fc" id="L214">        int[] prev = new int[len2 + 1];</span>
+<span class="fc" id="L215">        int[] curr = new int[len2 + 1];</span>
+
+<span class="fc bfc" id="L217" title="All 2 branches covered.">        for (int j = 0; j &lt;= len2; j++) {</span>
+<span class="fc" id="L218">            prev[j] = j;</span>
+        }
+
+<span class="fc bfc" id="L221" title="All 2 branches covered.">        for (int i = 1; i &lt;= len1; i++) {</span>
+<span class="fc" id="L222">            curr[0] = i;</span>
+<span class="fc" id="L223">            char c1 = s1.charAt(i - 1);</span>
+<span class="pc bpc" id="L224" title="1 of 2 branches missed.">            if (!caseSensitive) {</span>
+<span class="fc" id="L225">                c1 = Character.toLowerCase(c1);</span>
+            }
+<span class="fc bfc" id="L227" title="All 2 branches covered.">            for (int j = 1; j &lt;= len2; j++) {</span>
+<span class="fc" id="L228">                char c2 = s2.charAt(j - 1);</span>
+<span class="pc bpc" id="L229" title="1 of 2 branches missed.">                if (!caseSensitive) {</span>
+<span class="fc" id="L230">                    c2 = Character.toLowerCase(c2);</span>
+                }
+<span class="fc" id="L232">                int cost = 1;</span>
+<span class="fc bfc" id="L233" title="All 2 branches covered.">                if (c1 == c2) {</span>
+<span class="fc" id="L234">                    cost = 0;</span>
+                }
+<span class="fc" id="L236">                int insert = curr[j - 1] + 1;</span>
+<span class="fc" id="L237">                int delete = prev[j] + 1;</span>
+<span class="fc" id="L238">                int substitute = prev[j - 1] + cost;</span>
+<span class="fc" id="L239">                curr[j] = Math.min(Math.min(insert, delete), substitute);</span>
+            }
+<span class="fc" id="L241">            System.arraycopy(curr, 0, prev, 0, len2 + 1);</span>
+        }
+<span class="fc" id="L243">        return prev[len2];</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

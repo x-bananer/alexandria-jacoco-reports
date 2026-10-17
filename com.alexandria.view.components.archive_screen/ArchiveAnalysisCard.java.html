@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ArchiveAnalysisCard.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.archive_screen</a> &gt; <span class="el_source">ArchiveAnalysisCard.java</span></div><h1>ArchiveAnalysisCard.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.archive_screen;
+
+import com.alexandria.model.ArchiveComparison;
+import com.alexandria.model.ArchiveTermAnalysis;
+import com.alexandria.model.ArchiveTextAnalysis;
+import com.alexandria.view.components.shared.Card;
+
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+public class ArchiveAnalysisCard extends Card {
+<span class="fc" id="L15">    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern(&quot;d MMM uuuu&quot;);</span>
+
+    public ArchiveAnalysisCard(ArchiveTextAnalysis analysis) {
+<span class="fc" id="L18">        super(titleText(analysis.getProjectTitle(), analysis.getSourceFileName()));</span>
+
+<span class="fc" id="L20">        setTypeText(&quot;Text analysis&quot;);</span>
+<span class="fc" id="L21">        setSourceText(analysis.getSourceFileName());</span>
+<span class="fc" id="L22">        setFooterText(&quot;Saved &quot; + formatDate(analysis.getCreatedAt()));</span>
+<span class="fc" id="L23">        setActionText(&quot;Open&quot;);</span>
+<span class="fc" id="L24">    }</span>
+
+    public ArchiveAnalysisCard(ArchiveTermAnalysis analysis) {
+<span class="fc" id="L27">        super(titleText(analysis.getProjectTitle(), analysis.getSourceFileName()));</span>
+
+<span class="fc" id="L29">        setTypeText(&quot;Term analysis&quot;);</span>
+<span class="fc" id="L30">        setSourceText(analysis.getSourceFileName());</span>
+<span class="fc" id="L31">        setFooterText(&quot;Saved &quot; + formatDate(analysis.getCreatedAt()));</span>
+<span class="fc" id="L32">        setActionText(&quot;Open&quot;);</span>
+
+<span class="fc" id="L34">        Label termLabel = new Label(&quot;Term: &quot; + analysis.getTerm());</span>
+<span class="fc" id="L35">        termLabel.getStyleClass().add(&quot;archive-term-preview&quot;);</span>
+<span class="fc" id="L36">        termLabel.setWrapText(true);</span>
+<span class="fc" id="L37">        setExtraContent(termLabel);</span>
+<span class="fc" id="L38">    }</span>
+
+    public ArchiveAnalysisCard(ArchiveComparison comparison) {
+<span class="nc" id="L41">        super(titleText(comparison.title(), comparison.sources()));</span>
+
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        boolean termComparison = comparison.term() != null;</span>
+<span class="nc bnc" id="L44" title="All 2 branches missed.">        setTypeText(termComparison ? &quot;Term comparison&quot; : &quot;Text comparison&quot;);</span>
+<span class="nc" id="L45">        setSourceText(comparison.sources());</span>
+<span class="nc" id="L46">        setFooterText(&quot;Saved &quot; + formatDate(comparison.createdAt()));</span>
+<span class="nc" id="L47">        setActionText(&quot;Open&quot;);</span>
+
+<span class="nc bnc" id="L49" title="All 2 branches missed.">        if (termComparison) {</span>
+<span class="nc" id="L50">            Label termLabel = new Label(&quot;Term: &quot; + comparison.term());</span>
+<span class="nc" id="L51">            termLabel.getStyleClass().add(&quot;archive-term-preview&quot;);</span>
+<span class="nc" id="L52">            termLabel.setWrapText(true);</span>
+<span class="nc" id="L53">            setExtraContent(termLabel);</span>
+        }
+<span class="nc" id="L55">    }</span>
+
+    public Button getOpenButton() {
+<span class="fc" id="L58">        return getActionButton();</span>
+    }
+
+    private static String titleText(String projectTitle, String sourceFileName) {
+<span class="pc bpc" id="L62" title="1 of 4 branches missed.">        if (projectTitle == null || projectTitle.isBlank()) {</span>
+<span class="fc" id="L63">            return sourceFileName;</span>
+        }
+<span class="fc" id="L65">        return projectTitle;</span>
+    }
+
+    private static String formatDate(LocalDateTime date) {
+<span class="fc bfc" id="L69" title="All 2 branches covered.">        return date == null ? &quot;unknown date&quot; : DATE_FORMAT.format(date);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ComparisonDocumentView.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.compare_screen</a> &gt; <span class="el_source">ComparisonDocumentView.java</span></div><h1>ComparisonDocumentView.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.compare_screen;
+
+import com.alexandria.model.FileType;
+import com.alexandria.service.analysis.SearchMatch;
+import com.alexandria.view.components.shared.document.DocumentView;
+
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Label;
+import javafx.scene.control.OverrunStyle;
+import javafx.scene.control.Tooltip;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+
+import java.nio.file.Path;
+import java.util.List;
+
+public class ComparisonDocumentView extends VBox {
+
+    private static final String NO_DOCUMENT = &quot;No document loaded&quot;;
+
+<span class="fc" id="L25">    private final DocumentView documentA = new DocumentView();</span>
+<span class="fc" id="L26">    private final DocumentView documentB = new DocumentView();</span>
+
+<span class="fc" id="L28">    private final Label documentAName = new Label(NO_DOCUMENT);</span>
+<span class="fc" id="L29">    private final Label documentBName = new Label(NO_DOCUMENT);</span>
+
+<span class="fc" id="L31">    public ComparisonDocumentView() {</span>
+
+<span class="fc" id="L33">        getStyleClass().add(&quot;comparison-document-view&quot;);</span>
+
+<span class="fc" id="L35">        setSpacing(0);</span>
+<span class="fc" id="L36">        setMinSize(0, 0);</span>
+<span class="fc" id="L37">        setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);</span>
+
+        // Comparison is read-only: no text selection and no citation/annotation popup.
+<span class="fc" id="L40">        documentA.setSelectionEnabled(false);</span>
+<span class="fc" id="L41">        documentB.setSelectionEnabled(false);</span>
+
+<span class="fc" id="L43">        StackPane rowA = buildDocumentRow(</span>
+                &quot;Doc A:&quot;, documentAName, documentA, &quot;comparison-document-a&quot;);
+
+<span class="fc" id="L46">        StackPane rowB = buildDocumentRow(</span>
+                &quot;Doc B:&quot;, documentBName, documentB, &quot;comparison-document-b&quot;);
+
+<span class="fc" id="L49">        rowA.setPrefHeight(0);</span>
+<span class="fc" id="L50">        rowB.setPrefHeight(0);</span>
+
+<span class="fc" id="L52">        VBox.setVgrow(rowA, Priority.ALWAYS);</span>
+<span class="fc" id="L53">        VBox.setVgrow(rowB, Priority.ALWAYS);</span>
+
+<span class="fc" id="L55">        getChildren().addAll(rowA, rowB);</span>
+<span class="fc" id="L56">    }</span>
+
+<span class="fc" id="L58">    private static final Insets NAME_TAG_MARGIN = new Insets(0, 14, 16, 0);</span>
+
+    private StackPane buildDocumentRow(
+            String documentLabel,
+            Label fileNameLabel,
+            DocumentView documentView,
+            String styleClass) {
+
+<span class="fc" id="L66">        Label typeLabel = new Label(documentLabel);</span>
+<span class="fc" id="L67">        typeLabel.getStyleClass().addAll(&quot;heading-sm&quot;, &quot;comparison-document-label&quot;);</span>
+<span class="fc" id="L68">        typeLabel.setMinWidth(Label.USE_PREF_SIZE);</span>
+
+<span class="fc" id="L70">        fileNameLabel.getStyleClass().addAll(&quot;text-muted&quot;, &quot;comparison-document-name&quot;);</span>
+<span class="fc" id="L71">        fileNameLabel.setTextOverrun(OverrunStyle.CENTER_ELLIPSIS);</span>
+<span class="fc" id="L72">        fileNameLabel.setMinWidth(0);</span>
+<span class="fc" id="L73">        HBox.setHgrow(fileNameLabel, Priority.ALWAYS);</span>
+
+<span class="fc" id="L75">        HBox nameTag = new HBox(6, typeLabel, fileNameLabel);</span>
+<span class="fc" id="L76">        nameTag.setAlignment(Pos.CENTER_LEFT);</span>
+<span class="fc" id="L77">        nameTag.getStyleClass().add(&quot;comparison-document-tag&quot;);</span>
+<span class="fc" id="L78">        nameTag.setPickOnBounds(false);</span>
+<span class="fc" id="L79">        nameTag.setMaxHeight(Region.USE_PREF_SIZE);</span>
+
+<span class="fc" id="L81">        StackPane row = new StackPane(documentView, nameTag);</span>
+<span class="fc" id="L82">        row.getStyleClass().addAll(&quot;comparison-document-row&quot;, styleClass);</span>
+<span class="fc" id="L83">        row.setMinSize(0, 0);</span>
+<span class="fc" id="L84">        row.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);</span>
+
+<span class="fc" id="L86">        nameTag.maxWidthProperty().bind(row.widthProperty().multiply(0.4));</span>
+
+<span class="fc" id="L88">        StackPane.setAlignment(nameTag, Pos.BOTTOM_RIGHT);</span>
+<span class="fc" id="L89">        StackPane.setMargin(nameTag, NAME_TAG_MARGIN);</span>
+
+<span class="fc" id="L91">        return row;</span>
+    }
+
+    public void loadDocumentA(String content, FileType fileType, Path sourcePath) {
+<span class="nc" id="L95">        documentA.loadDocument(content, fileType, sourcePath);</span>
+<span class="nc" id="L96">        updateName(documentAName, sourcePath);</span>
+<span class="nc" id="L97">    }</span>
+
+    public void loadDocumentB(String content, FileType fileType, Path sourcePath) {
+<span class="nc" id="L100">        documentB.loadDocument(content, fileType, sourcePath);</span>
+<span class="nc" id="L101">        updateName(documentBName, sourcePath);</span>
+<span class="nc" id="L102">    }</span>
+
+    public void loadDocuments(
+            String contentA, FileType fileTypeA, Path sourcePathA,
+            String contentB, FileType fileTypeB, Path sourcePathB) {
+
+<span class="nc" id="L108">        loadDocumentA(contentA, fileTypeA, sourcePathA);</span>
+<span class="nc" id="L109">        loadDocumentB(contentB, fileTypeB, sourcePathB);</span>
+<span class="nc" id="L110">    }</span>
+
+    public void setDocumentNames(String nameA, String nameB) {
+<span class="nc bnc" id="L113" title="All 4 branches missed.">        if (nameA != null &amp;&amp; !nameA.isBlank()) {</span>
+<span class="nc" id="L114">            documentAName.setText(nameA);</span>
+        }
+<span class="nc bnc" id="L116" title="All 4 branches missed.">        if (nameB != null &amp;&amp; !nameB.isBlank()) {</span>
+<span class="nc" id="L117">            documentBName.setText(nameB);</span>
+        }
+<span class="nc" id="L119">    }</span>
+
+    private void updateName(Label label, Path path) {
+<span class="nc" id="L122">        label.setText(fileName(path));</span>
+<span class="nc bnc" id="L123" title="All 2 branches missed.">        label.setTooltip(path == null ? null : new Tooltip(path.toString()));</span>
+<span class="nc" id="L124">    }</span>
+
+    private String fileName(Path path) {
+<span class="nc bnc" id="L127" title="All 2 branches missed.">        if (path == null) {</span>
+<span class="nc" id="L128">            return NO_DOCUMENT;</span>
+        }
+<span class="nc" id="L130">        Path name = path.getFileName();</span>
+<span class="nc bnc" id="L131" title="All 2 branches missed.">        return name == null ? path.toString() : name.toString();</span>
+    }
+
+    public DocumentView getDocumentA() {
+<span class="nc" id="L135">        return documentA;</span>
+    }
+
+    public DocumentView getDocumentB() {
+<span class="nc" id="L139">        return documentB;</span>
+    }
+
+    public void goToPageA(Integer page, Integer paragraph) {
+<span class="nc" id="L143">        documentA.goToPage(page, paragraph);</span>
+<span class="nc" id="L144">    }</span>
+
+    public void goToPageB(Integer page, Integer paragraph) {
+<span class="nc" id="L147">        documentB.goToPage(page, paragraph);</span>
+<span class="nc" id="L148">    }</span>
+
+    public void showSearchMatchesA(List&lt;SearchMatch&gt; matches, int activeIndex) {
+<span class="nc" id="L151">        documentA.showSearchMatches(matches, activeIndex);</span>
+<span class="nc" id="L152">    }</span>
+
+    public void showSearchMatchesB(List&lt;SearchMatch&gt; matches, int activeIndex) {
+<span class="nc" id="L155">        documentB.showSearchMatches(matches, activeIndex);</span>
+<span class="nc" id="L156">    }</span>
+
+    public void showSearchMatchA(SearchMatch match) {
+<span class="nc" id="L159">        documentA.showSearchMatch(match);</span>
+<span class="nc" id="L160">    }</span>
+
+    public void showSearchMatchB(SearchMatch match) {
+<span class="nc" id="L163">        documentB.showSearchMatch(match);</span>
+<span class="nc" id="L164">    }</span>
+
+    public void clearSearchHighlightsA() {
+<span class="nc" id="L167">        documentA.clearSearchHighlights();</span>
+<span class="nc" id="L168">    }</span>
+
+    public void clearSearchHighlightsB() {
+<span class="nc" id="L171">        documentB.clearSearchHighlights();</span>
+<span class="nc" id="L172">    }</span>
+
+    public void dispose() {
+<span class="nc" id="L175">        documentA.dispose();</span>
+<span class="nc" id="L176">        documentB.dispose();</span>
+<span class="nc" id="L177">        updateName(documentAName, null);</span>
+<span class="nc" id="L178">        updateName(documentBName, null);</span>
+<span class="nc" id="L179">    }</span>
+
+    public void clear() {
+<span class="nc" id="L182">        dispose();</span>
+<span class="nc" id="L183">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

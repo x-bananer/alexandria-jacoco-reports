@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TermComparisonService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.service</a> &gt; <span class="el_source">TermComparisonService.java</span></div><h1>TermComparisonService.java</h1><pre class="source lang-java linenums">package com.alexandria.service;
+
+import com.alexandria.service.analysis.TermComparisonResult;
+import com.alexandria.service.analysis.TermComparisonResult.TermTextOccurrence;
+import com.alexandria.service.analysis.TermComparisonServiceINT;
+
+import java.util.*;
+import java.util.regex.*;
+
+import static com.alexandria.service.AnalysisUtils.*;
+
+
+
+<span class="fc" id="L14">public class TermComparisonService implements TermComparisonServiceINT {</span>
+
+    public TermComparisonResult compareTerm(Map&lt;Integer, String&gt; textsById, Map&lt;Integer, String&gt; titlesById, String term) {
+<span class="fc" id="L17">        return compareTerm(textsById, titlesById, term, false);</span>
+    }
+
+    public TermComparisonResult compareTerm(Map&lt;Integer, String&gt; textsById, Map&lt;Integer, String&gt; titlesById, String term, boolean ignoreStopWords) {
+<span class="pc bpc" id="L21" title="2 of 4 branches missed.">        if (term == null || term.isBlank()) {</span>
+<span class="nc" id="L22">            return null;</span>
+        }
+
+<span class="pc bpc" id="L25" title="2 of 4 branches missed.">        if (textsById == null || textsById.isEmpty()) {</span>
+<span class="nc" id="L26">            return new TermComparisonResult(term, Collections.emptyList());</span>
+        }
+
+<span class="pc bpc" id="L29" title="1 of 4 branches missed.">        if (ignoreStopWords &amp;&amp; STOP_WORDS.contains(term.strip().toLowerCase(Locale.ROOT))) {</span>
+<span class="fc" id="L30">            return new TermComparisonResult(term, Collections.emptyList());</span>
+        }
+
+<span class="fc" id="L33">        var pattern = Pattern.compile(&quot;\\b&quot; + Pattern.quote(term.strip()) + &quot;\\b&quot;, Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);</span>
+
+<span class="fc" id="L35">        var occurrences = textsById.entrySet().stream().map(entry -&gt; {</span>
+<span class="fc" id="L36">            int textId = entry.getKey();</span>
+<span class="fc" id="L37">            String content = entry.getValue();</span>
+<span class="fc" id="L38">            int count = countMatches(content, pattern);</span>
+<span class="fc" id="L39">            int total = countMatches(content, WORD_PATTERN);</span>
+<span class="fc" id="L40">            String title = &quot;Text &quot; + textId;</span>
+<span class="pc bpc" id="L41" title="1 of 4 branches missed.">            if (titlesById != null &amp;&amp; titlesById.containsKey(textId)) {</span>
+<span class="fc" id="L42">                title = titlesById.get(textId);</span>
+            }
+
+<span class="fc" id="L45">            return new TermTextOccurrence(textId, title, count, calculateRelativeFrequency(count, total));</span>
+<span class="fc" id="L46">        }).toList();</span>
+
+<span class="fc" id="L48">        return new TermComparisonResult(term, occurrences);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

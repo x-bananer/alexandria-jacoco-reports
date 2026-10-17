@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ArchiveTermAnalysis.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.model</a> &gt; <span class="el_source">ArchiveTermAnalysis.java</span></div><h1>ArchiveTermAnalysis.java</h1><pre class="source lang-java linenums">package com.alexandria.model;
+
+import com.alexandria.service.analysis.TermAnalysisResult;
+
+import java.time.LocalDateTime;
+
+public class ArchiveTermAnalysis {
+	private Integer id;
+	private Integer textId;
+	private String projectTitle;
+	private String sourceFileName;
+	private String term;
+	private LocalDateTime createdAt;
+	private TermAnalysisResult termAnalysisResult;
+
+<span class="nc" id="L16">	public ArchiveTermAnalysis() {</span>
+<span class="nc" id="L17">	}</span>
+
+	public ArchiveTermAnalysis(Integer id, Integer textId, String projectTitle,
+<span class="fc" id="L20">			String sourceFileName, String term, LocalDateTime createdAt, TermAnalysisResult termAnalysisResult) {</span>
+<span class="fc" id="L21">		this.id = id;</span>
+<span class="fc" id="L22">		this.textId = textId;</span>
+<span class="fc" id="L23">		this.projectTitle = projectTitle;</span>
+<span class="fc" id="L24">		this.sourceFileName = sourceFileName;</span>
+<span class="fc" id="L25">		this.term = term;</span>
+<span class="fc" id="L26">		this.createdAt = createdAt;</span>
+<span class="fc" id="L27">		this.termAnalysisResult = termAnalysisResult;</span>
+<span class="fc" id="L28">	}</span>
+
+	public Integer getId() {
+<span class="fc" id="L31">		return id;</span>
+	}
+
+	public Integer getTextId() {
+<span class="fc" id="L35">		return textId;</span>
+	}
+
+	public String getProjectTitle() {
+<span class="fc" id="L39">		return projectTitle;</span>
+	}
+
+	public String getSourceFileName() {
+<span class="fc" id="L43">		return sourceFileName;</span>
+	}
+
+	public String getTerm() {
+<span class="fc" id="L47">		return term;</span>
+	}
+
+	public LocalDateTime getCreatedAt() {
+<span class="fc" id="L51">		return createdAt;</span>
+	}
+
+	public TermAnalysisResult getTermAnalysisResult() {
+<span class="fc" id="L55">		return termAnalysisResult;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

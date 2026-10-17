@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FrequencyBar.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.shared</a> &gt; <span class="el_source">FrequencyBar.java</span></div><h1>FrequencyBar.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.shared;
+
+import javafx.geometry.Pos;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+
+/** Shared visual meter for word-frequency and tracked-word rows. */
+public class FrequencyBar extends StackPane {
+<span class="nc" id="L9">    private final Region bar = new Region();</span>
+
+<span class="nc" id="L11">    public FrequencyBar() {</span>
+<span class="nc" id="L12">        Region track = new Region();</span>
+<span class="nc" id="L13">        track.getStyleClass().add(&quot;track&quot;);</span>
+
+<span class="nc" id="L15">        bar.getStyleClass().add(&quot;bar&quot;);</span>
+<span class="nc" id="L16">        getStyleClass().add(&quot;frequency-bar&quot;);</span>
+<span class="nc" id="L17">        setMinWidth(0);</span>
+<span class="nc" id="L18">        setPrefHeight(7);</span>
+<span class="nc" id="L19">        setMaxHeight(7);</span>
+
+<span class="nc" id="L21">        StackPane.setAlignment(track, Pos.CENTER_LEFT);</span>
+<span class="nc" id="L22">        StackPane.setAlignment(bar, Pos.CENTER_LEFT);</span>
+<span class="nc" id="L23">        bar.setMaxWidth(Region.USE_PREF_SIZE);</span>
+<span class="nc" id="L24">        getChildren().addAll(track, bar);</span>
+<span class="nc" id="L25">    }</span>
+
+    public void setRatio(double ratio) {
+<span class="nc" id="L28">        double safeRatio = Math.max(0, Math.min(1, ratio));</span>
+<span class="nc" id="L29">        bar.prefWidthProperty().unbind();</span>
+<span class="nc" id="L30">        bar.prefWidthProperty().bind(widthProperty().multiply(safeRatio));</span>
+<span class="nc" id="L31">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

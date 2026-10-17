@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TermAnalysisService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.service</a> &gt; <span class="el_source">TermAnalysisService.java</span></div><h1>TermAnalysisService.java</h1><pre class="source lang-java linenums">package com.alexandria.service;
+
+import com.alexandria.service.analysis.*;
+
+import java.util.*;
+import java.util.regex.*;
+
+import static com.alexandria.service.AnalysisUtils.*;
+
+<span class="fc" id="L10">public class TermAnalysisService implements TermAnalysisServiceINT {</span>
+
+    @Override
+    public TermAnalysisResult analyzeTerm(String content, String term) {
+<span class="pc bpc" id="L14" title="4 of 8 branches missed.">        if (content == null || content.isBlank() || term == null || term.isBlank()) {</span>
+<span class="nc" id="L15">            String safeTerm = &quot;&quot;;</span>
+<span class="nc bnc" id="L16" title="All 2 branches missed.">            if (term != null) {</span>
+<span class="nc" id="L17">                safeTerm = term;</span>
+            }
+<span class="nc" id="L19">            return new TermAnalysisResult(safeTerm, 0, 0.0, 0, 0, Collections.emptyList());</span>
+        }
+
+<span class="fc" id="L22">        var words = extractWords(content);</span>
+<span class="fc" id="L23">        var target = term.strip().toLowerCase(Locale.ROOT);</span>
+<span class="fc" id="L24">        var termPattern = Pattern.compile(&quot;\\b&quot; + Pattern.quote(target) + &quot;\\b&quot;, Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);</span>
+
+<span class="fc" id="L26">        var occurrences = countMatches(content, termPattern);</span>
+<span class="fc" id="L27">        var relativeFreq = calculateRelativeFrequency(occurrences, words.size());</span>
+<span class="fc" id="L28">        var neighbors = findNeighboringWords(words, extractWords(target), 5);</span>
+
+<span class="fc" id="L30">        return new TermAnalysisResult(</span>
+            term, occurrences, relativeFreq,
+<span class="fc" id="L32">            countContaining(content, SENTENCE_PATTERN, termPattern),</span>
+<span class="fc" id="L33">            countContainingParagraphs(content, termPattern),</span>
+<span class="fc" id="L34">            getTopWords(neighbors, words.size(), 5)</span>
+        );
+    }
+
+    private Map&lt;String, Long&gt; findNeighboringWords(List&lt;String&gt; words, List&lt;String&gt; targetWords, int radius) {
+<span class="fc" id="L39">        var neighbors = new HashMap&lt;String, Long&gt;();</span>
+<span class="fc" id="L40">        int tLen = targetWords.size();</span>
+<span class="pc bpc" id="L41" title="2 of 4 branches missed.">        if (tLen == 0 || words.size() &lt; tLen) return neighbors;</span>
+
+<span class="fc bfc" id="L43" title="All 2 branches covered.">        for (int i = 0; i &lt;= words.size() - tLen; i++) {</span>
+<span class="fc" id="L44">            boolean match = true;</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">            for (int k = 0; k &lt; tLen; k++) {</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">                if (!words.get(i + k).equals(targetWords.get(k))) {</span>
+<span class="fc" id="L47">                    match = false;</span>
+<span class="fc" id="L48">                    break;</span>
+                }
+            }
+<span class="fc bfc" id="L51" title="All 2 branches covered.">            if (match) {</span>
+<span class="fc" id="L52">                int start = Math.max(0, i - radius);</span>
+<span class="fc" id="L53">                int end = Math.min(words.size() - 1, i + tLen - 1 + radius);</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">                for (int j = start; j &lt;= end; j++) {</span>
+<span class="fc bfc" id="L55" title="All 6 branches covered.">                    if ((j &lt; i || j &gt;= i + tLen) &amp;&amp; !STOP_WORDS.contains(words.get(j))) {</span>
+<span class="fc" id="L56">                        neighbors.merge(words.get(j), 1L, Long::sum);</span>
+                    }
+                }
+            }
+        }
+<span class="fc" id="L61">        return neighbors;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

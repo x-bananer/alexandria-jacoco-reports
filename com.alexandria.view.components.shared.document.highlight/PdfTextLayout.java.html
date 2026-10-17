@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PdfTextLayout.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.view.components.shared.document.highlight</a> &gt; <span class="el_source">PdfTextLayout.java</span></div><h1>PdfTextLayout.java</h1><pre class="source lang-java linenums">package com.alexandria.view.components.shared.document.highlight;
+
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
+import org.apache.pdfbox.text.TextPosition;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+
+public final class PdfTextLayout {
+    private static final double LINE_HEIGHT_PADDING_RATIO = 1.20;
+
+<span class="fc" id="L16">    private record Glyph(</span>
+            double x,
+            double y,
+            double width,
+            double height,
+            double spaceWidth,
+            String unicode,
+            int line) {
+    }
+
+    private final List&lt;Glyph&gt; glyphs;
+    private final double[] lineTop;
+    private final double[] lineBottom;
+
+<span class="fc" id="L30">    private PdfTextLayout(List&lt;Glyph&gt; glyphs, double[] lineTop, double[] lineBottom) {</span>
+<span class="fc" id="L31">        this.glyphs = glyphs;</span>
+<span class="fc" id="L32">        this.lineTop = lineTop;</span>
+<span class="fc" id="L33">        this.lineBottom = lineBottom;</span>
+<span class="fc" id="L34">    }</span>
+
+    public static PdfTextLayout forPage(
+            PDDocument document,
+            int zeroBasedPage,
+            float renderDpi) throws IOException {
+
+<span class="fc" id="L41">        List&lt;TextPosition&gt; positions = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L43">        PDFTextStripper stripper = new PDFTextStripper() {</span>
+            @Override
+            protected void writeString(String string, List&lt;TextPosition&gt; textPositions) {
+<span class="fc" id="L46">                positions.addAll(textPositions);</span>
+<span class="fc" id="L47">            }</span>
+        };
+
+<span class="fc" id="L50">        stripper.setStartPage(zeroBasedPage + 1);</span>
+<span class="fc" id="L51">        stripper.setEndPage(zeroBasedPage + 1);</span>
+<span class="fc" id="L52">        stripper.getText(document);</span>
+
+<span class="fc" id="L54">        float scale = renderDpi / 72f;</span>
+<span class="fc" id="L55">        List&lt;TextPosition&gt; sorted = new ArrayList&lt;&gt;(positions);</span>
+<span class="fc" id="L56">        sorted.sort(Comparator.comparingDouble(TextPosition::getYDirAdj)</span>
+<span class="fc" id="L57">                .thenComparingDouble(TextPosition::getXDirAdj));</span>
+
+<span class="fc" id="L59">        List&lt;Glyph&gt; result = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L61">        int line = -1;</span>
+<span class="fc" id="L62">        Float previousLineY = null;</span>
+
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        for (TextPosition p : sorted) {</span>
+<span class="fc" id="L65">            float y = p.getYDirAdj();</span>
+<span class="fc" id="L66">            float tolerance = p.getHeightDir() * 0.5f;</span>
+
+<span class="pc bpc" id="L68" title="1 of 4 branches missed.">            if (previousLineY == null || Math.abs(y - previousLineY) &gt; tolerance) {</span>
+<span class="fc" id="L69">                line++;</span>
+<span class="fc" id="L70">                previousLineY = y;</span>
+            }
+
+<span class="fc" id="L73">            result.add(new Glyph(</span>
+<span class="fc" id="L74">                    p.getXDirAdj() * scale,</span>
+<span class="fc" id="L75">                    (p.getYDirAdj() - p.getHeightDir()) * scale,</span>
+<span class="fc" id="L76">                    p.getWidthDirAdj() * scale,</span>
+<span class="fc" id="L77">                    p.getHeightDir() * scale,</span>
+<span class="fc" id="L78">                    p.getWidthOfSpace() * scale,</span>
+<span class="fc" id="L79">                    p.getUnicode(),</span>
+                    line));
+<span class="fc" id="L81">        }</span>
+
+<span class="fc" id="L83">        result.sort(Comparator.comparingInt(Glyph::line)</span>
+<span class="fc" id="L84">                .thenComparingDouble(Glyph::x));</span>
+
+<span class="fc bfc" id="L86" title="All 2 branches covered.">        int lineCount = result.isEmpty()</span>
+<span class="fc" id="L87">                ? 0</span>
+<span class="fc" id="L88">                : result.get(result.size() - 1).line() + 1;</span>
+
+<span class="fc" id="L90">        double[] lineTop = new double[lineCount];</span>
+<span class="fc" id="L91">        double[] lineBottom = new double[lineCount];</span>
+
+<span class="fc" id="L93">        int from = 0;</span>
+<span class="fc bfc" id="L94" title="All 2 branches covered.">        while (from &lt; result.size()) {</span>
+<span class="fc" id="L95">            int lineIndex = result.get(from).line();</span>
+<span class="fc" id="L96">            int to = from;</span>
+<span class="pc bpc" id="L97" title="1 of 4 branches missed.">            while (to &lt; result.size() &amp;&amp; result.get(to).line() == lineIndex) {</span>
+<span class="fc" id="L98">                to++;</span>
+            }
+
+<span class="fc" id="L101">            double[] heights = new double[to - from];</span>
+<span class="fc" id="L102">            double[] baselines = new double[to - from];</span>
+<span class="fc bfc" id="L103" title="All 2 branches covered.">            for (int i = from; i &lt; to; i++) {</span>
+<span class="fc" id="L104">                heights[i - from] = result.get(i).height();</span>
+<span class="fc" id="L105">                baselines[i - from] = result.get(i).y() + result.get(i).height();</span>
+            }
+<span class="fc" id="L107">            Arrays.sort(heights);</span>
+<span class="fc" id="L108">            Arrays.sort(baselines);</span>
+
+<span class="fc" id="L110">            double medianHeight = heights[heights.length / 2];</span>
+<span class="fc" id="L111">            double medianBaseline = baselines[baselines.length / 2];</span>
+
+<span class="fc" id="L113">            lineBottom[lineIndex] = medianBaseline;</span>
+<span class="fc" id="L114">            lineTop[lineIndex] = medianBaseline - medianHeight;</span>
+
+<span class="fc" id="L116">            from = to;</span>
+<span class="fc" id="L117">        }</span>
+
+<span class="fc" id="L119">        return new PdfTextLayout(result, lineTop, lineBottom);</span>
+    }
+
+    public boolean isEmpty() {
+<span class="fc" id="L123">        return glyphs.isEmpty();</span>
+    }
+
+    public int nearestGlyphIndex(double x, double y) {
+<span class="fc bfc" id="L127" title="All 2 branches covered.">        if (glyphs.isEmpty()) {</span>
+<span class="fc" id="L128">            return -1;</span>
+        }
+
+<span class="fc" id="L131">        int best = 0;</span>
+<span class="fc" id="L132">        double bestDistance = Double.MAX_VALUE;</span>
+
+<span class="fc bfc" id="L134" title="All 2 branches covered.">        for (int i = 0; i &lt; glyphs.size(); i++) {</span>
+<span class="fc" id="L135">            Glyph g = glyphs.get(i);</span>
+
+<span class="fc" id="L137">            double centerX = g.x() + g.width() / 2.0;</span>
+<span class="fc" id="L138">            double centerY = g.y() + g.height() / 2.0;</span>
+
+<span class="fc" id="L140">            double dx = centerX - x;</span>
+<span class="fc" id="L141">            double dy = centerY - y;</span>
+
+<span class="fc" id="L143">            double distance = dx * dx + dy * dy;</span>
+
+<span class="fc bfc" id="L145" title="All 2 branches covered.">            if (distance &lt; bestDistance) {</span>
+<span class="fc" id="L146">                bestDistance = distance;</span>
+<span class="fc" id="L147">                best = i;</span>
+            }
+        }
+
+<span class="fc" id="L151">        return best;</span>
+    }
+
+    public List&lt;double[]&gt; selectionRectangles(int indexA, int indexB) {
+<span class="fc" id="L155">        List&lt;double[]&gt; rects = new ArrayList&lt;&gt;();</span>
+
+<span class="pc bpc" id="L157" title="1 of 2 branches missed.">        if (glyphs.isEmpty()) {</span>
+<span class="nc" id="L158">            return rects;</span>
+        }
+
+<span class="fc" id="L161">        int start = Math.max(0, Math.min(indexA, indexB));</span>
+<span class="fc" id="L162">        int end = Math.min(glyphs.size() - 1, Math.max(indexA, indexB));</span>
+
+<span class="fc" id="L164">        int currentLine = -1;</span>
+<span class="fc" id="L165">        double minX = 0;</span>
+<span class="fc" id="L166">        double maxX = 0;</span>
+<span class="fc" id="L167">        boolean open = false;</span>
+
+<span class="fc bfc" id="L169" title="All 2 branches covered.">        for (int i = start; i &lt;= end; i++) {</span>
+<span class="fc" id="L170">            Glyph g = glyphs.get(i);</span>
+
+<span class="fc bfc" id="L172" title="All 2 branches covered.">            if (g.line() != currentLine) {</span>
+<span class="pc bpc" id="L173" title="1 of 2 branches missed.">                if (open) {</span>
+<span class="nc" id="L174">                    rects.add(lineRect(currentLine, minX, maxX));</span>
+                }
+
+<span class="fc" id="L177">                currentLine = g.line();</span>
+<span class="fc" id="L178">                minX = g.x();</span>
+<span class="fc" id="L179">                maxX = g.x() + g.width();</span>
+<span class="fc" id="L180">                open = true;</span>
+
+            } else {
+<span class="fc" id="L183">                minX = Math.min(minX, g.x());</span>
+<span class="fc" id="L184">                maxX = Math.max(maxX, g.x() + g.width());</span>
+            }
+        }
+
+<span class="pc bpc" id="L188" title="1 of 2 branches missed.">        if (open) {</span>
+<span class="fc" id="L189">            rects.add(lineRect(currentLine, minX, maxX));</span>
+        }
+
+<span class="fc" id="L192">        return rects;</span>
+    }
+
+    private double[] lineRect(int line, double minX, double maxX) {
+<span class="fc" id="L196">        double top = lineTop[line];</span>
+<span class="fc" id="L197">        double bottom = lineBottom[line];</span>
+
+<span class="fc" id="L199">        double height = bottom - top;</span>
+<span class="fc" id="L200">        double padding = height * LINE_HEIGHT_PADDING_RATIO / 2.0;</span>
+
+<span class="fc" id="L202">        return new double[] {</span>
+                minX,
+                top - padding,
+                maxX - minX,
+                height + padding * 2
+        };
+    }
+
+    public String textFor(int indexA, int indexB) {
+<span class="pc bpc" id="L211" title="1 of 2 branches missed.">        if (glyphs.isEmpty()) {</span>
+<span class="nc" id="L212">            return &quot;&quot;;</span>
+        }
+
+<span class="fc" id="L215">        int start = Math.max(0, Math.min(indexA, indexB));</span>
+<span class="fc" id="L216">        int end = Math.min(glyphs.size() - 1, Math.max(indexA, indexB));</span>
+
+<span class="fc" id="L218">        StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L219">        Glyph previous = null;</span>
+
+<span class="fc bfc" id="L221" title="All 2 branches covered.">        for (int i = start; i &lt;= end; i++) {</span>
+<span class="fc" id="L222">            Glyph g = glyphs.get(i);</span>
+
+<span class="fc bfc" id="L224" title="All 2 branches covered.">            if (previous != null) {</span>
+<span class="pc bpc" id="L225" title="1 of 2 branches missed.">                if (g.line() != previous.line()) {</span>
+<span class="nc" id="L226">                    sb.append('\n');</span>
+                } else {
+<span class="fc" id="L228">                    double gap = g.x() - (previous.x() + previous.width());</span>
+
+<span class="pc bpc" id="L230" title="1 of 2 branches missed.">                    double threshold = previous.spaceWidth() &gt; 0</span>
+<span class="fc" id="L231">                            ? previous.spaceWidth() * 0.5</span>
+<span class="pc" id="L232">                            : previous.height() * 0.3;</span>
+
+<span class="pc bpc" id="L234" title="1 of 2 branches missed.">                    if (gap &gt; threshold) {</span>
+<span class="nc" id="L235">                        sb.append(' ');</span>
+                    }
+                }
+            }
+
+<span class="fc" id="L240">            sb.append(g.unicode());</span>
+<span class="fc" id="L241">            previous = g;</span>
+        }
+
+<span class="fc" id="L244">        return sb.toString().strip();</span>
+    }
+
+    public int[] findGlyphRange(String passage) {
+<span class="nc bnc" id="L248" title="All 4 branches missed.">        if (glyphs.isEmpty() || passage == null)</span>
+<span class="nc" id="L249">            return null;</span>
+
+<span class="nc" id="L251">        StringBuilder flat = new StringBuilder();</span>
+<span class="nc" id="L252">        List&lt;Integer&gt; map = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L254" title="All 2 branches missed.">        for (int i = 0; i &lt; glyphs.size(); i++) {</span>
+<span class="nc bnc" id="L255" title="All 2 branches missed.">            for (char c : glyphs.get(i).unicode().toCharArray()) {</span>
+<span class="nc bnc" id="L256" title="All 2 branches missed.">                if (!Character.isWhitespace(c)) {</span>
+<span class="nc" id="L257">                    flat.append(Character.toLowerCase(c));</span>
+<span class="nc" id="L258">                    map.add(i);</span>
+                }
+            }
+        }
+
+<span class="nc" id="L263">        StringBuilder needleBuilder = new StringBuilder();</span>
+<span class="nc bnc" id="L264" title="All 2 branches missed.">        for (char c : passage.toCharArray()) {</span>
+<span class="nc bnc" id="L265" title="All 2 branches missed.">            if (!Character.isWhitespace(c))</span>
+<span class="nc" id="L266">                needleBuilder.append(Character.toLowerCase(c));</span>
+        }
+<span class="nc" id="L268">        String needle = needleBuilder.toString();</span>
+<span class="nc bnc" id="L269" title="All 2 branches missed.">        if (needle.isEmpty())</span>
+<span class="nc" id="L270">            return null;</span>
+
+<span class="nc" id="L272">        int start = flat.indexOf(needle);</span>
+        int end;
+
+<span class="nc bnc" id="L275" title="All 2 branches missed.">        if (start &gt;= 0) {</span>
+<span class="nc" id="L276">            end = start + needle.length() - 1;</span>
+        } else {
+<span class="nc" id="L278">            int probe = Math.min(40, needle.length());</span>
+<span class="nc" id="L279">            start = flat.indexOf(needle.substring(0, probe));</span>
+<span class="nc bnc" id="L280" title="All 2 branches missed.">            if (start &lt; 0)</span>
+<span class="nc" id="L281">                return null;</span>
+
+<span class="nc" id="L283">            int tail = flat.indexOf(needle.substring(needle.length() - probe), start);</span>
+<span class="nc bnc" id="L284" title="All 2 branches missed.">            end = tail &gt;= 0 ? tail + probe - 1 : start + probe - 1;</span>
+        }
+
+<span class="nc" id="L287">        return new int[] { map.get(start), map.get(end) };</span>
+    }
+
+    public List&lt;int[]&gt; findAllGlyphRanges(String term) {
+<span class="nc" id="L291">        List&lt;int[]&gt; result = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L292" title="All 4 branches missed.">        if (glyphs.isEmpty() || term == null)</span>
+<span class="nc" id="L293">            return result;</span>
+
+<span class="nc" id="L295">        StringBuilder flat = new StringBuilder();</span>
+<span class="nc" id="L296">        List&lt;Integer&gt; map = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L298" title="All 2 branches missed.">        for (int i = 0; i &lt; glyphs.size(); i++) {</span>
+<span class="nc bnc" id="L299" title="All 2 branches missed.">            for (char c : glyphs.get(i).unicode().toCharArray()) {</span>
+<span class="nc bnc" id="L300" title="All 2 branches missed.">                if (!Character.isWhitespace(c)) {</span>
+<span class="nc" id="L301">                    flat.append(Character.toLowerCase(c));</span>
+<span class="nc" id="L302">                    map.add(i);</span>
+                }
+            }
+        }
+
+<span class="nc" id="L307">        StringBuilder needleBuilder = new StringBuilder();</span>
+<span class="nc bnc" id="L308" title="All 2 branches missed.">        for (char c : term.toCharArray()) {</span>
+<span class="nc bnc" id="L309" title="All 2 branches missed.">            if (!Character.isWhitespace(c))</span>
+<span class="nc" id="L310">                needleBuilder.append(Character.toLowerCase(c));</span>
+        }
+<span class="nc" id="L312">        String needle = needleBuilder.toString();</span>
+<span class="nc bnc" id="L313" title="All 2 branches missed.">        if (needle.isEmpty())</span>
+<span class="nc" id="L314">            return result;</span>
+
+<span class="nc" id="L316">        int from = 0;</span>
+        int idx;
+<span class="nc bnc" id="L318" title="All 2 branches missed.">        while ((idx = flat.indexOf(needle, from)) &gt;= 0) {</span>
+<span class="nc" id="L319">            result.add(new int[] { map.get(idx), map.get(idx + needle.length() - 1) });</span>
+<span class="nc" id="L320">            from = idx + needle.length();</span>
+        }
+
+<span class="nc" id="L323">        return result;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

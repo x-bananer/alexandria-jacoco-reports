@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TextComparisonDAO.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Alexandria - Text Analysis Tool</a> &gt; <a href="index.source.html" class="el_package">com.alexandria.dao</a> &gt; <span class="el_source">TextComparisonDAO.java</span></div><h1>TextComparisonDAO.java</h1><pre class="source lang-java linenums">package com.alexandria.dao;
+
+import com.alexandria.db.DatabaseConnection;
+import com.alexandria.model.TextComparison;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Text Comparison.
+ *
+ * Manages a comparison of two or more texts, including common frequently used words.
+ */
+<span class="fc" id="L19">public class TextComparisonDAO {</span>
+	public TextComparison create(TextComparison textComparison) throws SQLException {
+<span class="fc" id="L21">		String sql = &quot;INSERT INTO text_comparisons (user_id, comparison_data) VALUES (?, ?)&quot;;</span>
+
+<span class="fc" id="L23">		try (Connection connection = DatabaseConnection.getConnection();</span>
+<span class="fc" id="L24">				PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {</span>
+<span class="fc" id="L25">			statement.setInt(1, textComparison.getUserId());</span>
+<span class="fc" id="L26">			statement.setString(2, textComparison.getComparisonData());</span>
+			
+<span class="fc" id="L28">			statement.executeUpdate();</span>
+
+<span class="fc" id="L30">			try (ResultSet keys = statement.getGeneratedKeys()) {</span>
+<span class="pc bpc" id="L31" title="1 of 2 branches missed.">				if (keys.next()) {</span>
+<span class="fc" id="L32">					textComparison.setId(keys.getInt(1));</span>
+				}
+			}
+		}
+
+<span class="fc" id="L37">		return textComparison;</span>
+	}
+
+	public TextComparison findById(int id) throws SQLException {
+<span class="fc" id="L41">		String sql = &quot;SELECT * FROM text_comparisons WHERE id = ?&quot;;</span>
+
+<span class="fc" id="L43">		try (Connection connection = DatabaseConnection.getConnection();</span>
+<span class="fc" id="L44">				PreparedStatement statement = connection.prepareStatement(sql)) {</span>
+<span class="fc" id="L45">			statement.setInt(1, id);</span>
+
+<span class="fc" id="L47">			try (ResultSet resultSet = statement.executeQuery()) {</span>
+<span class="fc bfc" id="L48" title="All 2 branches covered.">				if (resultSet.next()) {</span>
+<span class="fc" id="L49">					return new TextComparison(</span>
+<span class="fc" id="L50">							resultSet.getInt(&quot;id&quot;),</span>
+<span class="fc" id="L51">							resultSet.getInt(&quot;user_id&quot;),</span>
+<span class="fc" id="L52">							resultSet.getString(&quot;comparison_data&quot;),</span>
+<span class="fc" id="L53">							resultSet.getTimestamp(&quot;created_at&quot;).toLocalDateTime());</span>
+				}
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">			}</span>
+<span class="pc bpc" id="L56" title="2 of 4 branches missed.">		}</span>
+
+<span class="fc" id="L58">		return null;</span>
+	}
+
+	public List&lt;TextComparison&gt; findAllByUserId(int userId) throws SQLException {
+<span class="fc" id="L62">		String sql = &quot;SELECT * FROM text_comparisons WHERE user_id = ?&quot;;</span>
+<span class="fc" id="L63">		List&lt;TextComparison&gt; textComparisons = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L65">		try (Connection connection = DatabaseConnection.getConnection();</span>
+<span class="fc" id="L66">				PreparedStatement statement = connection.prepareStatement(sql)) {</span>
+<span class="fc" id="L67">			statement.setInt(1, userId);</span>
+
+<span class="fc" id="L69">			try (ResultSet resultSet = statement.executeQuery()) {</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">				while (resultSet.next()) {</span>
+<span class="fc" id="L71">					TextComparison textComparison = new TextComparison(</span>
+<span class="fc" id="L72">							resultSet.getInt(&quot;id&quot;),</span>
+<span class="fc" id="L73">							resultSet.getInt(&quot;user_id&quot;),</span>
+<span class="fc" id="L74">							resultSet.getString(&quot;comparison_data&quot;),</span>
+<span class="fc" id="L75">							resultSet.getTimestamp(&quot;created_at&quot;).toLocalDateTime());</span>
+
+<span class="fc" id="L77">					textComparisons.add(textComparison);</span>
+<span class="fc" id="L78">				}</span>
+			}
+		}
+
+<span class="fc" id="L82">		return textComparisons;</span>
+	}
+
+	public boolean update(TextComparison textComparison) throws SQLException {
+<span class="fc" id="L86">		String sql = &quot;UPDATE text_comparisons SET comparison_data = ? WHERE id = ?&quot;;</span>
+
+<span class="fc" id="L88">		try (Connection connection = DatabaseConnection.getConnection();</span>
+<span class="fc" id="L89">				PreparedStatement statement = connection.prepareStatement(sql)) {</span>
+<span class="fc" id="L90">			statement.setString(1, textComparison.getComparisonData());</span>
+<span class="fc" id="L91">			statement.setInt(2, textComparison.getId());</span>
+
+<span class="fc" id="L93">			int updatedRows = statement.executeUpdate();</span>
+
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">			return updatedRows &gt; 0;</span>
+		}
+	}
+
+	public boolean delete(int id) throws SQLException {
+<span class="fc" id="L100">		String sql = &quot;DELETE FROM text_comparisons WHERE id = ?&quot;;</span>
+
+<span class="fc" id="L102">		try (Connection connection = DatabaseConnection.getConnection();</span>
+<span class="fc" id="L103">				PreparedStatement statement = connection.prepareStatement(sql)) {</span>
+<span class="fc" id="L104">			statement.setInt(1, id);</span>
+
+<span class="fc" id="L106">			int deletedRows = statement.executeUpdate();</span>
+
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">			return deletedRows &gt; 0;</span>
+		}
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>
